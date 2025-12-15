@@ -1,0 +1,980 @@
+ugc_code,university_name,university_type,city_guess,state,region,website,contact,email
+0,Rajiv Gandhi University,,Doimukh Itanagar,Arunachal Pradesh,Northeast,http://www.rgu.ac.in,0360-2277253   ,
+1,Assam University,,P.O.,Assam,Northeast,http://www.assamuniversity.nic.in,   03842-270802 ,
+2,Tezpur University,,Napaam Tezpur,Assam,Northeast,http://www.tezu.ernet.in,3712 267007/8/9   3712-267005/6,admn@tezu.ernet.in
+3,University of Hyderabad,,Campus Hyderabad,Telangana,South,http://www.uohyd.ac.in,040-23132101   23132102   23132103   ,
+4,Maulana Azad National Urdu University,,Gachibowli Hyderabad,Telangana,South,http://www.manuu.ac.in,040-23006612-15   18004252958,
+5,English & Foreign Languages University,,Campus Hyderabad,Telangana,South,http://www.efluniversity.ac.in,040-27098141   27097530   27098225   27098392   040-27098402,
+6,Jamia Millia Islamia,,Nagar New,Delhi,North,http://www.jmi.nic.in,+91(11)26981717  26984617  26984658  26988044  26987183   +91(11)2698 0229,
+7,University of Delhi,,,Delhi,North,http://www.du.ac.in,   ,
+8,Jawaharlal Nehru University,,Road New,Delhi,North,http://www.jnu.ac.in,011-26742575   26742676   26741557    011-26741586,
+9,Indira Gandhi National Open University,,Garhi New,Delhi,North,http://www.ignou.ac.in,91-011-29532098   29571402   29571401   ,
+10,The Indira Gandhi National Tribal University,,Sadan Amarkantak,Madhya Pradesh,Central,http://igntu.nic.in,(07629) 280801   280802   280803   280810   280811   07629-269432,recruit.igntu@gmail.com
+11,Mahatma Gandhi Antarrashtriya Hindi Vishwavidyalaya,,Wardha Mumbai,Maharashtra,West,,91-7152-232957   91-7152-242814,de.mba@hindivishwa.org  mgahvmbabba@gmail.com
+12,Mizoram University,,190 Aizwal,Mizoram,Northeast,http://www.mzu.edu.in,   ,registrar@mzu.edu.in
+13,North Eastern Hill University,,Campus Shillong,Meghalaya,Northeast,http://www.nehu.ac.in,   ,
+14,Manipur University,,Imphal,Manipur,Northeast,http://www.manipuruniv.ac.in,+91-385-2435833   2435276   2435100   +91-385-2435145 ,info@manipuruniv.ac.in
+15,Central Agricultural University,,Imphal,Manipur,Northeast,http://www.cau.org.in,0364-2570047   ,
+16,Pondicherry University,,Nagar Kalapet,Puducherry,South,http://www.pondiuni.edu.in,0413 - 2654262   ,registrar@pondiuni.edu.in
+17,Sikkim University,,Tadong Gangtok,Sikkim,Northeast,http://www.sikkimuniversity.in,+91-03592-251438   91-03592-251438,tkkaul@hotmail.com   registrar@cus.ac.in 
+18,Tripura University,,Suryamaninagar Agartala,Tripura,Northeast,http://www.tripurauniv.in, +91 381 237 4801/4803    +91 381 237 4802  ,tripurauniversity@rediffmail.com
+19,Aligarh Muslim University,,Aligarh,Uttar Pradesh,North,http://www.amu.ac.in,0571-2700994   2700173   2700220   2720520   0571-2700087/2700528,
+20,Babasaheb Bhimrao Ambedkar University,,Road Lucknow,Uttar Pradesh,North,http://www.bbau.ac.in,91-522-2440822    91-522-2440821  2441888,info@bbau.ac.in
+21,Banaras Hindu University,,Varanasi,Uttar Pradesh,North,http://www.bhu.ac.in,   ,
+22,University of Allahabad,,Allahabad,Uttar Pradesh,North,http://www.allduniv.ac.in/,0532-2461083   ,
+23,Visva Bharati,,Shantiniketan,West Bengal,East,http://www.visva-bharati.ac.in,91(3463)262751 to 262756 (6 lines)   91(3463)262672,
+24,Hemwati Nandan Bahuguna Garhwal University,,Srinagar Garhwal,Uttarakhand,North,http://www.hnbgu.ac.in,01346-252143   01346 – 252247,registrar.hnbgu@gmail.com
+25,Central university of Tamil Nadu,,Annexe Tiruvarur,Tamil Nadu,South,http://www.tiruvarur.in.nic.in/cutn/,+91 4366 220311   +91 4366 225312,psvc@cutn.ac.in/pavc@cutn.ac.in   admissions@cutn.ac.in
+26,Indian Maritime University,,Chennai,Tamil Nadu,South,http://www.imu.tn.nic.in,(044) 24530343   24530345   (044) 24530342,info@imu.co.in
+27,Central University of Rajasthan,,Bandar Sindri,Rajasthan,North,http://www.curaj.ac.in, +91-1463-238755   ,info@curaj.ac.in
+28,Central University of Punjab,,Road Bathinda,Punjab,North,http://www.cup.ac.in   http://www.cpu.edu.in,0164-243 0586   0164-2864111    ,cu.punjab.info@gmail.com
+29,Central University of Orissa,,-764020,,,http://www.cuo.ac.in,06852-288200   288210   06852-288225 ,info@cuo.ac.in
+30,Dr. Harisingh Gour Vishwavidyalaya,,Sagar,Madhya Pradesh,Central,http://www.dhsgsu.ac.in,07582-264796   241215   265228   264156   07582-264163/264236/264236,
+31,Central University of Kerala,,Kasaragod (DT),Kerala,South,http://www.cukerala.ac.in,91 (04994-257032   ,cukgod@gmail.com
+32,Central University of Karnataka,,University Gulbarga,Karnataka,South,http://www.cuk.ac.in,08472-272057   08472-272066,cukgulbarga@gmail.com
+33,Central University of Jharkhand,,Brambe Ranchi,Jharkhand,East,http://www.cuj.ac.in,06531-224163   06531-224163,pio@cuj.ac.in
+34,Central University of Kashmir,,Hospital) Srinagar,Jammu and Kashmir,North,http://www.cukashmir.ac.in,0194-2468357  0194-2468346   0194-2468351  0194-2468354,mail@cukashmir.ac.in
+35,Central University of Jammu,,Samba Jammu,Jammu and Kashmir,North,http://www.cujammu.ac.in,91-01923-249658   ,registrar@cujammu.ac.in
+36,Central University of Himachal Pradesh,,#NAME?,Himachal Pradesh,North,http://www.cuhimachal.ac.in,-462263,vc.cuhimachal@gmail.com
+37,Central University of Haryana,,Jant-Pali Mahendergarh,Haryana,North,http://www.cuh.ac.in,01285-249443   0124-2350283   2350284,registrar@cuh.ac.in
+38,Guru Ghasidas Vishwavidyalaya,,Bilaspur Chhatisgarh,Chhattisgarh,Central,http://www.ggu.ac.in,07752-260283   260351   260209   260294   07752-260148/260154,centralggu@ggu.ac.in
+39,Central University of South Bihar,,Chhajjubagh Patna,Bihar,East,http://www.cub.ac.in,0612-2227600  2784106  2226538   ,
+40,Central University of Gujarat,,A Gandhinagar,Gujarat,West,http://www.cug.ac.in,079 29289056   079 23260076,info@cug.ac.in
+41,Gandhi Institute of Technology and Management (GITAM),,Rushikonda Visakhapatman,Andhra Pradesh,South,http://www.gitam.edu/,0891-2790101   2790202   2790404   2790505   ,registrar@gitam.edu / admin@gitam.edu
+42,International  Institute of Information Technology,,032 (A.P.),Telangana,South,http://www.iiit.ac.in,+91-40-6653 1000    ,query@iiit.ac.in
+43,Koneru Lakshmaiah Education Foundation,,Vaddeswaram Guntur,Andhra Pradesh,South,http://www.kluniversity.in,0866 - 2577715   08645 - 246948,
+44,Rashtriya Sanskrit Vidyapeeth,,517 507.(A.P),Andhra Pradesh,South,http://rsvidyapeetha.ac.in,0877-2287649   0877-2287690   0877-2288644  0877-2286686   0877-2286177   ,
+45,Sri Sathya Sai Institute of Higher Learning,,Distt. A.P.Prasanthinilay,Andhra Pradesh,South,http://www.sssihl.edu.in,+91 8555 287239    ,registrar@sssihl.edu.in
+46,ICFAI Foundation for Higher Education,,Road Hyderabad,Andhra Pradesh,South,http://www.ifheindia.org,   ,
+47,Vignan's Foundation for Science   Technology and Research,,Vadlamudi Guntur,Andhra Pradesh,South,https://vignan.ac.in/,0863-2534645  2534646  02344700   ,
+48,North Eastern Regional Institute of Science & Technology,,Nirjuli Itanagar,Arunachal Pradesh,Northeast,http://www.nerist.ac.in,0360-2257401   0360-2257872/ 2258533,"@nerist.ernet.in,@nerist.ac.in"
+49,Nava Nalanda Mahavihara,,Nalanda-803 111,Bihar,East,http://www.navanalandamahavihara.o,611-228-1672  ,nnmdirector@sify.com
+50,Punjab Engineering College,,,Chandigarh,North,http://www.pec.ac.in,"0172- 2753064 ,  0172-2745175","webmaster@pec.ac.in,"
+51,Indian Agricultural Research Institute,,Pusa New,Delhi,North,http://www.iari.res.in,  ,
+52,Indain Institute of Foreigen Trade,,Area N.,Delhi,North,http://www.iift.edu,"+91-11-26965124 ,+91-11-26965051  ",
+53,Indian Law Institute,,Road New,Delhi,North,http://www.admissionnews.com,91-11-23386321  ,ili@ili.ac.in 
+54,Institute of liver and Biliary Sciences,,Kunj New,Delhi,North,http://www.ilbs.in/,46300000  7055  7056  26706700-02  64703890 ,
+55,Jamia Hamdard,,Nagar New,Delhi,North,http://www.jamiahamdard.edu,011-26059688  ,
+56,National Museum Institute of History of Arts  Conservation and Musicology,,Janpath New,Delhi,North,http://nmi.gov.in,+91 11 23012106  ,nmihacm@gmail.com 
+57,National Institute of Food Technology  Entrepreneurship & Management (NIFTEM),,Kundli Sonepat,Haryana,North,http://www.niftem.ac.in,130-2219759-63  ,info@niftem.ac.in
+58,National University of Educational Planning & Administration,,New,Delhi,North,http://www.nuepa.org,26565600  26544800  ,
+59,Rashtriya Sanskrit Sansthana,,Janakpuri New,Delhi,North,http://www.sanskrit.nic.in,+91-11-28524993  28520976  28520977,rsks@nda.vsnl.net.in
+60,Shri Lal Bahadur Shastri Rashtriya Sanskrit Vidyapith,,Area New,Delhi,North,http://www.slbsrsv.ac.in,(91) 011- 46060606  (91)011- 46060606,email : info@slbsrsv.ac.in
+61,TERI School of Advanced studies,,Rd N.,Delhi,North,http://www.teriuniversity.ac.in,91 11 26122222  26139110  26139011  91 11 26122874,
+62,Gujarat Vidyapith,,380 014.,Gujarat,West,http://www.gujaratvidyapith.org,079-27541148  079-27540746  079-40016200  ,
+63,Sumandeep Vidyapeeth,,Takula Waghodiya,Gujarat,West,http://www.sumandeepvidyapeethdu.edu.in,(02668) 245262 / 64 / 66  ,info@sumandeepvidyapeethdu.edu.in
+64,Maharishi Markandeshwar (Deemed to be University),,Mullana Ambala,Haryana,North,http://www.mmumullana.org,"01731-274475,76,77,78,  +91-8059930001  02  03  04  05  06",info@mmumullana.org
+65,Lingaya's Vidyapeeth,,Fridabad- 121002,Haryana,North,http://www.limat.org,0866-2085299  2085353  96426 08881  96426 08882,
+66,National Brain Research Centre,,-122001 (,Haryana,North,http://www.nbrc.ac.in,0124 - 2338920 to 26  0124 - 2338910,info@brc.ac.in
+67,National Dairy Research Institute,,132 001.,Haryana,North,http://www.ndri.res.in,  ,
+68,Manav Rachna International Institute of Research and Studies,,N.I.T. Faridabad-121001,Haryana,North,http://manavrachna.edu.in/,91 129 4198100 (30 Lines)  ,info@mriu.edu.in
+69,Birla Institute of Technology,,215. (,Jharkhand,East,http://www.bitmesra.ac.in,91 651 2275444/2275896  ,
+70,B.L.D.E.,,Bijapur Karantaka,Karnataka,South,http://bldedu.ac.in/,"918352 262770,918352 262507  918352 260267,918352 264951",
+71,Christ,,Road Bangalore-560029,Karnataka,South,http://www.christuniversity.in,"+91 80.4012.9100,+91.80.4012.9600  ",mail@christuniversity.in
+72,Indian Institute of Science,,560 012.,Karnataka,South,http://www.iisc.ernet.in,"080-22932241,22932231  ",
+73,International Institute of Information Technology,,Bangalore (IIIT-B),Karnataka,South,http://www.iiitb.ac.in,91 80 4140 7777 /2852 7627  91 80 28527636,ramachandra@iiitb.ac.in
+74,Jain,,V.V.Puram Bangalore,Karnataka,South,http://www.jainuniversity.ac.in,91 80 43431000  91 80 43431010,jainunversity@gamil.com
+75,JSS Academy of Higher Education & Research,,Nagara Mysore,Karnataka,South,www.jssuni.edu.in,0821-2548400/2548391/392  ,registrar@jssuni.edu.in
+76,Jawahar lal Nehru Centre for Advanced Scientific Research,,Bangalore-560064 (Kanataka),Karnataka,South,http://www.jncasr.ac.in,91-80-22082750  91-80-22082766,admin@jncasr.ac.in
+77,K.L.E. Academy of Higher Education and Research,,Nagar Belgaum-590010,Karnataka,South,http://www.kleuniversity.edu.in,0831-2444444  ,info@kleuniversity.edu.in
+78,Manipal Academy of Higher Education,,Nagar Manipal-576119.,Karnataka,South,http://www.manipal.edu,0820-2571201  ,
+79,National Institute of Mental Health & Neuro Sciences,,560 029.,Karnataka,South,http://www.nimhans.kar.nic.in,"080-26995000/5100,5200,5300,5400  26568120,8121,8122,8123,8124",virusravi@gmail.com
+80,NITTE,,Deralakatte Mangalore-575018,Karnataka,South,http://www.nitte.edu.in,91 - 824 - 2204300/01/02/03/04  0824-2204305  91 - 824 - 2204305,info@nitte.edu.in
+81,Sri Devraj Urs Academy of Higher Education and Research,,Tamaka Kolar-563101,Karnataka,South,http://www.sduu.ac.in,  ,
+82,Sri Siddhartha Academy of Higher Education,,Tumkur-572107,Karnataka,South,http://www.sahetumkur.ac.in,0816 2275516  0816-2278867 /2275514,info@sahe.in
+83,Swami Vivekananda Yoga Anusandhana Samsthana,,Agrahara Bangalore-560018,Karnataka,South,http://www.vyasa.org,26608645/26612669  ,info@svyasa.org  svyasa@svyasa.org
+84,Yenepoya,,Mangalore,Karnataka,South,http://yenepoya.edu.in,0824-2204668/69/70  91 824 2204667,reachus@yenepoya.org
+85,Kerala Kalamandalam,,Thrissur,Kerala,South,http://www.kalamandalam.org,91+ 4884 262418  262526  91- 4884 - 262019,info@kalamandalam.org
+86,Indian Institute of Space Science and Technology,,P.O. Thiruvananthapuram,Kerala,South,http://www.iist.ac.in,"0471-2568422,2568452,2568453  0471-2568462",
+87,Indian Institute of Information Technology and Management,,Link Road.,Madhya Pradesh,Central,http://www.iiitm.ac.in,0751-2449704  0751-2449813,
+88,Pandit Dwarka Prasad Mishra Indian Institute of Information Technology,,College Jabalpur,Madhya Pradesh,Central,http://www.iitk.ac.in,  ,
+89,Lakshmibai National Institute of Physical Education,,474002. M.P.,Madhya Pradesh,Central,http://www.lnipe.nic.in,91-751-4000984  ,nishikanttiwari@gmail.com
+90,Bharati Vidyapeeth,,Marg Pune,Maharashtra,West,http://bvuniversity.edu.in/,No: 020-24325701  24407100  24331317  ,bvuniversity@yahoo.co.in
+91,Central Institute of Fisheries Education,,400 061,Maharashtra,West,http://www.cife.edu.in,022-26363404  26361656  26345944  28614355  022- 26361573 /26348223,root@cife.bom.nic.in  fishinst@bom3.vsnl.net.in
+92,D.Y Patil Educational Society,,Kasada Kolhapur-416006,Maharashtra,West,http://www.dypatilunikop.org,(0231) 2601235/36  2601595  (0231) 2601238,"info@dypatilkolhapur.org,info@dypatilunikop.org"
+93,Datta Meghe Institute of Medical Sciences,,(Meghe) Wardha,Maharashtra,West,http://www.dmims.edu.in,07152-287701  07152-287706,medical_wda@sancharnet.in  info@dmimsu.com
+94,Deccan College Postgraduate & Research Institute,,411 006.,Maharashtra,West,http://www.deccancollegepune.ac.in,020-26692982  26691457  26615232  26683192  020-26692104,dakshina@pn2.vsnl.net.in
+95,Dr. D.Y. Patil Vidyapeeth,,Pimpri Pune,Maharashtra,West,http://www.dpu.edu.in,020-27805000  020-27805001,info@dpu.edu.in 
+96,Gokhale Institute of Politics & Economics,,411 004.,Maharashtra,West,http://www.gipe.ac.in,91-20-25650287/25679940/25654288/25661367  91-20-25652579,gipe@vsnl.com   gipelib@gipe.ac.in
+97,Homi Bhabha National Institute  Regd. Office,,Complex Mumbai-85,Maharashtra,West,http://www.hbni.ac.in,  ,
+98,Indira Gandhi Institute of Development Research,,Mumbai-400 065.,Maharashtra,West,http://www.igidr.ac.in,022-28425747  28425337  022-28401336  28401346,postmaster@igidr.ac.in
+99,Defence Institute of Advanced Technology,,Girinagar Pune,Maharashtra,West,https://www.diat.ac.in,020-24304005  ,
+100,International Institute for Population Sciences,,400 088.,Maharashtra,West,http://www.iipsindia.org,022-42372400  ,
+101,Institute of Chemical Technology,,Matunga Mumbai-400019,Maharashtra,West,http://www.ictmumbai.edu.in,91 22 33611001  91 22 33611111,director@ictmumbai.edu.in
+102,Krishna Institute of Medical Sciences,,-415539,Maharashtra,West,http:/www. kimsuniversity.in,91-2164-241555-58  91-40-27840980,contact@kimsuniversity.in
+103,MGM Institute of Health Sciences,,Kamothe,Maharashtra,West,http://www.mgmuhs.com,"022-27432471,27432994  ",registrar@mgmuhs.com
+104,Narsee Monjee Institute of Management Studies,,(W) Mumbai-400056,Maharashtra,West,http://www.nmims.edu,022-42355555  ,"nmims@nmims.edu,enquiry@nmims.edu"
+105,Padmashree Dr.D.Y. Patil Vidyapeeeth,,Pin-400 706,Maharashtra,West,http://www.dypatil.ac.in,91 22 39285999  91 22 39286197,info@dypatil.com   dypuniversity_1@yahoo.co.in
+106,Pravara Institute of Medical Sciences,,Tal. Rahata,Maharashtra,West,http://www.pravara.com/,91-2422-273600  91-2422-273413,pravara@bom3.vsnl.net.in  contact@pmtpims.org
+107,Symbiosis International University,,District: Pune,Maharashtra,West,http://www.siu.edu.in,020-39116200  020-39116206,registrar@siu.edu.in
+108,Tata Institute of Fundamental Research,,400 005,Maharashtra,West,http://www.tifr.ac.in,91-22-22782000  ,
+109,Tata Institute of Social Sciences,,Mumbai-400 088.,Maharashtra,West,http://www.tiss.edu,  022-25525000,webmaster@tiss.edu
+110,Tilak Maharashtra Vidyapeeth,,Gultekdi Pune-411037,Maharashtra,West,http://www.tmv.edu.in,"020-24261856  24264699  24267888,24454866  91-020-24266068  24271695",
+111,Kalinga Institute of Industrial Technology,,Orissa -,,,http://www.kiit.ac.in,  91 674 2725113,kiit@kiit.ac.in
+112,Siksha 'O' Anusandhan,,Orissa -,,,http://www.soauniversity.ac.in,91-674- 2350635  2350791  2350794  2350802  91 - 674 - 2350826,info@soauniversity.ac.in
+113,Sant Longowal Institute of Engineering and Technology,,District- Sangru,Punjab,North,http://www.sliet.ac.in,  ,sliet_webasters@yahoo.com
+114,Thapar Institute of Engineering & Technology,,Road Patiala,Punjab,North,http://www.thapar.edu.in,91-175-2393021  91-175-2364498  2393020,registrar@thapar.edu
+115,Sri Balaji Vidyapeeth (Deemed to be University),,of Pudducherry,Puducherry,South,http://www.sbvu.ac.in,0413-2615449 to 2615458  ,registrar@sbvu.ac.in
+116,Banasthai Vidyapith,,304022. (,Rajasthan,North,http://www.banasthali.org,01438-228647  228323/653  228371  228340  01438-228365,"info@banasthali.ac.in  
+ashastri@banasthali.ac.in"
+117,Birla Institute of Technology & Science,,Vihar Pilani,Rajasthan,North,http://www.bits-pilani.ac.in,01596-255298  255310  ,samuel@pilani.bits-pilani.ac.in
+118,Institute of Advanced Studies in Education,,Shahr Churu,Rajasthan,North,http://www.iaseuniversity.org.in,01564- 220025  223642  01564 - 223682(FAX),oncampus@iaseuniversity.org.in
+119,IIS,,Mansarovar Jaipur,Rajasthan,North,http://www.iisuniv.ac.in,91-141-2400160-61  2397906-07  91 - 2395494  2781158,icg@iisuniv.ac.in
+120,Jain Vishva Bharati Institute,,Ladnun-341 306.,Rajasthan,North,http://jvbi.ac.in,"018581-222230,222110,224332  1581-223472",jvbiladnun@gmail.com
+121,Janardan Rai Nagar Rajasthan Vidyapeeth,,313 001.(,Rajasthan,North,http://www.jrnrvu.org,"91 294 2429441,2493493,2492440  0294-2492400",info@jrnrvpu.org
+122,The LNM Institute of Information Technology  jaipur,,Via-Jamdoli District:-Jaipur,Rajasthan,North,http://www.lnmiit.ac.in,0141-5191851/ 2688090  0141-2689014 (FAX),info.lnmiit@lnmiit.ac.in
+123,Mody Institute of Education and Research,,Lakshmangarh,Rajasthan,North,http://www.mitsuniversity.ac.in,(01573) 225001(12 Lines)  (01573) 225041 to 44,contact@mitsuniversity.ac.in
+124,Academy of Maritime Education and Training,,Chennai- 603112,Tamil Nadu,South,http://www.ametuniv.ac.in,91 - 44 - 27472155 / 27472904 / 27472905 / 2747215  91 - 44 - 27472804,amet@vsnl.com
+125,Amrita Vishwa Vidyapeetham,,Coimbatore,Tamil Nadu,South,http://www.amrita.edu,91-422-2685000  91-422-2656274,univhq@amrita.edu
+126,Avinashilingam Institute for Home Science & Higher Education for Women,,641 043.,Tamil Nadu,South,http://www.avinashilingam.edu,0422-2443219  2451252  2441252  2211288  0422-2438786,avinuty.ac.in
+127,B.S. Abdur Rahman Institute of Science and Technology,,Tamilnadu-600 048,Tamil Nadu,South,http://www.bsauniv.ac.in,91-44-22751347/348/350/362  91-44-22750520,bsar@bsauniv.ac.in
+128,Bharath Institute of Higher Education & Research,,Chennai 600073,Tamil Nadu,South,http://www.bharathuniv.com,"91 - 44 - 2229 0742  2229 0125,2440 4699  2445 341  91 - 44 - 2229 3886",admission@bharathuniv.ac.in
+129,Chennai Mathematical Institute,,TamilNadu,Tamil Nadu,South,http://www.cmi.ac.in,"91-44-2747 0226  ?  2747 0229,3298 3441  3298 3442  91-44-2747 0225",office at cmi dot ac dot in
+130,Chettinad Academy of Research and Education  (CARE),,Kanchipuram Distt.,Tamil Nadu,South,http://www.chettinadhealthcity.com,91 (0)44 4741 1010  91 (0)44 4741 1011,mail@chettinadhealthcity.com
+131,The Gandhiigram Rural Institute,,,Tamil Nadu,South,http://www.ruraluniv.ac.in,2452371  2452375  0451-2453071,grucc@ruraluniv.ac.in
+132,Hindustan Institute of Technology  and Science (HITS),,Kelambakkam Chennai,Tamil Nadu,South,http://www.hindustanuniv.ac.in,(044) – 27474262  (044) – 27474385,hindustan@hindustanuniv.ac.in
+133,Kalasalingam Academy of Research and Education,,Tamal Nadu,Tamil Nadu,South,http://www.kalasalingam.ac.in,04563 - 289042/43/44  04563 - 289322,info@kalasalingam.ac.in
+134,Karunya Institute of Technology and Sciences,,Nagar Coimbatore,Tamil Nadu,South,http://www.karunya.edu,0422 - 2614300  91 422 2615615,ku@karunya.edu
+135,Karpagam Academy of Higher Education,,Eachanari Post,Tamil Nadu,South,http://www.kahedu.edu.in,"0422-2611146,2611082  0422-2611043",info@karpagamuniversity.ac.in
+136,Dr. M.G.R. Educational and Research Institute,,Chennai-600095,Tamil Nadu,South,http://www.drmgrdu.ac.in,91 - 044-23782176 / 23782186 / 23782085  91 - 044- 23783165,contact@drmgrdu.ac.in
+137,Meenakshi Academy of Higher Education and Research,,Nagar(West) Chennai-600078,Tamil Nadu,South,http://www.maher.ac.in,(044) 23643955  23643956  (044) 23643958,info@maher.ac.in
+138,Noorul Islam Centre for Higher Education,,Thuckalay Kanyakumari,Tamil Nadu,South,http://www.niuniv.com,04651-251956  04651-257266,info@niceindia.com
+139,Periyar Manaimmai Institute of Science & Technology (PMIST),,Vallam Thanjavur,Tamil Nadu,South,http://www.pmu.edu,91-4362-264600  91-4362-264660,pmu@pmu.edu
+140,Ponnaiyan Ramajayam Institute of Science & technology (PMIST),,Chavadi Thanjavur,Tamil Nadu,South,http://www.prist.ac.in,(04362) 265021  265022  266940  266950  266960  04362-265150,contact@prist.ac.in
+141,Rajiv Gandhi National Institute of Youth Development,,Sriperrumbudur,Tamil Nadu,South,http://www.rgniyd.gov.in,(091)044 - 27162741  27162612  (091)044 - 27162705,app@rgniyd.gov.in/acadrgniyd@gamil.com
+142,S.R.M Institute of Science and Technology,,Mambalam Chennai,Tamil Nadu,South,http://www.srmuniv.ac.in,044-27417777/27417000  ,
+143,Sathyabama Institute of Science and Technology,,Salai Chennai,Tamil Nadu,South,http://www.sathyabamauniversity.ac.in,044 - 2450 3150 / 51   044 - 2450 3154/55,sathyabama@sathyabama.ac.in
+144,Saveetha Institute of Medical and Technical Sciences,,Velappanchavadi Chennai,Tamil Nadu,South,http://www.saveetha.com,91 - 44 - 2680 1580 / 1581 / 1582 / 1583 / 1584 /  91 - 44 - 2680 0892,contact@saveetha.com
+145,Shanmugha Arts Science Technology & Research Academy (SASTRA),,Samudram Thanjavur,Tamil Nadu,South,http://www.sastra.edu,91 4362 264101-108  304000-010.  91 4362 264120,registrar@sastra.edu
+146,Sri Chandrasekharendra Saraswathi Vishwa Mahavidyalaya,,Enathur Kancheepuram,Tamil Nadu,South,http://www.kanchiuniv.ac.in,(91) 44-27264293  27264308  27264301  (91) 44-27264285,
+147,Sri Ramachandra Medical College and Research Institute,,Nagar Chennai.,Tamil Nadu,South,http://http://www.sriramachandra.edu.in,044-24765512  ,
+148,St. Peter’s Institute of Higher Education and Research,,Avadi Chennai,Tamil Nadu,South,http://www.spiher.ac.in,044 - 26558080 - 85  ,spiher@stpetersuniversity.org
+149,VELS Institute of Science Technology & Advanced Studies (VISTAS),,Pallavaram Chennai,Tamil Nadu,South,http://www.velsuniv.ac.in,91 - 44 - 2266 2500 / 2501 / 2502 / 2503  91 - 44 - 2266 2513,vistas@velsuniv.org
+150,Vellore Institute of Technology,,Vellore,Tamil Nadu,South,http://www.vit.ac.in,"91-416-2243091 / 93  91-416-2243092,2240411",
+151,Vel Tech Rangarajan Dr. Sagunthala R & D Institute of Science and Technology,,Chennai,Tamil Nadu,South,http://www.veltechuniv.edu.in   www.vel-tech.org,"044-26841622,26840896,  2,435,759,124,348,250","eveltech@vsnl.com,"
+152,Vinayaka Mission’s Research Foundation,,Ariyanoor Salem,Tamil Nadu,South,http://www.vinayakamission.com,"0427 - 247 7316 / 317 / 594 / 598
+  0427 - 247 7903
+",vmtrust@vmu.edu.in/vmtrust@gmail.com
+153,Sam Higginbottom Institute of Agriculture  Technology & Sciences,,Naini Allahabad,Uttar Pradesh,North,http://www.shiats.edu.in,91 532 2684281  91 532 2684394,
+154,Bhatkhande Music Institute,,Bagh Lucknow,Uttar Pradesh,North,http://www.bhatkhandemusic.edu.in,  ,info@bhatkhandemusic.edu.in
+155,Central Institute of Higher Tibetan Studies,,Sarnath Varanasi,Uttar Pradesh,North,http://www.cihts.ac.in,091-542-2585242/2585148/2581737  0542-2585150,cihts@yahoo.com
+156,Dayalbagh Educational Institute,,Dayalbagh Agra,Uttar Pradesh,North,http://www.dei.ac.in,0562-2801545  6544855  0562-2801226(Fax),admin@dei.ac.in
+157,Indian Veterinary Research Institute,,Izatnagar U.P.,Uttar Pradesh,North,http://www.ivri.nic.in,0581- 2300096  2301375  0581- 2303284  2302179,root@ivri.up.nic.in
+158,Jaypee Institute of Information Technology,,Sector-62 Noida,Uttar Pradesh,North,http://www.jiit.ac.in,0120-2400973  ,webadmin@jiit.ac.in
+159,Nehru Gram Bharati,,Dubawal Prayagraj,Uttar Pradesh,North,http://www.ngbu.edu.in,7705988333  7705966333,info.ngbu@gmail.com
+160,Shobhit Institute of Engineering & Technology,,Road Meerut,Uttar Pradesh,North,http://www.shobhituniversity.ac.in,91-121- 2575091 / 92  3264004  91-121- 2575724,mail@shobhituniversity.ac.in
+161,Santosh,,Nagar Ghaziabad,Uttar Pradesh,North,https://santosh.ac.in/,"91-120-2741141-43,2741777  91-120-2741140",santosh@santoshdeemedtobeuniversity.com
+162,Forest Research Institute,,Forest Dehradun,Uttarakhand,North,http://www.icfre.org,91- 135- 2758295  2759646  91- 135- 2750297,garbyalms@icfre.org   ddg_admin@icfre.org   cm_rb@
+163,Gurukul Kangri vidyapeeth,,Haridwar Uttrakhand.,Uttarakhand,North,http://www.gkvharidwar.org,01334-249011  249012  249013  243090  01334-245265/246366/246811,registrargkv@yahoo.comg
+164,Graphic Era,,Dehradun Uttrakhand.,Uttarakhand,North,http://www.ugc.ac.in,91-135-2643420  2642727  91-135-2644025,enquiry@geu.ac.in
+165,Ramakrishna Mission Vivekananda Educational  and Research Institute,,Distt Howrah,West Bengal,East,http://www.rkmvu.ac.in,  ,
+166,Assam Don Bosco University,,Azara Guwahati,Assam,Northeast,http://www.dbuniversity.ac.in,91-03842-270802  91-03842-270849  91 361 2841949,"contact@dbuniversity.ac.in,hr@dbuniversity.ac.in"
+167,Dr. C.V. Raman University,,Kota Bilaspur,Chhattisgarh,Central,http://www.cvru.ac.in,"91-7753-253728  202582 253737,  91-7753-253728",cvruraipur@yahoo.co.in
+168,MATS University,,: Raipur,Chhattisgarh,Central,http://www.matsuniversity.ac.in,91 771 4078995  4078996  91 771 4078997,info@matsuniversity.ac.in
+169,Charotar University of Science & Technology,,District Anand,Gujarat,West,http://www.charusat.ac.in,02697-247 500  02697-247 100,info@ecchanga.ac.in
+170,Calorx Teacher's University,,Chandlodia Ahmedabad,Gujarat,West,http://www.ctu.org.in,02717-242328/29  ,registrar@ctu.org.in
+171,Dhirubhai Ambani Institute of Information and Communication Technology,,Circle Gandhinagar,Gujarat,West,http://www.daiict.ac.in,079-30520000  3052-0010  ,info@daiict.ac.in
+172,Ganpat University,,Vidyanagar Mehsana,Goa,West,http://www.ganpatuniversity.ac.in,2762-286080  286924-25  180023312345,info@ganpatuniversity.ac.in
+173,Kadi  Sarva Vishwavidyalaya,,15/23 Gandhinagar,Gujarat,West,http://ksvuniversity.org.in,079-23222664  23241492  079-23244690,info@ksvuniversity.org.in 
+174,Nirma University,,Chharodi Ahmedabad,Gujarat,West,http://www.nirmauni.ac.in,02717-241900 to 04  241911 to 15  02717-241916-17,asst_registrar@nirmauni.ac.in  webmaster@nirmauni.ac.in
+175,Pandit Deendayal petroleum University,,At Raisan,Gujarat,West,http://www.pdpu.ac.in,079-23275060  23275030  NULL,info@pdpu.ac.in
+176,The Northcap University,,23-A Gurgaon,Haryana,North,http://ncuindia.edu,0124-2365811 to 13  0124-2367488 ,ncu@ncuindia.edu
+177,O.P. Jindal Global University,,Sonipat,Haryana,North,http://www.jgls.org,91-130-3057804  91-130-3057808,admissions@jgu.edu.in
+178,Acharaya N.G.Ranga Agricultural University,,Lam Gantur,Andhra Pradesh,South,http://www.angrau.ac.in,24015161  24015163/24015011 to 24015017  ,"angrau@ap.nic.in,angrau_help@yahoo.com"
+179,Acharaya Nagarjuna University,,Nagar Guntur,Andhra Pradesh,South,http://www.anu.ac.in,0863-22346114  0863-2293320 ,
+180,Adikavi Nannaya University,,Jayakrishnapuram Rajahmundry,Andhra Pradesh,South,http://www.nannayauniversity.info/,8121692457/9440801165  ,
+181,Alagappa University,,Sivaganga District,Tamil Nadu,South,http://alagappauniversity.ac.in/, 04565 - 223100  ,registraralagappauniv@gmail.com
+182,Aliah University,,Town Kolkata,West Bengal,East,http://www.aliah.ac.in,91-33-2706-2269  2706-2271  2367-1432  1800-345-1786  ,infodesk@aliah.ac.in
+183,Anand Agricultural University,,Anand,Gujarat,West,http://www.aau.in,91 (0)2692-225800  ,
+184,Dr. N.T.R. University of Health Sciences,,Vijayawada,Andhra Pradesh,South,http://www.ntruhs.ap.nic.in,  ,
+185,Andhra University,,Visakhapatnam,Andhra Pradesh,South,http://www.andhrauniversity.info/,0891-2755547  2755324  2539510  0891-2755547  2755324,aulibra@md2.vsnl.net.in
+186,Anna University,,Guindy Chennai,Tamil Nadu,South,http://www.annauniv.edu,  ,
+187,Annamalai University,,Annamalainagar,Tamil Nadu,South,http://www.annamalaiuniversity.ac.in,04144-238282  04144-238080,
+188,Assam Agricultural University,,013. (,Assam,Northeast,http://www.aau.ac.in,0376-2340013  2340350  2340008  2310304  0376-2340001,
+189,Awadesh Pratap Singh University,,486 003.,Madhya Pradesh,Central,http://www.apsurewa.nic.in, 07662 - 233340  07662 - 233436,ccapsu@gmail.com 
+190,Baba Farid University of Health Sciences,,203 Panjab,Punjab,North,http://www.bfuhs.ac.in,01639-256253  FAX No.01639 - 256234,generalinfo@bfuhs.ac.in
+191,Baba Ghulam Shah Badshah University,,Himmat Jammu,Jammu and Kashmir,North,http://www.bgsbuniversity.org,01962-262616   0191-2464402  2466892/ Mob. 9419103565,bgsbu@rediffmail.com
+192,Babasaheb Bhimrao Ambedkar Bihar University,,842 001.,Bihar,East,http://www.brabu.net/,0621-2243071   0621-2242495 ,registrar.brabu@gmail.com  mca.brabu.net@gmail.com   
+193,Bangalore University,,Bharathi Bangalore,Karnataka,South,www.bangaloreuniversity.ac.in ,  ,
+194,Barkatullaah University,,462 026.,Madhya Pradesh,Central,http://www.bubhopal.nic.in,2517100  2517200  ,
+195,Bastar Vishwavidyalaya,,Jagdalpur,Chhattisgarh,Central,http://www.bvvjdp.ac.in,07782-239037  ,Info@bvvjdp.ac.in
+196,Berhampur University,,Berhampur Bhanja,Bihar,East,http://www.buodisha.edu.in,  ,
+197,Bhagat Phool Singh Mahila Vishwavidyalaya,,Kalan Sonipat,Haryana,North,http://www.bpswomenuniversity.ac.in,01263-283001  002  283111  01263-283779,vcebpswomenuniversity.ac.in
+198,Bharathiar University,,641 046.,Tamil Nadu,South,http://www.bdu.ac.in,0431-2407071  2407072  2407074  2407075  Fax: (91) 422-2422387.,office@bdu.ac.in
+199,Bharathidasan University,,Palkalaiperur Tiruchirappalli,Tamil Nadu,South,http://www.bdu.ac.in,0431-2407071  0431-2407072  2407074  2407075,office@bdu.ac.in
+200,Krishnakumarsinhji Bhavnagar University,,Road Bhavnagar,Gujarat,West,http://www.bhavuni.edu,0278-2426519  2430002  2430006  2430007  2564626  0278-2426706/2513943,drhc_trivedi@rediffmail.com
+201,Bhupender Narayan Mandal University,,113. (,Bihar,East,http://bnmu.bih.nic.in,06476-222059  222060  222779  06476-222068/222578,
+202,Bidhan Chandra Krishi Vishwavidyalaya,,252 (WB),West Bengal,East,http://www.bckv.edu.in,"(03473)-222269	  (03473)-223256 /57 / 58 / 59",
+203,Biju Patnaik University of Technology,,Orissa -,,,http://www.bput.ac.in,(0661) 2402560  ,"students@bput.ac.in,bput@bput.ac.in"
+204,Birsa Agricultural University,,834 006.(,Jharkhand,East,http://www.baujharkhand.org,+91-651-2450832  Fax: +91-651-2450850,www.baujharkhand.org
+205,Bundelkhand University,,128 (UP),Uttar Pradesh,North,http://www.bujhansi.org,0510-2320497  2320046  2320496  2321214  0510- 2320761/2320762/2321667,bujhansi@up.nic.in
+206,Burdwan University,,Rajbati Burdwan,West Bengal,East,http://www.buruniv.ac.in,-2635226,
+207,Calcutta University,,700 073.,West Bengal,East,http://www.caluniv.ac.in,033-22413288  25747474  22410071  24037237  033- 22413222,
+208,Calicut University,,District Calicut,Kerala,South,http://www.universityofcalicut.info,"0494-2407227  2400809  2400816  0494-2400252,2407104",
+209,CEPT University,,Ahmedabad-380009,Gujarat,West,http://www.cept.ac.in,0091-79-26302470 / 26302740  0091-79-26302075,registrar@cept.ac.in
+210,Chanakya National Law University,,Mithapur Patna-800001,Bihar,East,http://www.cnlu.ac.in,0612-2352302  2352309  0612-2352315   ,chanakyalawuniv@gmail.com  contact@cnlu.ac.in
+211,Chandr Shekhar Azad University of Agriculture & Technology,,208 002.,Uttar Pradesh,North,http://www.csauk.ac.in,-2534125,info@csauk.ac.in
+212,Chatrapati Sahuji Maharaj Kanpur University,,Kalyanpur KANPUR,Uttar Pradesh,North,http://www.kanpuruniversity.org,  ,
+213,Chaudhary Devi Lal University,,Sirsa,Haryana,North,http://www.cdlu.in,01666-6248052  247600  01666-248123  239819,
+214,Chhattisgarh Swami Vivekanad Technical Universty,,Durg-490009 Chatisgarh,Chhattisgarh,Central,http://www.csvtu.ac.in,-2262008,csvtubhilai@rediffmail.com
+215,Choudary Charan Singh Haryana Agricultural Univeersity,,125 004.,Haryana,North,http://www.hau.ac.in,0172-255000  256000  ,regi@hau.ac.in
+216,Choudary Charan Singh University,,200 005.,Uttar Pradesh,North,http://www.ccsuniversity.ac.in,0121-2760551  2760554  2760576  2763539  2765353  0121-2760577/ 2762838,
+217,Cochin Unviersity of Science & Technology,,682 022.,Kerala,South,http://www.cusat.edu,0484-2577290/2577550  ,registrar@cusat.ac.in
+218,Davangere University,,Shivagangothri Davangere,Karnataka,South,http://www.davangereuniversity.ac.in,08192-208029  ,registrar@davnagereuniversity.ac.in
+219,Deen Bandhu Chhotu Ram University of Sciences & Technology,,Murthal,Haryana,North,http://www.dcrusm.org,0130-2484003/2484005  0130-2484004,"registrar@dcrustm.org,rkarora.dcrust@gmail.com"
+220,Deen Dayal Upadhyay Gorakhpur University,,009. (U.P.),Uttar Pradesh,North,http://www.ddugu.edu.in,  ,registrarddugu@gmail.com registrar@ddugu.edu.in
+221,Devi Ahilya Vishwavidyalaya,,Marg Indore,Madhya Pradesh,Central,http://www.dauniv.ac.in,0731-2524863/2580135/2580137  ,
+222,Dharmsinh Desai University,,Road Nadiad-387001,Gujarat,West,http://www.ddit.ac.in,0268-2520502  2521007  0268-2520501,
+223,Dibrugarh University,,004. (,Assam,Northeast,http://www.dibru.ac.in,  ,
+224,Doon University,,Nagar Dehradun,Uttarakhand,North,http://www.gov.ua.nic.in/doonuniversity,0135-2533136  2533105  0135-2533115  2533110,registrardoon@gmail.com  ardoonuniversity@gmail.com
+225,Dr. B.R.Ambedkar   University,,Srikakulam Etcherla,Andhra Pradesh,South,http://www.brau.in,08942-240900  ,http://www.brau.in
+226,Dr. B.R.Ambedkar Open University,,500 033.,Telangana,South,http://www.braou.ac.in,040-23544910  27223810  23680211  27963627  040-23544830/23548433,open@braou.ac.in
+227,Dr. B.R. Ambedkar University,,Agra-282 004.,Uttar Pradesh,North,http://www.brauagra.ac.in,2820051  2852118  2852136  ,info@dbrau.ac.in
+228,Dr. Babasaheb Ambedkar Marathwada University,,Jaisingpura Aurangabad,Maharashtra,West,http://www.bamu.net,2403400  2400431  2403199,
+229,Dr. Babasaheb Ambedkar Open University,,Chharodi Ahmedabad,Gujarat,West,http://www.baou.edu.in/,  ,info@baou.edu.in
+230,Dr. Babasaheb AmbedkarTechnological University,,Lonere-402103 Dt-Raigad.,Maharashtra,West,http://www.dbatu.ac.in,  ,
+231,Dr. Punjabrao Deshmukh Krishi Vidyapeeth,,444 104.,Maharashtra,West,http://www.pdkv.mah.nic.in,0724-2258200  2258217,
+232,Dr. Ram Manohar Lohia Awadh University,,001 (U.P),Uttar Pradesh,North,http://www.rmlau.ac.in,  ,
+233,Dr. Ram Manohar Lohiya National Law University,,Lucknow U.P.,Uttar Pradesh,North,http://www.rmlau.ac.in,  ,registrar@rmlnlu.ac.in  
+234,Dr. Shakuntala Misra National Rehabilitation University,,Road Lucknow,Uttar Pradesh,North,http://www.dsmru.up.nic.in,0522-2998380  ,Registrar@dsmnru.ac.in
+235,Dr. Y.S.Parmar University of Horticulture & Forestry,,Solan-173230 (H.P),Himachal Pradesh,North,http://www.yspuniversity.ac.in,01792-252357  252363  252343  252219  252365  01792-252242/252009,
+236,Dravidian University,,Kuppam-517 425,Andhra Pradesh,South,http://www.dravidianuniversity.ac.in,08570-278236  ,
+237,Fakir Mohan University,,756 020,,,http://www.fmuniversity.nic.in,06782-275768  ,registrarfmuniversity@gmail.com
+238,G.B.Pant University of Agriculture & Technology,,Nagar-263 145,Uttarakhand,North,http://www.gbpuat.ac.in,+91-5944-233320  233350  Fax: +91-5944-233473 ,
+239,Gauhati University,,Guwahati-781014 (,Assam,Northeast,http://www.gauhati.ac.in,  ,
+240,Univesity of Gour Banga,,Distt. Malda,West Bengal,East,http://www.ugb.ac.in,03512-223664 / 223666  ,E-mail: registrar@ugb.ac.in
+241,Gautam Buddha University,,Greater Noida,Uttar Pradesh,North,http://www.gbu.ac.in,0120-2344200  ,
+242,Goa University,,Teleiogao Plateau,Goa,West,http://http://www.unigoa.ac.in/,0832-6519000/6519001  6519044  2451376  2425174  0832-2451184  2452889,
+243,Gujarat Ayurveda University,,Jamnagar-361 008,Gujarat,West,http://www.ayurveduniversity.edu.in,0288-2677324  2750912  2676854  2661188  0288-2555966/2555585,info@ayurveduniversity.com
+244,Gujarat National Law University,,P.O) Gandhinagar,Gujarat,West,http://www.gnlu.ac.in,91 - 79 - 23276611 /12  91-79-23276613/ 7878186624 (FAX),contact@gnlu.ac.in
+245,Gujarat Technological University,,,Gujarat,West,http://www.gtu.ac.in,079-2630 0499   0599  ,info@gtu.ac.in
+246,Gujarat University,,380 009.,Gujarat,West,http://www.gujaratuniversity.org.i,079-27541392  55449002  27546767  27541288  079-27542547,
+247,Gulbarga University,,585 106,Karnataka,South,http://www.gulbargauniversity.kar.nic.ini,91-8472-263202  08472-263205  245927  245632  263206,root@guluni.kar.nic.in
+248,Guru Angad Dev Veterinary & Animal Sciences University,,Road Ludhiana,Punjab,North,http://www.gadvasu.in,  ,
+249,Guru Jambeshwar University of Science and Technology,,125 001.,Haryana,North,http://www.gju.ernet.in,  ,
+250,Guru Nanak Dev University,,143 005,Punjab,North,http://www.gndu.ac.in,-2255803,
+251,Hemchandracharya North Gujarat University,,265. (,Gujarat,West,http://www.ngu.ac.in,02766-222745  220932  230743  02766-230529  233648  Fax-02766-231917,regi@ngu.ac.in
+252,Hidayatullah National Law University,,Raipur Chattisgarh-493661,Chhattisgarh,Central,http://www.hnlu.ac.in,"0771-3057603,604  ",
+253,Chaudhary Sarwan Kumar Himachal Pradesh Krishi Vishvavidyalaya,,,Himachal Pradesh,North,http://www.hillagric.ernet.in,  ,
+254,Himachal Pradesh University,,005. (HP),Himachal Pradesh,North,http://www.hpuniv.nic.in,91-177: 2830445  2830635  2830709  2830741  2831637  2831727  2831742  2831998  0177-2830775  2830912,vc_hpu@hotmail.com  vchpu@jla.vsnl.net.in  deanstudies@gmail.com  
+255,Indira Gandhi Krishi Vishwavidyalaya,,492 012.(Chattisgarh),Chhattisgarh,Central,http://www.igau.edu.in,  ,
+256,Indira Kala Sangeet Vishwavidyalaya,,Khairagarh-491881.(Chattisgarh),Chhattisgarh,Central,http://www.iksvv.com,(+91) 07820 - 234232  (+91) 07820 - 234727,reg@iksvv.com
+257,Islamic University of Sciences & Technology University,,122 Kashmir,Jammu and Kashmir,North,http://www.islamicuniversity.edu.in,01933-247954  01933-247955,info@islamicuniversity.edu.in
+258,Jadavpur University,,700 032.,West Bengal,East,http://www.jadavpur.edu,  ,
+259,Jagadguru Ramanandacharya Sanskrit University,,:Bhankrota Jaipur-302026,Rajasthan,North,http://www.jrrsanskrituniversity.ac.in,  ,jrrsu@yahoo.com
+260,Jai Naraim Vyas University,,342 001.(,Rajasthan,North,http://www.jnvu.org,  ,http://www.jnvu.edu.in
+261,Jai Prakash vishwavidyalaya(university),,301. (,Bihar,East,http://jpv.bih.nic.in,[06152] - 243898  [06152] - 232607,
+262,Jammu University,,180 004.,Jammu and Kashmir,North,http://www.jammuuniversity.in,0191-2435248  2435259  2453544  2453588  ,
+263,Jawaharlal Nehru Krishi Vishwavidyalaya,,Jabalpur-482 004.,Madhya Pradesh,Central,http://www.jnkvv.nic.in,0761-2681200  0761-2681608  0761-2353314 ,skjain_jnau@yahoo.com
+264,Jawaharlal Nehru Technological University,,500 085.,Andhra Pradesh,South,http://www.jntuh.ac.in, +91-040-2315 8661 to 2315 8664  ,
+265,Jawaharlal Nehru Technological University,,Road Kakinada,Andhra Pradesh,South,http://www.jntuk.edu.in,0884-2300900  ,registrar@jntuk.edu.in  gvrp_raju@yahoo.com
+266,Jawaharlal Nehru Technological University,,Anantpur,Andhra Pradesh,South,http://www.jntua.ac.in,  ,
+267,Jiwaji University,,001. (MP),Madhya Pradesh,Central,http://www.jiwaji.edu,+91 751 2442712  ,
+268,Kakatiya University,,506 009.,Telangana,South,http://www.kakatiya.ac.in,"0870-2439966,2439977  ",b_venkatrathnam@yahoo.co.in
+269,Kalyani University,,Kalyani,West Bengal,East,http://www.klyuniv.ac.in,"091 033 2582-8220  2582-8293  2582-8750  2582-8378  2582-8286,2582-8275  2582-8478  2582-8889  2582-1254   091 033 2502 7562",
+270,Kameshwar Singh.Darbhanga Sanskrit Vishwavidyalaya,,846 008.(,Bihar,East,http://www.ksdsu.edu.in,06272-222178   ,info@ksdsu.edu.in  n_mishra2k2@indiatimes.com  info@ksdsu.edu.in  vc@ksdsu.edu.in
+271,Karanataka  State Law University,,Navanagar Hubli-580025,Karnataka,South,http://www.kslu.ac.in,0836-2222392   0836 2223392,kslu.registrar@gmail.com   
+272,Karanataka  State Open University,,Manasangangotri Mysore-570006,Karnataka,South,http://karnatakastateopenuniversity.in,0821-2500873  2519952     ,info@ksoumysore.net.in
+273,Kannada University,,Bellary) 583276,Karnataka,South,http://www.kannadauniversity.org,(08394) 241337  241334  241335  08394) 241334  241335  ,kanandauniversity@gmail.com  mail@kannadauniversity.org        
+274,Kannur University,,Distt- Kannur,Kerala,South,http://www.kannuruiversity.ac.in,0497-2785200  2785222  2785335  0497-2782190,registrar@kannuruniversity.ac.in   cnn_knruty@sancharnet.in 
+275,"Akkamahadevi women's  University (Formerly known as ""Karnataka State Women's University)",,Vijayapur,Karnataka,South,http://www.kswu.ac.in/,08352-229025   Fax : 08352-229057 ,registrar.kswub@gmail.com  
+276,Karanataka  University,,580 003.,Karnataka,South,http://www.kud.ac.in,0836-2215252  ,vc@kud.ac.in
+277,Karanataka Veterinary  Animal & Fisheries Science University,,Bidar-585401(,Karnataka,South,www.kvafsu.kar.nic.in; www.kvafsu.edu.in  ,08482-245313; 245241   08482-245107/245241  ,hsmurthy05@yahoo.com; hsmurthy05@gmail.com
+278,Kashmir University,,& K),Jammu and Kashmir,North,http://www.kashmiruniversity.net,"0194-2420078  2420405  2420570  2421346  2424152  2429870   0194-2414074,2420408  2414087  2414124 ",info@kashmiruniversity.net
+279,Kavi Kulguru Kalidas Sanskrit Vishwavidyalaya,,,Maharashtra,West,http://www.sanskrituni.net,91-7114-255549  256476  ,unikalidas@yahoomail.com
+280,Kerala University,,695 0,Kerala,South,http://www.keralauniversity.edu,"0471-2305738   0471-2305994 ,2306422 (16 Lines  91-471 2307158",ku.release@gmail.com
+281,Kerala Agricultural Unviersity,,680 654.,Kerala,South,http://www.kau.edu,0487-2438011  0487-2370019,www.kau.edu
+282,King Georges Medical University,,Lucknow U.P.,Uttar Pradesh,North,http://www.kgmcindia.edu,+91 522 2257450  2257451  2257452  2257453  ,info@kgmcindia.edu
+283,Kolhan University,,West Singhbhum,Jharkhand,East,www.kalhanuniversity.in,91-6582-255274   91-6582-255274 ,info@kolanuniversity.org 
+284,Konkan Krishi Vidyapeeth,,District Ratnagiri,Maharashtra,West,http://www.dbskkv.org,  ,
+285,Krantiguru Shyamji Krishna Verma Kachchh University,,Ground Bhuj-Kachchh,Gujarat,West,http://kskvku.digitaluniversity.ac,  02832 - 235012/11,info@kskvkachchhuniversity.org   kachchhuniversi
+286,Krishna Kanta Handique State Open University,,Guwahati-781 006,Assam,Northeast,http://www.kkhsou.in,0361-2234964  2235971  0361-2235398,"kkh_sou@yahoo.com ,info@kkhsou.in"
+287,Krishna University,,Rajupeta Machllipatanam,Andhra Pradesh,South,http://www.krishnauniversity.ac.in,08672-225960  ,crskru@gmail.com
+288,Kumaun University,,Nanital,Uttarakhand,North,http://www.kunainital.ac.in,05942-236856  ,
+289,Kurukshetra University,,119 (,Haryana,North,http://www.kuk.ac.in,  ,
+290,Kushabhau Thakre Patrakarita Avam Jansanchar Vishwavidyalaya,,Raipur (Chattisgarh),Chhattisgarh,Central,http://www.ktujm.ac.in,0771-  2779202  6499184  6499187  ,kulsachiv@ktujm.ac.in
+291,Kuvempu University,,-577 451.,Karnataka,South,http://www.kuvempu.ac.in,08282-256301 to 256307  FAX: 08282-256262  256255,ku@kuvempu.ac.in
+292,Lalit Narayan Mithila University,,008. (,Bihar,East,http://www.lnmu.in ,06272-222463  222186   ,vc@lnmu.in 
+293,Lucknow University,,226 007.,Uttar Pradesh,North,http://www.lkouniv.ac.in,9412244332, info@lkouniv.ac.in
+294,Mahatma Gandhi Chitrakoot Gramodaya Vishwavidyalaya,,District Satna,Madhya Pradesh,Central,http://www.mgcgvchitrakoot.com,(07670) - 265413 / 265411  ,
+295,M.J.P. Rohilkhand University,,Marg Bareilly,Uttar Pradesh,North,http://www.mjpru.ac.in ,  ,
+296,M.P.Bhoj (open) University,,Road Bhopal,Madhya Pradesh,Central,http://www.bhojvirtualuniversity.com,0755-2492090  2492091  ,directorit.mpbou@gmail.com
+297,Madaras University,,Chepauk Chennai,Tamil Nadu,South,http://www.unom.ac.in ,2539 9422  ,info@unom.ac.in
+298,Madurai Kamraj University,,Madurai-625 021.(T.N.).,Tamil Nadu,South,http://www.mkuniversity.org,0452-123456  ,mku@mkuniversity.org.
+299,Magadh University,,Bodhgaya,Bihar,East,http://www.magadhuniversity.ac.in/,0631-2200572     0631-2200572   ,info@magadhuniversity.org
+300,Maharshi Panini Sanskrit Evam Vedic Vishwavidyalaya,,Road Ujjain,Madhya Pradesh,Central,http://http://mpsvvujjain.org,0734 - 2526044  0734-2524845,
+301,Maharahtra University of Health Sciences,,Nashik-422 005,Maharashtra,West,http://www.muhsnashik.com,(0253) 2539100 (0253) 2539100   2539300  ,
+302,Maharaja Sayajirao University of Baroda,,002. (,Gujarat,West,www .msubaroda.ac.in,  ,
+303,Maharana Pratap University of Agriculture & Technology,,Campus Udaipur-313001,Rajasthan,North,http://www.mpuat.ac.in,  ,
+304,Maharashtra Animal & Fishery Sciences University,,Nagpur-440 006,Maharashtra,West,http://www.mafsu.in,"2511784,85  ",
+305,Maharishi Dayanand Saraswati University,,305 001,Rajasthan,North,http://mdsuajmer.ac.in/,0145-2787056/058/412/414/413  ,registrarmdsu@gmail.com
+306,Maharishi Dayanand University,,001. (,Haryana,North,http://www.mdurohtak.ac.in,01262-274640  ,
+307,Mahatam Gandhi Kashi Vidyapeeth,,002 (U.P),Uttar Pradesh,North,http://www.mgkvp.ac.in,  ,
+308,Mahatma Gandhi University,,Nalgonda-500 803,Andhra Pradesh,South,http://www.mguniversity.ac.in,  ,
+309,Mahatma Gandhi Unversity,,560. (,Kerala,South,http://www.mgu.ac.in,0481–2731050 TO 2731068  ,vbsrikumar@mgu.ac.in
+310,Mahatma Phule Krishi Vidyapeeth,,413 722.,Maharashtra,West,http://www.mpkv.mah.nic.in,  ,
+311,Makhanlal Chaturvedi National University of Journalism & Communication,,Zone-1 Bhopal,Madhya Pradesh,Central,http://www.mcu.ac.in/,91-755-2551642  ,registrarmcu@gmail.com
+312,Mangalore University,,574 199.,Karnataka,South,http://www.mangaloreuniversity.ac.in,0824-2287276  2287347    0824-2287367  2287424 ,contactus@mangaloreuniversity.ac.in  
+313,Manonmaniam Sundarnar University,,627 008.,Tamil Nadu,South,http://www.msuniv.ac.in/,0462-2333741  ,registraroffice@msuniv.ac.in
+314,Marathwada Agricultural University,,431 402.,Maharashtra,West,http://www.mkv2.mah.nic.in,  ,
+315,Maulana Mazharul Haque Arabic & Persian University,,800 006,Bihar,East,http://mmhapu.bih.nic.in,"0612-2215750   0612-2215711,0612-2581333 ",mmhapupatna@yahoo.in
+316,Mohan Lal Shukhadia University,,Udaipur,Rajasthan,North,http://www.mlsu.ac.in,0294-2470918  0294-2471035,registrar@mlsu.ac.in
+317,Mother Teresa Women's University,,624 101.,Tamil Nadu,South,http://www. motherteresawomenuniv.ac.in,0452 – 241685  ,
+318,Mumbai University,,400 032.,Maharashtra,West,http://www.mu.ac.in,22708700,
+319,Mysore University,,570 005.,Karnataka,South,http://www.uni-mysore.ac.in,0821-2419361  ,registrar@uni-mysore.ac.in
+320,Nalanda Open University,,Maidan Patna,Bihar,East,http://www.nalandaopenuniversity.com   www.nou.ac.in  ,0612-2201013  2206916   0612-2201001 ,nalopuni@sancharnet.in nou@nou.ac.in 
+321,Narendra Deo University of Agriculture & Technology,,229. (U.P),Uttar Pradesh,North,http://www.nduat.ac.in,  ,
+322,National Academy of Legal Studies & Research University,,Hyderabad,Telangana,South,http://nalsar.ac.in,040-23498200 / 400  8418-245161 / 174 ,admissions@nalsar.ac.in   
+323,National Law Institute University,,Kalan Bhopal,Madhya Pradesh,Central,http://www.nliu.ac.in,0755-2696965/971  ,nliu@nliu.ac.in 
+324,National law School of India University,,560 072.,Karnataka,South,http://www.nls.ac.in,91-080-23213160  23160532/533/535  080-23160534,registrar@nls.ac.in
+325,National Law Universituy,,342304 (,Rajasthan,North,http://www.nlujodhpur.ac.in,+91-291-2577138  5100713  ,nlu-jod-rj@nic.in
+326,National University of Advanced Legal Studies (NUALS),,Kaloor Kochi-682017,Kerala,South,http://www.nuals.ac.in,040484-0484-2555990  2555991  0484 – 2555992,registrar@nuals.ac.in
+327,Netaji Shubhash Open University,,Sector-1 Kolkata.,West Bengal,East,http://www.wbnsou.com,-7382,
+328,Nilamber-Pitamber University,,Madininager Palamu-822101,Jharkhand,East,http://www.npu.ac.in,"06562-231580 ,231579  ",info@npu.ac.in
+329,North Benagal University,,Ram Mohanpur,West Bengal,East,http://www.nbu.ac.in,  ,
+330,Kavayitri Bahinabai Chadhari North Maharashtra University,,P.B.No.80 Jalgaon,Maharashtra,West,http://www.nmu.ac.in,  ,
+331,Orissa University Of Agriculture & Technology,,Orissa -,,,http://www.ouat.ac.in,2397818 / 2397868 / 2397919 / 2397970 / 2397769 / 2397719 / 2397669  ,ouatmain@hotmail.com   
+332,Osmania University,,500 007.,Telangana,South,http://www.osmania.ac.in,"040-27098292,27682243  ",www.osmania.ac.in
+333,Palamuru University,,Quarters Mahabubnagar-509001,Telangana,South,http://www.palamuruuniversity.ac.in,91.08542275006  088  91-08542275,
+334,Periyar University,,011 (T.N.),Tamil Nadu,South,http://periyaruniversity.ac.in,0427-2345766  2345520  ,
+335,Potti Sreeramulu Teugu Universtity,,#NAME?,Telangana,South,http://teluguuniversity.ac.in/,040-23230435  23230641   040-23236045 ,info@teluguuniversity.ac.in
+336,Pt. Bhagwat Dayal Sharma University of Health Sciences,,Rohtak-124001,Haryana,North,'http://www.uhsr.ac.in,01262-211300-303  01262-211308,vicehancellor.uhsr@gmail.com
+337,Pt. Sundarlal Sharma (Open) University,,Vihar Bilaspur-495001,Chhattisgarh,Central,http://www.pssou.ac.in,-220734,"vc@pssou.ac.in,"
+338,Pt.Ravishankar Shukla University,,010 Chattisgarh,Chhattisgarh,Central,http://www.prsu.ac.in,0771-2262818  0771-2262583,
+339,Savitribai Phule Pune University,,Ganeshkhind Pune,Maharashtra,West,http://www.unipune.ac.in,25601099/25696061/25690062/25696064/ 25696065  ,
+340,Punjab Agriculture University,,141 004.,Punjab,North,http://www.pau.edu,91-161- 2401960-79 Ext:- 213  ,registrar@pau.edu
+341,Punjab Technical University,,Kapurthala(PB.),Punjab,North,http://www.ptu.ac.in,"01822-662542,662560,662571  ",ptuddestuc@gmail.com
+342,Punjabi University,,147 002.,Punjab,North,http://www.punjabiuniversity.ac.in,  ,
+343,Rabindra Bharati University,,700 050.,West Bengal,East,http://www.rbu.ac.in,  ,registrar@rbu.ac.in
+344,Swami Keshwanand Rajasthan Agriculture University,,Road Bikaner,Rajasthan,North,http://www.raubikaner.org,91-151-2251083  , cimca@raubikaner.org
+345,Rajasthan Ayurveda University,,Jodhpur,Rajasthan,North,,  ,rau_jodhpur@yahoo.co.in
+346,Rajasthan Technical University,,Kota-324 010,Rajasthan,North,http://www.rtu.ac.in,0744-2473861  ,rtuweb@gmail.com 
+347,Rajasthan University,,302 004.,Rajasthan,North,http://www.uniraj.ernet.in,  ,
+348,Rajasthan University of Health Sciences,,Sanganer Jaipur,Rajasthan,North,http://www.ruhsraj.org,0141-2791928  0141-2795529,ruhsacademic@gmail.com
+349,Rajendra Agricultural University,,Samastipur-848125 (,Bihar,East,www.pusavarsity.org.in,06274-240226  ,info@pusavarsity.org.in
+350,Rajiv Gandhi Prodoyogiki Vishwavidyalaya,,Bhopal 462036(M.P.),Madhya Pradesh,Central,http://www.rgtu.net,0755-2507 833  ,
+351,Rajiv Gandhi University of Health Science,,560 041.,Karnataka,South,http://www.rguhs.ac.in,080-26961933/35  ,
+352,Ranchi University,,008. (,Jharkhand,East,http://www.ranchiuniversity.ac.in,91-651-2208553  ,admin@ranchiuniversity.org.in
+353,Rani Durgavati Vishwavidyalaya,,001. (M.P),Madhya Pradesh,Central,http://www.rdunijbpin.org,(0761) 2600567-68  , rdvvcc1@rediffmail.com
+354,Ravenshaw University,,753 003,,,http://ravenshawuniversity.ac.in,  ,ravenshawuniversity@yahoo.co.in
+355,Rayalaseema University,,Kurnool-518 002,Andhra Pradesh,South,http://www.rayalaseemauniversity.ac.in,  ,
+356,Sambalpur University,,Orissa -,,,http://www.suniv.ac.in,0663-2430157  ,
+357,Sampurnanand Sanskrit Vishwavidyalaya,,002. (UP),Uttar Pradesh,North,http://www.ssvv.up.nic.in,0542- 2204089  ,info@ssvv.ac.in
+358,Sant Gadge Baba Amravati University,,Amravati-444602 (M.S.),Maharashtra,West,http://www.sgbau.ac.in,  ,
+359,Sardar Patel University,,120. (,Gujarat,West,http://www.spuvvn.edu,02692-237258/236475/230309  ,
+360,Sardar Vallabh Bhai Patel University of Agriculture & Technology,,Meerut U.P-250110,Uttar Pradesh,North,http://www.svbpmeerut.ac.in,0121-2888590  0121-2888522,
+361,Sarguja University,,Ambikapur,Chhattisgarh,Central,http://www.sua.nic.in,"(07774) 222789  222790,  ",registrarsua@yahoo.co.in 
+362,Satavahana University,,Jyothinagar Karimnagar,Andhra Pradesh,South,http://www.satavahana.ac.in,0878-2255911  2255922  0878-2255933,
+363,Saurashtra University,,Road Rajkot,Gujarat,West,http://www.saurashtrauniversity.edu,0281-2578501/4/5/6/7/8/9/10/12  ,registrar@sauuni.ernet.in
+364,Sher-e-Kashmir University of Agricultural Science & Technology,,001. (J&K),Jammu and Kashmir,North,http://www.skuastkashmir.ac.in,  ,skustkashmir@gmail.com
+365,Shivaji University,,416 004.,Maharashtra,West,http://www.unishivaji.ac.in,0231 - 2609063  ,registrar @ unishivaji . ac . in
+366,Shree Sankaracharaya University of Sanskrit,,Ernakulam Kalady,Kerala,South,http://www.ssus.ac.in,  ,
+367,Shree Somnath Sanskrit University,,District Junagarh,Gujarat,West,http://www.shreesomnathsanskrituniversity.org,  ,
+368,Shri Jagannath Sanskrit Vishwavidyalaya,,Orissa -,,,http://www.sjsv.nic.in,06752-251565  ,
+369,Shri Mata Vaishno Devi University,,J&K,Jammu and Kashmir,North,http://www.smvdu.net.in,01991-285535/285524/285634 /285699  01991-285694,info@smvdu.ac.in
+370,Sri krishnadevaraya University,,Venkateswarpuram-515055 Anantur,Andhra Pradesh,South,http://www.skuniversity.org,"08554-255056  255486,  08554-255780",webadmin@skuniversity.org
+371,Sido Kanhu University,,101. (,Jharkhand,East,http://www.skmu.edu.in/,06434-223006   06434-222495 ,
+372,Smt. Nathibai Damodar Thackersey Women's University,,400 020.,Maharashtra,West,http://www.sndt.ac.in,022-2203 1879  2203 2159  ,
+373,Solapur University,,Solapur-413255 (,Maharashtra,West,http://su.digitaluniversity.ac/,"0217-2744763  2744766  2744767  2744771,2744772  2744773  2744774  2744778                                                                                                   2744772  2744773  2744774  2744778                                             2744779  2351489",
+374,Veer Narmad South Gujarat University,,Surat,Gujarat,West,http://www.vnsgu.ac.in,91 (0261) 2227141 to 2227146  91 (0261) 2227312(F),info@vnsgu.ac.in 
+375,Sri Padmavati Mahila Vishwavidyalayam,,517 502.,Andhra Pradesh,South,http://www.spmvv.ac.in,0877-2284588  0877-2248416,info@spmvv.ac.in  
+376,Sri Venkateswara University,,502. A.P.,Andhra Pradesh,South,http://www.svuniversity.ac.in,  ,
+377,Sri Venkateswara Vedic University,,Tirupati-517502 Chittoor,Andhra Pradesh,South,http://www.svvedicuniversity.org,  ,vcvedicuniversity@yahoo.com 
+378,Sri Venkateswara Veterinary University,,Road Tirupati,Andhra Pradesh,South,http://www.svvu.edu.in,(0877) 2248006  2248068  2248155  2248621  0877) 2249222,
+379,Swami Ramanand Teerth Marathwada University,,(M.S.),Maharashtra,West,http://www.srtmun.org,(091-2462) - (PBX) 229242  229243  ,
+380,T.M. Bhagalpur University,,Bhagalpur,Bihar,East,http://www.tmbu.org,  ,
+381,Tamil Nadu Open University,,Saidapet Chennai,Tamil Nadu,South,http://www.tnou.ac.in,044-2430 6600  044-2430 6645,contact@tnou.ac.in
+382,Tamil Nadu Teacher Education University,,Salai Chennai-600005,Tamil Nadu,South,http://www.tnteu.in/,  ,
+383,Tamil University,,005. (T.N.),Tamil Nadu,South,http://www.tamiluniversity.ac.in,  ,
+384,Tamilnadu Agricultural University,,003. (T.N),Tamil Nadu,South,http://www.tnau.ac.in,91-422-6611200  ,
+385,Tamilnadu Dr. Ambedkar Law University,,Chennai-600028 (T.N.),Tamil Nadu,South,http://www.tndalu.org,044 – 24641212  24641919  ,
+386,Tamilnadu Dr. M.G.R.Medical University,,600 032.,Tamil Nadu,South,http://www.tnmmu.ac.in,  ,
+387,Tamilnadu Physical Educaton and Sports University,,Road Chennai-600006,Tamil Nadu,South,http://www.tnpesu.org,  ,
+388,Tamilnadu Veterinary & Animal Sciences University,,Chennai-600 007.,Tamil Nadu,South,http://www.tanuvas.ac.in,+91-44-25551586/ 87  25554555/ 56  ,
+389,Telangana University,,503 322,Andhra Pradesh,South,http://www.telanganauniversity.ac.in,08461-222217  08461-222212,tu@telanganauniversity.ac.in
+390,The Rajiv Gandhi National University of Law,,Patiala-147 001,Punjab,North,http://www.rgnul.ac.in,0175-2304188  2304491  2221002  ,info@rgnul.ac.in
+391,The Rashtrasant Tukadoji Maharaj Nagpur University,,Nagpur,Maharashtra,West,http://www.nagpuruniversity.org,0712-2580304   2040127  ,
+392,Thiruvalluvar University,,Vellore District,Tamil Nadu,South,http://www.thiruvalluvaruniversity.ac.in,0416-2274755  2274756  ,
+393,Tumkur University,,Road Tumkur,Karnataka,South,http://www.tumkuruniversity.ac.in,0816-2254546  2255596  0816-2270719,tumkuruniversity2004@gmail.com
+394,U.P.King George's University of Dental Sciences,,Lucknow,Uttar Pradesh,North,http://www.kgmcindia.edu/,  ,
+395,U.P. Rajarshi Tandon Open University,,(Sector-F)Phaphamau Allahabad-211013,Uttar Pradesh,North,http://www.uprtou.ac.in,0532-2447035  ,www.uprtou.ac.in
+396,University of Agricultural Sciences,,-560 024,Karnataka,South,http://www.uasbangalore.edu.in,080-23332442  2333134  23330984  23330188  080-2333027,
+397,University of Agricultural Sciences,,580 005.,Karnataka,South,http://www.uasd.edu,0091-836-2747958  0091-836-2745276,
+398,University of Kota,,Kota,Rajasthan,North,http://www.uok.ac.in/,"+91-744-2472934,+91-744-2471037,+91-744-2209647  ",info@uok.ac.in 
+399,Utkal University,,Orissa -,,,http://www.utkaluniversity.ac.in,  ,
+400,Utkal University of Culture,,Orissa -,,,http://www.uuc.ac.in,  91-674-2535486,"mail@uuc.ac.in,uuculture@dataone.in"
+401,Dr. A.P.J. Abdul Kalam Technical University,,Yojna Lucknow,Uttar Pradesh,North,http://www.uptu.ac.in,  ,
+402,Uttarakhand Sanskrit University,,More Haridwar-,Delhi,North,http://www.usvv.ac.in,01334-250896  8449088884  ,uttarakhandsvv@gmail.com
+403,Uttarakhand Technical University,,wala Dehrdun,Uttarakhand,North,http://www.uktech.ac.in,"0135-2770059,2770126  2770127  2770128  Fax: 0135-2770119,2770124",vc@uktech.ac.in  pkgiitr@gmail.com
+404,Vardhman Mahaveer Open University,,Road Kota,Rajasthan,North,http://www.vmou.ac.in,+91-:0744-2471254    +91-0744-2472525,
+405,Veer Bahadur Singh Purvanchal University,,PIN-222002 (U.P.),Uttar Pradesh,North,http://www.vbspu.ac.in,  ,
+406,Veer Kunwar Singh University,,Ara,Bihar,East,http://www.vksu-ara.org,06182-2329113  ,
+407,Veer Surendra Sai University of Technology,,Orissa -,,,http://www.vssut.ac.in,(0663)2430211  ,info@uceburla.ac.in
+408,Vesveswaraiah Technological University,,Sangama Belgaum-590018(,Karnataka,South,http://www.vtu.ac.in,0831-2498100  ,
+409,Vikrama Simhapuri University,,(M.D.) Nellore,Andhra Pradesh,South,http://www.simhapuriuniv.ac.in,0861-2352366  0861-2352356,
+410,Vikram University,,Ujjain,Madhya Pradesh,Central,http://www.vikramuniv.ac.in,0734-2514277  ,vcvikramujn@gmail.com  registrarvikram@gmail.com
+411,Vinoba Bhave University,,301. (,Jharkhand,East,http://www.vbu.co.in,91-6546-294003  91-6546-270982 ,info@vbuhazaribag.org
+412,Yashwant Rao Chavan Maharashtra Open University,,Nasik-422222,Maharashtra,West,http://www.ycmou.com,0253-2231714 / 2231715  ,
+413,Yogi Vemana University,,Kadapa-516 003,Andhra Pradesh,South,http://www.yogivemanauniversity.ac.in,08562-225429  225411  225400  ,Pa2vc@yogivemanauniversity.ac.in
+414,Maharishi University of Management and Technology,,Mangla Bilaspur,Chhattisgarh,Central,http://www.mumt.com,07752-214301  212272  NULL,
+415,Ahmedabad University,,Navrangpura Ahmedabad,Gujarat,West,http://www.ahduni.edu.in,91-79-40044161-66  ,info@ahduni.edu.in
+416,AMITY University,,,Haryana,North,,  ,
+417,Chitkara University,,(NH_21A) Solan,Himachal Pradesh,North,http://www.chitkarauniversity.edu.in,01795-661002  01795-661011,info@chitkarauniversity.edu.in
+418,Jaypee University of Information Technology,,Distt. Solan,Himachal Pradesh,North,http://www.juit.ac.in,91-1792-2579991  01792-245362(Fax),
+419,Eternal University,,Distt. Sirmour,Himachal Pradesh,North,http://www.eternaluniversity.edu.i,91 - 01799 - 276012  276114  01799 - 276006,contact@eternaluniversity.org   info@eternaluniver
+420,Shoolini University of Biotechnology and Management Sciences,,Solan,Himachal Pradesh,North,http://www.shooliniuniversity.com,"01792-226675,308000,9218426675  NULL",info@shooliniuniversity.com
+421,Indus International Uniersity,,Distt. Una,Himachal Pradesh,North,http://www.iiuedu.in,01975-398200  09318797101/2/3,info@iiuedu.in
+422,Arni University,,Distt. Kangra,Himachal Pradesh,North,http://www.arni.in,099888 97102  096465 00902  NULL,campus@arni.in
+423,Manav Bharti University,,Distt Solan,Himachal Pradesh,North,http://www.manavbhartiuniversity.edu.in,01792-268279  268280  NULL,mbusolan@manavbhartiuniversity.edu.in
+424,Bahra University,,Distt. Solan,Himachal Pradesh,North,http://www.bahrauniversity.edu.in,09805092461  09805092466,bahrauniversity@rayatbahra.com
+425,The Institute of Chartered Financial Analysts of India University,,2 Ranchi,Jharkhand,East,http://www.iujharkhand.edu.in/,  0651-2245178 ,iuj.registrar@gmail.com
+426,Jaypee University of Engineering & Technology,,Distt Guna,Madhya Pradesh,Central,http://www.jiet.ac.in,91-7544- 267051  267310-314  91-7544-267011,contact@jiet.ac.in
+427,Martin Luther Christian University,,Nongrah Shillong,Meghalaya,Northeast,http://www.mlcuniv.in,0364-2535437/67  0364-2535420,admin@mlcuniv.in  university.mlcu@gmail.com
+428,Techno Global University,,Mawlai Shillong,Meghalaya,Northeast,http://technoglobaluniversity.com,"0364-2550043   08794766782 ,09836544419",info@technoglobaluniversity.com
+429,The Institute of Chartered Financial Analysts of India University,,Tura Bazar,Meghalaya,Northeast,http://www.iumeghalaya.edu.in,03651-224683-84  NULL,
+430,University of Science & Technology  Meghalaya,,Mile Baridua,Meghalaya,Northeast,www.ustm.ac.in,"0361-2895075,2895030  7002943146",ustm_erdf@rediffmail.com  ustm2011@gmail.com
+431,The Institute of Chartered Financial Analysts of India University,,Chaltlang Aizawal,Mizoram,Northeast,www.iumizoram.edu.in ,0389-2361232  0389-2361208,
+432,The Global Open University,,NH-29 Dimapur,Nagaland,Northeast,http://nagaland.net.in,NULL  NULL,
+433,ICFAI University,,Road Dimapur,Nagaland,Northeast,www.iunagaland.edu.in,03862-234815 / 16  ,registrar@iunagaland.edu.in 
+434,Lovely Professional University,,Jalandhar-,Delhi,North,http://www.lpu.in,01824-404404  01824-506100  506111 ,info@lpu.co.in
+435,Amity University,,Road Jaipur,Rajasthan,North,http://amity.edu/jaipur,141-2372489  2374595  1426-227722(call center)  toll free 1800-1800-111    ,admissionsjpr@amity.edu 
+436,Bhagwant University,,Road Ajmer,Rajasthan,North,http://www.bhagwantuniversity.com,0145-2789406  2789421  9928144442  9928144443 ,unibhagwant@rediffmail.com
+437,Jagannath University,,Teshil-Chaksu Jaipur,Rajasthan,North,http://www.jagannathuniversity.org,0141-3020545  91-141-3020538,
+438,Jaipur National University,,Jaipur Jagatpura,Rajasthan,North,http://www.jnujaipur.ac.in,0141-2753377  2754399  9351288101  Fax:2752418  1800-2000-034  1800-2000-043 ,info@jnujaipur.ac.in  seedlingacademy@hotmail.com
+439,Jodhpur National University,,Boranada Jodhpur,Rajasthan,North,http://www.jodhpurnationaluniversity.com,02931-281551–557   281416  99288 19733,info@jodhpurnationaluniversity.com
+440,Jayoti Vidyapeet Women's University,,Way Jaipur,Rajasthan,North,http://www.jvwomensuniv.com,01428-515253  01428- 287427  01428- 287428,info@jvwomensuniv.com
+441,Mahatma Jyoti Rao Phoole University,,Achrol Jaipur,Rajasthan,North,http://www.mjrpuniversity.com,0141-2294680  2295101  2295239  01426-283950  283952  283953  0141-2294947,info@mjrpuniversity.com  admission.mjrp@gmail.com 
+442,Mewar University,,Chittorgarh,Rajasthan,North,http://www.mewaruniversity.org,01471-220881  220882  220883  220884  9269629541  ,admission@mewaruniversity.org  career@mewaruniversity.org  
+443,NIMS University,,Nagar Jaipur-,Delhi,North,http://www.nimsuniversity.org,9116010405  0141-2605050 ,registrar@nimsuniversity.org
+444,Shri Jagdish Prasad Jhabarmal Tibrewala University,,#NAME?,Rajasthan,North,http://jjtu.ac.in,09820870624  09370512956  01595-513006,jjtu@jjtu.ac.in  enquiry@jjtu.ac.in
+445,Sir Padmapat Singhania University,,Bhatewar Udiapur,Rajasthan,North,http://www.spsu.ac.in,180030026555  02957-226095 (6 Lines  0294-2430102,info@spsu.ac.in
+446,Singhania University,,Distt. Jhunjhunu,Rajasthan,North,http://www.singhaniauniversity.co.in,01593-271299/300/005  01593-271003,info@singhaniauniversity.co.in
+447,Suresh Gyan Vihar University,,Jagatpura Jaipur,Rajasthan,North,http://www.gyanvihar.org,0141-2988411  0141-2988412  0141-2758253-56,registrar@mygyanvihar.com
+448,Shridhar University,,Road Pilani,Rajasthan,North,www.shridharuniversity.ac.in,01596-510000  01596-510002,info@shridharuniversity.ac.in
+449,The Institute of Chartered Financial Analysts of India University,,(ICFAI),Sikkim,Northeast,www.iusikkim.edu.in,03592-202065/066   03592-201466,iusikkim@gmail.com  info@iusikkim.edu.in
+450,Sikkim Manipal University,,Gangtok East,Sikkim,Northeast,http://www.smu.edu.in,03592-270294  246220  246219  246217  246216  03592-231937  246112,info@smu.edu.in
+451,Vinayaka Missions Sikkim University,,Gangtok East,Sikkim,Northeast,http://www.vmsuniversity.in,03592-232588  9332367555   03592-232417 ,contactus@vmsuniversity.in
+452,ICFAI University,,Kamalghat West,Tripura,Northeast,https://iutripura.edu.in/,0381-2865752/62  Fax: 0381-2865754,registrar@iutripura.edu.in
+453,AMITY University,,,Uttar Pradesh,North,http://amity.edu,0120-2445252  NULL,
+454,Jagadgura Rambhadracharya Handicapped University,,Chitrakoot Karwi,Uttar Pradesh,North,http://www.jrhu.com,05198-224481  224263  5198-224293,jrhuniversity@yahoo.com
+455,Integral University,,Road Lucknow,Uttar Pradesh,North,www.integraluniversity.ac.in,0522-2890730  2890812   0522-2890809,info@integraluniversity.ac.in
+456,Mangalayatan University,,Beswan Aligarh,Uttar Pradesh,North,http://www.mangalayatan.in,"9319222222  9319888888  07351002561    0571-3258592,3258593",info@mangalayatan.edu.in   admissions@mangalayatan.edu.in  admissions@mangalayatan.edu.in 
+457,Mohammad Ali Jauhar University,,Distt. Rampur,Uttar Pradesh,North,http://www.jauharuniversity.edu.in,"0595-2328786,87   9897182240   8755334644  8191934266   9760803440",  majur786@gmail.com  
+458,Teerthanker Mahaveer University,,,Delhi,North,http://www.tmu.ac.in,"0591-2360000,2360555  NULL",university@tmu.ac.in   
+459,Sharda University,,Grerater Noida,Uttar Pradesh,North,http://www.sharda.ac.in,91-23239700/3121001  NULL,info@sharda.ac.in
+460,Swami Vivekananda Subharti University,,,Delhi,North,www.subharti.org ,0121-3001058  Fax : 0121-2439067  9639010020  9639010035  9639010623,subharti.uni@gmail.com
+461,Dev Sanakrit Vishwavidyalaya,,Shantikunj Haridwar,Uttarakhand,North,http://www.dsvv.ac.in,01334-260723  261367  262094  01334-260723/260866,
+462,Himgiri Zee University,,Dehradun,Uttarakhand,North,http://himgirizeeuniversity.edu.in,"91-135-2102676  6542474  91-135-2760465,",hnvus@hnv.edu.in  hnvddn@yahoo.com
+463,The ICFAI University,,Selaqui Dehradun,Uttarakhand,North,http://www.iudehradun.edu.in/,"0135-30003009,3003010,3003016   0135-30003009,",
+464,University of Petroleum and Energy Studies,,Nagar Dehradun,Uttarakhand,North,http://www.upes.ac.in,"0135-2102549/54/61/98  2776201,2770137,2102690",info@upes.ac.in
+465,University of Patanjali,,Dayanad Gram,Delhi,North,http://patanjaliuniversity.com,91-1334-242526  NULL,
+466,Punjab University,,,Chandigarh,North,http://www.puchd.ac.in,1800-180-2065  2534818  2534866  ,webman@pu.ac.in
+467,National Law University,,Dwarka New,Delhi,North,http://nludelhi.ac.in,011-28034993  28034257  ,info@nludelhi.ac.in
+468,Indraprastha Institute of Information Technology,,Phase III,Delhi,North,http://www.iiitd.ac.in,91-11-26907400-7404 (5 lines)  91-11-2509 9176,info@iiitd.ac.in  registrar@iiitd.ac.in
+469,Guru Gobind Singh Indraprastha Vishwavidyalaya,,Dwarka New,Delhi,North,http://www.ipu.ac.in,011-23869802  23073798  23865735  011-23865941-42,kka@ipu.edu
+470,Delhi Technological University,,Bawana Road,Delhi,North,http://www.dce.edu,91-11-27871018  011-27871023,mail@dce.edu
+471,Ambedkar University Delhi (AUD),,Kashmere Gate,Delhi,North,http://www.aud.ac.in,011-23864052  23861845  011-25074875-79,info@aud.ac.in
+472,West Bengal State University,,10knc Kolkata-700124,West Bengal,East,http://www.wbsubregistration.org,25241975  25241976  25241978  25241979  ,
+473,Maulana Abul Kalam Azad University of Technology,,Sector-I Kolkata,West Bengal,East,http://www.wbut.ac.in,(033) 23210731   ext. 114  (033) 23218771 (D),registrar@wbut.ac.in
+474,West Bengal University of Animal and Fishery Sciences,,-700 037.,West Bengal,East,http://wbuafscl.ac.in,  ,
+475,Vidya Sagar University,,University Midnapore-721102,West Bengal,East,http://www.vidyasagar.ac.in/,276554  276555  276557  276558  276554 ,
+476,Uttar Banga Krishi Vishwavidyalaya,,Cooch Behar,West Bengal,East,http://www.ubkv.org,  ,
+477,The West Bengal University of Health Sciences,,Lake Kolkata,West Bengal,East,http//www.wbuhs.ac.in,(033) 23213461 / 23346602  033-23580100,
+478,The West Bengal National University of Juridical Science,,Calcutta,West Bengal,East,http://www.nujs.edu,(+91)33-2335 7379/ 0765/ 2806/ 2809/ 2811/ 2812  ,
+479,The Bengal Engineering & Science University,,Shibpur Howrah,West Bengal,East,http://www.becs.ac.in,  ,
+480,Patna University,,800 005.,Bihar,East,http://www.patnauniversity.ac.in,0612-2670531     ,
+481,National Law University,,-753015,,,http://www.nluo.ac.in,+91 671 – 2338018  ,registrar@nluo.ac.in  
+482,Arybhatta Knowledge University,,Maidan Patna,Bihar,East,http://www.akubiharf.ac.in,0612-2219106  NULL,
+483,Indian Institute of Technology (Roorkee),,Roorkee,Uttarakhand,North,www.iitr.ernet.in,NULL  NULL,
+484,National Institute of Technology,,Agartala Barjala,Tripura,Northeast,http://www.nitagartala.in,"0381-2346630,2346360  NULL",nitaedc@gmail.com
+485,National Institute of Technology,,Raipur Chattisgarh,Chhattisgarh,Central,http://www.gcetraipur.ac.in,NULL  NULL,
+486,Malviya National Institute of Technology,,J.L.N Marg,Rajasthan,North,http://www.mnti.ac.in,0141-2529078  0141-2529029,
+487,Motilal Nehru National Institute of Technolgy,,Allahabad,Uttar Pradesh,North,http://www.mnit.ac.in,NULL  NULL,
+488,National Insitute of Technology,,NIT Campus,Kerala,South,http://www.nitc.ac.in,0495-2286100  NULL,registrar@nitc.ac.in
+489,National Institute of Technology,,Hamirpur,Himachal Pradesh,North,http://www.nitham.ac.in,"01972-224390,222308  NULL",director@nitham.ac.in
+490,National Institute of Technology,,Kurukshetra,Haryana,North,http://www.nitkkr.ac.in,"01744-233200,233009  NULL",
+491,National Institute of Technology,,PO: Rourkela,Odisha,East,http://www.nitrkl.ac.in,"0661-2462002,2462020  NULL",
+492,National Institute of Technology Karnataka,,Srinivasnagar Mangalore,Karnataka,South,http://www.nitk.ac.in,0824-2474000/26  NULL,director@nitk.ac.in
+493,National Institute of Technology,,Silchar,Assam,Northeast,http://www.nits.ac.in,03842-224879  NULL,patodlr@nits.ac.in
+494,Visvesvaraya National  Institute of Technology,,Nagpur Nagpur,Maharashtra,West,http://www.vnit.ac.in,"0712-223710,2222828,226750  NULL",
+495,Maulana Azad National Institute of Technology,,Bhopal NULL,Madhya Pradesh,Central,,0755-4051000  NULL,info@manit.ac.in
+496,National Institute of Technology,,Warangal,Andhra Pradesh,South,http://www.nitw.ac.in,0870-2459366  NULL,webmaster@nitw.ac.in
+497,Sardar Valabh Bhai National Institute  of Technology,,Surat NULL,Gujarat,West,http://www.svnit.ac.in,NULL  NULL,
+498,National Institute of Technology,,Jamshedpur,Jharkhand,East,http://www.nitjsr.ac.in,NULL  NULL,
+499,B.R.Ambedkar National Institute of Technology,,Pass Jalandhar,Punjab,North,http://www.nitj.ac.in,"0181-2690301,2690603,2690453  NULL",
+500,National Institute of Technology,,Tiruchirapally,Tamil Nadu,South,http://www.nitt.edu,NULL  NULL,
+501,National Institute of Technology,,Patna,Bihar,East,http://www.nitp.ac.in,NULL  NULL,
+502,National Institute of Technology,,Srinagar Hazratbal,Jammu and Kashmir,North,http://www.nit.ac.in,0194-2422032  NULL,
+503,National Institute of Technology,,Durgapur,West Bengal,East,http://www.nitdgp.ac.in,NULL  NULL,
+504,Indian Institute of Technology,,Amingaon Guwahati,Assam,Northeast,http://www.iitg.ac.in,0361-2583000  NULL,admoff@iitg.ernet.in
+505,All India Institute of Medical Sciences,,Nagar New,Delhi,North,http://www.aiims.edu,NULL  NULL,
+506,Indian Institute of Technology,,Khas New,Delhi,North,http://www.iitd.ac.in,NULL  NULL,
+507,Sree Chitra Tirunal Institute for Medical Sciences & Technology,,Thiruvananthapuram,Kerala,South,http://www.sctimst.ac.in,0471-2443152  2550728  0471-2550728,sct@sctimst.ac.in
+508,Indian Institute of Technology,,Powai Mumbai,Maharashtra,West,http://www.iitb.ac.in,NULL  NULL,
+509,Dakshina Bharat Hindi Prachar Sabha,,Nagar Chennai,Tamil Nadu,South,http://www.dbhps-chennai.com,044-24341824  044-24348420,info@dbhps-chennai.com
+510,Indian Institute of Technology,,Madras Chennai,Tamil Nadu,South,http://www.iitm.ac.in,NULL  NULL,
+511,Indian Institute of Technology,,Kanpur,Uttar Pradesh,North,http://www.iitk.ac.in,02597205/2597211  NULL,doiitk@iitk.ac.in
+512,Indian Statistical Institute,,Rd Kolkatta,West Bengal,East,http://www.isical.ac.in,033-25777694  NULL,
+513,Post-Graduate Institute of Medical Education & Research,,,Chandigarh,North,http://www.pgimer.nic.in,0172-2746018  0172-2744401,pgimer-chd@nic.in
+514,National Institute of Pharmeutical Education & Research,,67 Mohali,Punjab,North,,0172-2292074  0172-2214682,Prakriti@niper.ac.in
+515,Indian Institute of Technology Ropar,,Road Rupnagar,Punjab,North,http://www.iitrpr.ac.in,01881-227078  NULL,info@iitrpr.ac.in
+516,Indian Institute of Technology,,Ahmedabad,Gujarat,West,,NULL  NULL,
+517,Indian Institute of Technology,,Yeddumailaram Hyderabad,Andhra Pradesh,South,,  ,
+518,National Institute of Technology,,,Manipur,Northeast,,NULL  NULL,
+519,Indian Institute of Technology,,-751013,,,,NULL  NULL,
+520,Indian Institute of Technology,,Colony Patna,Bihar,East,,NULL  NULL,
+521,Alliance University,,Road Bangalore,Karnataka,South,http://www.alliance.edu.in,080 - 4619 9000/4619 9100/4129 9200  FAX-080 - 4619 9099,enquiry@alliance.edu.in
+522,Apeejay Stya University,,Sohna Gurgaon,Haryana,North,http://university.apeejay.edu,0124-2013718/721  2013218    NULL,registrar@asu.apeejay.edu
+523,Azim Premji University,,CITY BENGALURU,Karnataka,South,http://azimpremjifoundation.org/,  ,
+524,Baddi University of Emerging Sciences & Technology,,Distt. Solan,Himachal Pradesh,North,http://baddiuniv.ac.in,01795-247353  247884  247882  247352  ,registrar@baddiuniv.ac.in
+525,Centurion  University  of Technolgy and Management,,761 211,,,http//www.cutm.ac.in,06815- 223088  Mob: 09437493586  Fax: 06815- 222150,deansoet.pkd@cutm.ac.in
+526,Chitkara  University,,,Chandigarh,North,http://www.chitkara.edu.in,01762-507084  01762-507925,info@chitkara.edu.in
+527,CMJ University,,District Meghalay,Meghalaya,Northeast,http://www.cmjumeghalaya.edu.in/,"0361-2897101,2897416  mobile-863854226",info@registrar@cmjumeghalaya.edu.in
+528,Dr K N Modi University,,Distt. Tonk,Rajasthan,North,http://www. dknmu.org,"08875010008,15  NULL",info@dknmu.org  deputyregistrar@dknmu.org
+529,G L A University,,NH#2 Mathura-,Delhi,North,http://www.gla.ac.in,5662-250900  250908/909  8937099911  22  33  Fax - 05662-241687  ,glauniversity@gla.ac.in  admission@gla.ac.in  
+530,IFTM University,,Lodhipur Rajput,Delhi,North,http://iftmuniversity.ac.in,0591-2360817  0591-2360818,info@iftmuniversity.ac.in
+531,Invertis University,,U.P. NULL,Uttar Pradesh,North,http://www.invertis.org,0581-2460442  2460443  2460454  0581-2460454 ,contact@invertis.org
+532,Maharishi Markandeshwar University,,Solan NULL,Himachal Pradesh,North,http://mmusolan.org,01792-268267  ,info@mmusolan.org
+533,Navrachana University,,Road Vadodara,Gujarat,West,http://www.nuv.ac.in,0265-3020100  NULL,nuv@nuv.ac.in
+534,Noida International University,,Budh Nagar,Uttar Pradesh,North,http://niu.edu.in/,01204862200  NULL,info@niu.edu.in 
+535,Pacific Academy of Higher Education  & Research (PAHER),,Udaipur NULL,Rajasthan,North,,97724-22999  97725-22999  96729-78004  NULL,admission@pahersociety.org
+536,dsdsds,,wqw wqq,Andhra Pradesh,South,ugc.ac.in,98999899  8998,rrrrf@gmcin.com
+537,South Asian University,,JNU Campus,Delhi,North,www.southasianuniversit.org,  ,
+538,University College of Medical Sciences,,Dilshad Garden,Delhi,North,www.ucms.ac.in,  ,
+539,Damodaram Sanjivayya National Law University,,Pedawaltair Visakhapatnam,Andhra Pradesh,South,http://dsnlu.ac.in/,0891-2529952  ,dsnluvsp@gmail.com
+540,Jawaharlal Nehru Architecture and Fine Arts University,,Tank Hyderabad,Telangana,South,http://jnafau.ac.in,040-64637122  23317006    040-23321226,registrar@jnafau.ac.in
+541,Ayush and Health Sciences University of Chhattisgarh,,Road Raipur,Chhattisgarh,Central,http://www.cghealthuniv.com/,  ,
+542,Gujarat Forensic Sciences University,,Bhavan Gandhinagar,Gujarat,West,,  ,
+543,Lala Lajpat Rai University of Veterinary & Animal Sciences,,Hisar,Haryana,North,,  ,
+544,YMCA University of Science & Technology,,Faridabad,Haryana,North,http://ymcaust.ac.in,0129-2310126  ,contact@ymcaust.ac.in
+545,Himachal Pradesh Technical University,,Baru Hamirpur,Himachal Pradesh,North,,  ,
+546,National University of Study & Research in Law,,Mesra Ranchi,Jharkhand,East,http://nusrlranchi.com,0651- 2275250/6570860    0651-2275028 ,info@nusrlranchi.com  nusrlranchi@gmail.com  
+547,Rani Channamma University,,Highway Belagavi,Karnataka,South,www.rcub.ac.in,"0831-2565203,234  0831-2565234",rcuregistrar@gmail.com  registrar@rcub.ac.in
+548,Vijayanagara Sri Krishnadevaraya University,,Bellary,Karnataka,South,http://www.vskub.ac.in,08392-242873  ,
+549,Kerala University of Fisheries & Ocean Studies,,Ranangarh Kochi,Kerala,South,www.kufos.ac.in ,"0484-2700964  2700598  2700274  2700596  2703782,2701095,2701085    0484-2700337  270378  2701085   2701095  2  ",utypanangad@kufos.ac.in 
+550,Kerala Veterinary & Animal Sciences University,,PO Wayanad,Kerala,South,,  ,
+551,Kerala University of Health Sciences,,Trissur,Kerala,South,http://www.kuhs.ac.in,0487-2207664  2207612   0487-2207616,helpdesk@kuhas.ac.in   
+552,Madhya Pradesh Pashu Chikitsa Vigyan Vishwavidyalaya,,Lines Jabalpur,Madhya Pradesh,Central,,  ,
+553,Maharaja Ganga Singh University,,Road Bikaner,Rajasthan,North,,  ,
+554,Mahamaya Technical University,,G.B. Nagar,Uttar Pradesh,North,,-2472735,Info@mtu.ac.in
+555,Khwaja Moinuddin Chishti Urdu  Arabi-Farsi University,,I.I.M. Lucknow,Uttar Pradesh,North,,  ,
+556,Presidency University,,Street Kolkata,West Bengal,East,http://www.presiuniv.ac.in,(033) 22412738  (033)2257-2444(Fax),registrar@presiuniv.ac.in
+557,Sidho-Kanho-Birsha University,,Purulia,West Bengal,East,http://www.skbu.ac.in,03252-202 419  ,registrar@skbu.ac.in
+558,Uttarakhand Open University,,Haldwani (Nainital),Uttarakhand,North,,+91 5946 261122  ,http://uou.ac.in
+559,Maharishi Markandeshwar University,,Sadopur-Ambala,Haryana,North,http://www.mmambala.org,0171-3041550  ,info@mmambala.org
+560,Sri Sai University,,Taragarh Palampur,Himachal Pradesh,North,http://www.srisaiuniversity.org,9736501212  9736501329  936501330  9736501266  9417050602  9736501261  9218450302  9736501201  9418950302  9736501262 ,contact@srisaiuniversity.com
+561,Amity University,,Airport) Gwalior,Madhya Pradesh,Central,http://www.amity.edu,0751–2496025/26/27   08349994630  08349994631  08349994632 ,info@gwa.amity.edu  admission@gwa.amity.edu
+562,ITM University,,Road Gwalior,Madhya Pradesh,Central,www.itmuniversity.ac.in,9399405170,deputy.registrar@itmuniversity.ac.in
+563,Mahatama Gandhi University,,Distt. Ri-Bhoi,Meghalaya,Northeast,,  ,
+564,University of Technology & Management,,Laitumkhrah Shillong,Meghalaya,Northeast,http://www.utm.ac.in,0364-2500969/ 2500973/76  2500980   0364-2500676,info@utm.ac.in
+565,Sri Guru Granth Sahib World University,,Fatehgarh Sahib,Punjab,North,http://www.sggswu.edu.in,01763-234210  ,registrar@sggswu.edu.in
+566,Raffles University,,Alwar Neemrana,Rajasthan,North,www.rafflesuniversity.edu.in,01494-675555  01494-675505,registrar@rafflesuniversity.edu.in
+567,Homoeopathy University,,Sanganer Jaipur,Rajasthan,North,,  ,
+568,Galgotias University,,Budh Nagar,Uttar Pradesh,North,http://www.galgotiasuniversity.edu.in,0120-4370000  Null,ceo@galgotiasuniversity.edu.in
+569,Shiv Nadar University,,Budh Nagar,Uttar Pradesh,North,http://snu.edu.in,1800-102-1768  0120-2663801,info.pg@snu.edu.in  admissions@snu.edu.in
+570,Babu Banarasi Das University,,Nagar Lucknow,Uttar Pradesh,North,http://www.bbdu.ac.in,  ,
+571,Shri Venkateshwara University,,Distt:- Amroha,Uttar Pradesh,North,http://www.svu.edu.in,8477956666  8194005705  0592-2291235,info@svu.edu.in  registrar@svu.edu.in
+572,Rajiv Gandhi University of Knowledge Technology,,Gachibowli Hyderabad,Telangana,South,http://www.rgukt.in/,040-23001830  ,generalenq@rgukt.in
+573,Karnataka Sanskrit University,,Chamarajpet Bangalore,Karnataka,South,http://www.ksu.ac.in,080-2670 1303  ,karnatakasanskrituniversity@gmail.com
+574,Indian Institute of Technology,,Stand Mandi,Himachal Pradesh,North,http://www.iitmandi.ac.in,0195-237731  ,director@iitmandi.ac.in
+575,Indian Institute of Technology,,Univ Indore,Madhya Pradesh,Central,,  ,
+576,Indian Institute of Technology,,IIT,Rajasthan,North,,  ,
+577,"Indian Institute of  Information Technology,Design & Manufacturing(IIITDM)",,Madras Campus,Tamil Nadu,South,http://www.iiitdm.iitm.ac.in,044-27476300  ,office@iiitdm..ac.in
+578,National Institute of Technology,,,Sikkim,Northeast,,  ,
+579,National Institute of Technology,,,Arunachal Pradesh,Northeast,,  ,
+580,National Institute of Technology,,,Sikkim,Northeast,,  ,
+581,National Institute of Technology,,,Uttarakhand,North,,  ,
+582,National Institute of Technology,,,Mizoram,Northeast,,  ,
+583,National Institute of Technology,,,Nagaland,Northeast,,  ,
+584,National Institute of Technology,,,Meghalaya,Northeast,,  ,
+585,National Institute of Technology,,,Goa,West,,  ,
+586,National Institute of Technology,,,Puducherry,South,,  ,
+587,National Institute of Technology,,,Delhi,North,,  ,
+588,KSGH Music and Performing Arts University,,Ladshmipuram Mysore,Karnataka,South,http://www.musicuniversity.ac.in,0821-2402141   0821-2402114,
+589,Assam Down Town University,,Panikhaiti Guwahati,Assam,Northeast,www.adtu.in ,91-98641 37777  0361-2330008,"dutta2@sancharnet.in ,admissions@downtowngroup.in "
+590,UKA Tarsadia University,,Baroli-Mahuva Road,Gujarat,West,http://www.utu.ac.in,02625-254144   255882  02625-255882,ceo@utu.ac.in 
+591,NIILM University,,Road Kaithal,Haryana,North,www.niilmuniversity.in,"09992800242,09992800283,09992800287  09992800289  09873344377 ",infoadmission@niilmuniversity.in 
+592,Rabindranath Tagore University (formerly known as AISECT University),,Chouraha Bhopal,Madhya Pradesh,Central,www.aisectuniversity.ac.in,07480-295707   0755-6766100,info@aisectuniversity.ac.in
+593,People's University,,Bhanpur Bhopal,Madhya Pradesh,Central,www.peoplesuniversity.edu.in,0755-4005291  4005265  0755-4005293,regstrar@peopleuniversity.edu.in
+594,Oriental University,,Jakhya Indore,Madhya Pradesh,Central,http://www.orientaluniversity.in,0731-32656651  3295651  ,registrar@orientaluniversity.in
+595,RKDF University,,Nagar Bhopal,Madhya Pradesh,Central,www.rkdf.ac.in,0755-2740305  ,info@rkdf.ac.in
+596,William Carey University,,Umkdait Shillong,Meghalaya,Northeast,http://www.williamcareyuniversity.ac.in,7005999538  Null,info@williamcareyuniversity.ac.in
+597,ICFAI University,,Road Jaipur,Rajasthan,North,https://www.iujaipur.edu.in/,8426043404,registrar@iujaipur.edu.in
+598,ICFAI University,,Solan Distt,Himachal Pradesh,North,,  ,
+599,ICFAI University,,Distt: Durg,Chhattisgarh,Central,,  ,
+600,Pratap University,,(Chandwaji) Ajmer,Delhi,North,http://www.pratap.edu.in,0142-6213582  0142-6213581 ," 	info@pratapuniversity.in"
+601,Manipal University,,Express Jaipur,Rajasthan,North,http://www.jaipur.manipal.edu,0141-3999100  ,admissions@jaipur.manipal.edu
+602,Sunrise University,,Ramgarh Alwar,Rajasthan,North,,0144-5121144  9649903058,coe@sunriseuniversity.in
+603,JK Lakshmipat University,,Road Jaipur,Rajasthan,North,http://www.jklu.edu.in,91-141-7107500  ,registrar@jklu.edu.in
+604,Mahatma Gandhi University of Medical Sciences & Technology,,Jaipur-302 022,Rajasthan,North,,  ,
+605,Graphic Era Hill University,,Dehradun (,Uttarakhand,North,,  ,
+606,RK University,,Kasturbadham Rajkot,Gujarat,West,http://www.rku.ac.in,9909952030/31  ,info@rku.ac.in
+607,The Assam Kaziranga University,,Jorhat,Assam,Northeast,www.kazirangauniversity.in,+91 376 2351433  ,info@kazirangauniversity.in
+608,Kalinga University,,Naya Raipur,Chhattisgarh,Central,https://kalingauniversity.ac.in/,09303097001/02/03/04/05  ,kalingauniversity1@gmail.com 
+609,Rai University,,Taluka Ahmedabad,Gujarat,West,http://www.raiuniversity.edu,09687688736  07574858437  07574858439  08980004322,provost@raiuniversity.edu  deputyregistrar@raiuniversity.edu  crd@raiuniversity.edu
+610,AURO University of Hospitality and Management,,ONGC Surat,Gujarat,West,http://aurouniversity.edu.in,0261-4088101  ,info@aurouniversity.edu.in
+611,M.V.N. University,,stone NH-2,Delhi,North,http://mvn.edu.in,01275-329791  fax: 011-66173782,info@mvn.edu.in
+612,Baba MastNath University,,Bohar Rohtak,Haryana,North,http://bmu.ac.in,8683888830  8683888831  8683888832,registrarbmu@gmail.com  registrar@bmu.ac.in
+613,Ansal University,,Gurgaon,Haryana,North,http://ansaluniversity.edu.in,Null  Null,Null
+614,Career Point University,,Hamirpur,Himachal Pradesh,North,http://www.cpuh.in,1972-269701  9625380006  9625380007  ,info@cpuniverse.in 
+615,I.E.C. (India Education Centre) University,,Baddi Solan,Himachal Pradesh,North,http://iecuniversity.com,9459898200/201/202/206  1800-11-8787  011-26444838,admissions@iecuniversity.com
+616,Jharkhand Rai University,,Road Ranchi,Jharkhand,East,http://www.jru.edu.in,9693296660  1800 120 2546,info@jru.edu.in 
+617,Sai Nath University,,#NAME?,Jharkhand,East,http://www.sainathuniversity.com,8057112225  0651-2544082  0651-2544082,info@sainathuniversity.com
+618,A.K.S. University,,Satna,Madhya Pradesh,Central,,  ,
+619,Swami Vivekanand University,,Sironja Sagar,Madhya Pradesh,Central,www.svnuniversity.co.in,07582-281000  07582-281353,info@svnuniversity.co.in
+620,Guru Kashi University,,Sabo Bathinda,Punjab,North,http://www.gurukashiuniversity.in,01655-324777   ,info@gurukashiuniversity.in 
+621,Sri Sri University,,3 Cuttack,Odisha,East,http://srisriuniversity.edu.in,0674-6611184  ,info@srisriuniversity.edu.in
+622,Maharaj Vinayak Global University,,Amer Jaipur,Rajasthan,North,http://www.mvgu.ac.in,0141-2704229  0141-2703964,info@mvgu.ac.in
+623,University of Engineering & Management,,Jaipur,Rajasthan,North,,  ,
+624,Career Point University,,Kota,Rajasthan,North,,  ,
+625,Vivekananda Global University,,Jagatpura Jaipur,Rajasthan,North,http://vgu.ac.in,"0141-4077999,9549360-111-222-333-444-555   0141-4077900(Fax)  Toll feer no. 1800-3-13-14-15 ",info@vgu.ac.in
+626,Poornima University,,Extension Jaipur,Rajasthan,North,,  ,
+627,Sangam University,,Road Bhilwara,Rajasthan,North,http://sangamuniversity.ac.in,01482-650505  650707  7891050000  7891050001  01482-249022 ,info@sangamuniversity.ac.in  admissions@sangamuniversity.ac.in 
+628,Monad University,,N.H. 24,Delhi,North,http://www.monad.edu.in,0122-2327000 / 8475074951/52/53/54/55   ,admissions@monad.edu.in 
+629,NIIT University,,N.H. 8,Delhi,North,http://www.niituniversity.in,01494-302415  01494-302412,Registrar@niituniversity.in  Registraroffice@niituniversity.in
+630,Dr. Y.S.R. Horticultural Univerity,,Godavari Distt.,Andhra Pradesh,South,http://www.drysrhu.edu.in/,08818-284311  08818-284223,vcaphu@gmail.com  vc@drysrhu.edu.in
+631,National Law University and Judicial Academy,,Ulubari Guwahati,Assam,Northeast,http://www.nluassam.ac.in/,0361-2738891/92  2738892  ,systems@nluassam .ac.in
+632,Bodoland University,,Kokrajhar BTC,Assam,Northeast,http://www.bodolanduniversity.ac.in,03661-277149   ,registrar@bodolanduniversity.org
+633,Assam Rajiv Gandhi University of Co-operative Management,,Sivasagar Guwahati,Assam,Northeast,http://argucom.org.in,0361-2237253  ,dr.rafiquzz@yahoo.com   upload@argucom.org.in
+634,Rajmata Vijayaraje Scindia Krishi Vishwa Vidyalaya,,Road Gwalior,Madhya Pradesh,Central,,  ,
+635,Gondwana University,,Complex Godchiroli,Maharashtra,West,www.gondwana.digitaluniversity.org  www.gondwanauniversity.org,  ,
+636,Guru Ravidas Ayurved University,,Jodhmal Hohiarpur,Punjab,North,,01882-243326  ,graupunjab@gmail.com
+637,Swarnim Gujarat Sports University,,Campus Gandhinagar,Gujarat,West,,  ,
+638,Sri Venkateswara Institute of Medical Sciences,,Triupati-517 507,Andhra Pradesh,South,http://www.svimstpt.ap.nic.in,0877-2287152 & 2286131  0877-2286803  ,svimshosp@yahoo.com  bvengamma@yahoo.com    
+639,A P Goyal Shimla University,,Shimla,Himachal Pradesh,North,http://agu.edu.in,91-177-2006001  91-177-2006000,dr@apg.edu.in
+640,Geetanjali University,,Udaipur,Rajasthan,North,http://geetanjaliuniversity.com,0294-2500000-06  0294-2500007,contactus@geetanjaliuniversity.com  
+641,J.E.C.R.C  University,,Village Jaipur,Rajasthan,North,http://jecrcuniversity.edu.in,0141-6565605  6565607  9982682903,admissioninfo@jecrcu.edu.in
+642,Indira Gandhi Technological and Medical Science University,,Ziro-791120,Arunachal Pradesh,Northeast,http://www.igtamsu.ac.in. ,03788-255132  03788-224202  7085983978  7085983991,indiragandhitechmeduniversity@gmail.com
+643,Atal Bihari Bajpayee Vishwavidyalaya,,Chowk Bilaspur,Chhattisgarh,Central,https://www.bilaspuruniversity.ac.in/,"07752-260294,077522-214203,07752-214204   ",bilaspur.university2012@gmail.com 
+644,ITM University,,Distt. Raipur,Chhattisgarh,Central,http://www.itmuniversity.org,0771-3092600  1800-209-9727,info@itmuniversity.org
+645,Atal Bihari Vajpayee Hindi Vishwavidyalaya,,Marg Bhopal,Madhya Pradesh,Central,,0755-2491051  0755 - 2491051 / 52,abvhvbpl@gmail.com
+646,Arunachal University of Studies,,Distt. Namsai,Arunachal Pradesh,Northeast,http://www.arunachaluniversity.ac.in,0380-6202797  6202664  ,info@arunachaluniversity.ac.in
+647,Chandigarh University,,Gharuan Mohali,Punjab,North,http://www.cuchd.in,0160-2710300  3014444  0160-3014402,info@cumail.in
+648,Shri Ramswaroop Memorial University,,Road Barabanki,Uttar Pradesh,North,http://www.srmu.ac.in,05248-262639  09554953791  09554953792  05248-262639, registrar@srmu.ac.in  registrar.office@srmu.ac.in
+649,Adesh University,,Road Bathinda,Punjab,North,http://adeshuniversity.ac.in,"0164-2742900,5055208,5055000  ",
+650,Assam Science & Technology University,,Kohilipara Guwahati,Assam,Northeast,http://www.astu.org.in,  ,
+651,Venkateshwara Open University,,Papum Pare,Arunachal Pradesh,Northeast,http://www.vou.ac.in,08447732677  9599818109,
+652,Techno India University,,Lake Kolkata,West Bengal,East,,  ,
+653,Children's University,,Sector-20 Gandhinagar,Gujarat,West,www.cugujarat.ac.in,079-23244562  23244576  ,vccu.gujarat@gmail.com
+654,Indus University,,Via-Thaltej Ahmedabad,Gujarat,West,http://indusuni.ac.in,02764-260277 / 78 / 79  9099944241 / 42,info@indusuni.ac.in
+655,Maharaja Agrasen University,,Distt. Sonal,Himachal Pradesh,North,www.mau.ac.in,9318029217  9318029218  93180-29231  32  33  35  39  41  0172-5001551  52  53  54,career@mau.ac.in  info@mau.ac.in
+656,The Glocal University,,,Delhi,North,https://www.glocaluniversity.edu.in,8392939359,info@theglocaluniversity.in
+657,Raja Mansingh Tomar Music & Arts University,,Marg Gwalior,Madhya Pradesh,Central,,  ,
+658,Rajasthan University of Veterinary & Animal Sciences,,Bikaner,Rajasthan,North,,  ,
+659,Rajasthan University of Veterinary & Animal Sciences,,Bikaner,Rajasthan,North,, 0151-2543419   ,
+660,Bihar Agricultural University,,Sabour (BhagalPur),Bihar,East,http://bausabour.ac.in,0641-2452609   ,
+661,DIT University,,Makkawala Dehradun,Uttarakhand,North,http://www.dit.edu.in,0135 - 3000300  3000301  0135 - 3000309(F),
+662,IMS Unison University,,Road Dehradun,Uttarakhand,North,http://www.iuu.ac,135-3000600  7055900075  135-3000700(F),info@iuu.ac
+663,D.A.V University,,Jalandhar India,Punjab,North,http://www.davuniversity.org,0181-2708848  8195000352,
+664,Desh Bhagat University,,Gobindgarh (Pb.),Punjab,North,http://www.deshbhagatuniversity.in/,01765-520523-24  ,contact@deshbhagatuniversity.in 
+665,Uttaranchal University,,Nagar Dehradun,Uttarakhand,North,www.uttaranchaluniversity.ac.in,"0135-2771946,2771947  0135-2772135",university@uttaranchaluniversity.ac.in
+666,Techno Global University,,Distt. Vidisha,Madhya Pradesh,Central,,  ,
+667,K.R. Mangalam University,,Road Gurgaon,Delhi,North,http://krmangalam.edu.in,8800697010-20   ,welcome@krmangalam.edu.in 
+668,Jagran Lakecity University,,Huzur Bhopal,Madhya Pradesh,Central,http://www.jlu.edu.in,0755-6611138  ,info@jlu.edu.in
+669,Shree Guru Gobind Singh Tricentenary University,,Distt. Gurgaon,Haryana,North,www.sgtunviersity.org,0124-2278184  0124-2278151,info@sgtedu.org
+670,GD Goenka University,,Sohna,Haryana,North,http://www.gdgoenkauniversity.com,0124-3315900 ; 08800992021/22/23  0124-3315970,registrar@gdgu.org
+671,Apex Professional University,,East Siang,Arunachal Pradesh,Northeast,http://www.apexuniversity.ac.in,0368-2222223  2222202  ,info@apexuniversity.edu.in
+672,Sardar Patel University of Police  Security & Criminal Justice,,Daijar Jodhpur,Rajasthan,North,http://www.policeuniversity.ac.in,0291-3062000  ,
+673,Jagan Nath University,,Road Jhajjar,Haryana,North,http://www.jagannathuniversityncr.ac.in,"01251-279700,01-04  ",admission@jagannathuniversityncr.ac.in
+674,Swami Rama Himalayan University,,PO-Doiwala Dehradun,Uttarakhand,North,,  ,
+675,Kumar Bhaskar Varma Sanskrit & Ancient Studies University,,Hati Namati,Assam,Northeast,http://www.kbvsasun.ac.in,03624-220142  Fax-03624-222418,kbvsasun@rediffmail.com
+676,Raksha Shakti University,,Meghaninagar Ahmedabad,Gujarat,West,,079 - 22683624 079 - 22684173  079 - 22683762,academicbr@rakshashaktiuniversity.edu.in
+677,Indian Institute of Teacher Education,,Sector-15 Gandhinagar,Gujarat,West,,18002335500,osdiite@gmail.com
+678,Karnataka Folklore University,,Vijayanagar Banglore,Karnataka,South,http://www.janapadauni.in,0836-2255180  ,kajavivi@gmail.com 
+679,Reva University,,Bangalore,Karnataka,South,http://www.reva.edu.in,"080-66226622  080-65687563,65",info@reva.edu.in
+680,Shobhit University,,Distt.- Saharanpur,Uttar Pradesh,North,http://shobhituniversity.ac.in,0121-2575091/92  0121-2575724,mail@shobhituniversity.ac.in
+681,SRM University,,City Sonepat,Haryana,North,http://www.srmuniversity.ac.in,0130-2121214/15 Ext. No -710   ,vcsrmh@srmuniversity.ac.in  &  registrar@srmuniversity.ac.in
+682,Himalayan University,,Complex Naharlagun,Arunachal Pradesh,Northeast,http://www.himalayanuniversity.com,0360-2350618  ,info@himalayanuniversity.com
+683,Nalanda University,,Rajgir,Bihar,East,http://www.nalandauniv.edu.in,91-611-2255330  ,
+684,South Asian Universit y,,Chanakyapuri New,Delhi,North,http://www.southasianuniversity.org, +91-11-24122512-14; +91-11-24195000  +91-11-24122511,sau@southasianuniversity.org
+685,Haridev Joshi University of Journalism and Mass Communication,,Road Jaipur,Rajasthan,North,http://www.hjuj.ac.in,0141-2373761   2373739 ,info@hjuj.ac.in 
+686,Chhattisgarh Kamdhenu Vishwavidyalaya,,Durg,Chhattisgarh,Central,http://cgkv.ac.in/,  ,
+687,Cotton University,,Panbazar Guwahati,Assam,Northeast,https://cottonuniversity.ac.in/,0361-2733530  ,
+688,North Orissa University,,757 003,,,http://www.nou.nic.in,  ,
+689,Tamil Nadu Fisheries University,,Road Nagapattinam,Tamil Nadu,South,http://www.tnfu.org.in/university/wp/,  ,
+690,Sri Dev Suman Uttarakhand Vishwavidyalaya,,Tehri Garhwal,Uttarakhand,North,http://sdsuv.ac.in/,01376-254065  01376-254065 ,info@sdsuv.ac.in 
+691,Presidency  University,,Rajanakunte Bangaluru,Karnataka,South,http://presidencyuniversity.in,080-23093500  9845215960,info@presidencyuniversity.in
+692,Thunchath Ezhuthachan Malayalam University,,Tirur Malappuram,Kerala,South,http://malayalamuniversity.edu.in/en/,0494 2631230  ,info@malayalamuniversity.edu.i n
+693,OPJS University,,Jhunjhunu Road,Rajasthan,North,http://www.opjsuniversity.edu.in/,89501-10000  89503-30000  77260-09719  01559-290333  ,info@opjsuniversity.org
+694,Tantia University,,Sri Ganganagar,Rajasthan,North,http://tantiauniversity.com,(0154) 2494131  9414093060  9414093505   9414093044  9414093051  9414093082,registrar@tantiauniversity.com              admission@tantiauniversity.com
+695,PES University,,Stage Bangalore,Karnataka,South,http://www.pes.edu,080-26721983  26722108  ,admissions@pes.edu
+696,M.S. Ramaiah University of Applied Sciences,,Nagar Bangalore,Karnataka,South,http://www.msruas.ac.in,080-45366666  ,uas@msruas.ac.in
+697,Xavier university,,-751013,,,,  ,
+698,C. U. Shah University,,City Surendranagar,Gujarat,West,http://www.cushahuniversity.ac.in,(02752) 294005  02752-247712,
+699,CMR University,,Nagar Bangolare,Karnataka,South,http://www.cmr.edu.in,080-25426977  080-25426988,info@cmr.edu.in
+700,Srimanta Sankaradeva University of Health Sciences,,Bhangagarh Guwahati,Assam,Northeast,http://ssuhs.in,91 0361 2130431  ,ssuhs_assam@yahoo.in
+701,Tamilnadu National Law School,,Taluk Tiruchirapalli,Tamil Nadu,South,http://www.tnnls.in,  ,
+702,Uttarakhand Ayurved University,,Road Dehradun,Uttarakhand,North,http://www.uau.ac.in,  ,
+703,Kazi Nazrul University,,Asansol (North),West Bengal,East,http://www.knu.ac.in,0341-2250456  ,
+704,Indira Gandhi University,,Rewari,Haryana,North,http://www.igu.ac.in, 01274-248753  54   01274 – 248754,universityindiragandhi@gmail.com 
+705,Sri Satya Sai University of Technology & Medical Sciences,,Pachama Sehore,Madhya Pradesh,Central,http://sssutms.co.in,+91-7562-222482/223647/223646  778900027  7748900028 ,info@sssutms.co.in
+706,Madhav University,,#NAME?,Rajasthan,North,http://madhavuniversity.edu.in/,  ,
+707,Rama University,,Mandhana Kanpur,Uttar Pradesh,North,http://ramauniversity.ac.in,0512-2780886  ,info@ramauniversity.ac.in
+708,Maulana Azad University,,Nagar Jodhpur,Rajasthan,North,,  ,
+709,Tamil Nadu Music and Fine Arts University,,Salai Chennai,Tamil Nadu,South,,  ,
+710,Hemwati Nandan Bahuguna Medical Education University,,Road Dehradun,Uttarakhand,North,,  ,
+711,Shekhawati University,,College Sikar,Rajasthan,North,,  ,
+712,Al-Falah University,,Faridabad,Haryana,North,alfalahuniversity.edu.in,0129-2400605  09899303060  ,info@afset.org
+713,BML Munjal University,,Sidhrawali Gurugram,Haryana,North,https://www.bml.edu.in,0124-2679002  ,registrar@bml.edu.in
+714,Team Lease Skills University,,Bypass Vadodara,Gujarat,West,,  ,
+715,Junagarh Agricultural University,,Junagarh,Gujarat,West,,  ,
+716,Dr. Bhimrao Ambedkar Law University,,Road Jaipur,Rajasthan,North,,  ,
+717,Veer Chandra Singh Garhwali Uttarakhand University of Horticulture & Forestry,,Garhwal Uttrakhand,Uttarakhand,North,,  ,
+718,ITM Vocational University,,Waghodia Vadodara,Gujarat,West,,  ,
+719,Pacific Medical University,,27 Udiapur,Rajasthan,North,,  ,
+720,Dayananda Sagar University,,Layout Banglore,Karnataka,South,http://www.dsu.edu.in,080-42113566  ,registrar@dsu.edu.in
+721,Shri Ramasamy Memorial University  Sikkim,,P.O. Gangtok,Sikkim,Northeast,http://www.srmus.ac.in,91-3592 231666  232666  ,registrar@srmus.ac.in
+722,Madan Mohan Malaviya University of Technology,,Gorakhpur,Uttar Pradesh,North,http://www.mmmut.ac.in,+91-551-2273958  +91-551-6050001  0551-2270011  0551-6050015,
+723,Ashoka University,,NCR Sonepat,Haryana,North,www.ashoka.edu.in,+91 130 2300000  ,info@ashoka.edu.in
+724,Amity University,,Mumbai,Maharashtra,West,http://www.amity.edu/mumbai/,  ,
+725,Rajiv Gandhi National Aviation University,,D.T. Raebareli,Uttar Pradesh,North,,  ,
+726,Nagaland University,,HQ: Lumami,Nagaland,Northeast,http://www.nagauniv.org.in/,  ,
+727,North East Frontier Technical University,,Siang (Distt.),Arunachal Pradesh,Northeast,https://www.neftu.edu.in/,  ,
+728,Chaudhary Ranbir Singh University,,Jind,Haryana,North,http://www.crsujind.org,  ,
+729,Rayat Bahra University,,#NAME?,Punjab,North,http://www.rayatbahrauniversity.edu.in,0160-5009665  0160-5009671,info@rayatbahrauniversity.edu.in
+730,Amity University,,Tehsil- Tilda,Chhattisgarh,Central,,  ,
+731,Nizam's Institute of Medical Sciences,,Punjagutta Hyderabad,Telangana,South,http://www.nims.edu.in/,1.82805E+12,nims@ap.nic.in
+732,Mahapurusha Srimanta Sankaradeva Viswavidyalaya,,Kalongpar Nagaon,Assam,Northeast,http://www.sankaradeva.com,09435052648  03672-231146,mssvnagaon@gmail.com
+733,Arunodaya University,,Papum Pare,Arunachal Pradesh,Northeast,http://www.arunodayauniversity.ac.in,9402853177,info@arunodayauniversity.ac.in
+734,Rai Technology University,,Taluk Bangalore,Karnataka,South,,  ,
+735,Maharishi Mahesh Yogi Vedic Vishwavidyalaya,,Jabalpur,Madhya Pradesh,Central,,  ,
+736,IIHMR University,,Airport Jaipur,Rajasthan,North,http://www.iihmr.edu.in,0141-3924700  ,iihmr@iihmr.edu.in
+737,Maharishi University of Information Technology,,Post-Diburia Lucknow,Uttar Pradesh,North,http://www.muit.in,180030005444   0522-2771509,info@muit.in
+738,Jaypee University,,Road Anoopshahar,Uttar Pradesh,North,http://www.jaypeeu.ac.in,05734-296777  05734-275661  ,webadmin@mail.jaypeeu.ac.in
+739,U.P. Pandit Deen Dayal Upadhyaya Pashu Chikitsa Vigyan Vishwavidhyalaya Evam Go-Anusandhan Sansthan,,Mathura,Uttar Pradesh,North,http://www.upvetuniv.edu.in,  ,
+740,Assam Women's University,,Jorhat,Assam,Northeast,,  ,
+741,Adamas University,,Barasat Kolkata,West Bengal,East,,  ,
+742,Adamas University,,Barasat Kolkata,West Bengal,East,,  ,
+743,Sarvepalli Radhakrishnan University,,Jatkhedi Bhopal,Madhya Pradesh,Central,http://www.srku.edu.in/,  ,
+744,GNA University,,Distt. Kapurthala,Punjab,North,,  ,
+745,Seacom Skills University,,#NAME?,West Bengal,East,http://www.seacomskillsuniversity.org/seacomweb/index.php,08101948766  08237490466  033-24307111/1691,info_ssu@seacomgroup.com
+746,State University of Performing and Visual Arts,,Sector-6 Rohtak,Haryana,North,,  ,
+747,University of Engineering and Management,,Area-III Kolkata,West Bengal,East,,  ,
+748,JIS University,,24 Parganas,West Bengal,East,,  ,
+749,Abhilashi University,,distt. Mandi,Himachal Pradesh,North,,  ,
+750,Professor Jayashankar Telangana State Agricultural University,,Rajendranagar Hyderabad,Telangana,South,,  ,
+751,Cooch Behar Panchanan Barma University,,Cooch Behar,West Bengal,East,http://cbpbu.ac.in/,03582-230218  ,info@cbpbu.ac.in
+752,Sant Baba Bhag Singh University,,Village-Khiala PO-Padhiana,Punjab,North,http://www.sbbsuniversity.ac.in,0181-2711163  ,info@sbbsuniversity.ac.in
+753,O.P. Jindal University,,Punjipathra Raigarh,Chhattisgarh,Central,http://www.opju.ac.in,-311671,
+754,Institute of Trans-Disciplinary Health Sciences and Technology,,Post Banglore,Karnataka,South,,  ,
+755,Spicer Adventist University,,Post Pune,Maharashtra,West,http://www.sau.edu.in,020-25807000  020-25807001,
+756,Lakulish Yoga University,,Chharodi Ahmedabad,Gujarat,West,,  ,
+757,Sri Konda Laxman Telangana State Horticultural University,,Rajendranagar Hyderabad,Telangana,South,,  ,
+758,Mahatma Gandhi Central University,,East Champaran,Bihar,East,,  ,
+759,Ajeenkya D.Y. Patil University,,Lohegaon Pune,Maharashtra,West,http://adypu.edu.in/,020-67077942  ,info@adypu.edu.in
+760,Flame University,,Mulshi Pune,Maharashtra,West,,  ,
+761,Parul University,,#NAME?,Gujarat,West,http://www.paruluniversity.ac.in,02668-260300  307  09879105597  09409395076,info@paruluniversity.ac.in
+762,G.L.S. University,,,Gujarat,West,,  ,
+763,The Neotia University,,24 Parganas(S),West Bengal,East,www.tnu.in,033-40084848  ,info@tnu.in
+764,Srinivas University,,Surathkal Mangalore,Karnataka,South,www.srinivasuniversity.ac.in  www.srinivasuniversity.edu.in,0824-2444891  0824-2421566,info@srinivasuniversity.edu.in
+765,Sangai International University,,Churachandpur,Manipur,Northeast,,  ,
+766,R.N.B. Global University,,Road Bikaner,Rajasthan,North,www.rnbglobal.edu.in,0151-5156000  ,info@rnbglobal.edu.in
+767,Raj Rishi Bhartrihari Matsya University,,Campus Alwar,Rajasthan,North,,  ,
+768,LNCT University,,Road Bhopal,Madhya Pradesh,Central,,0755-4087005/23  ,lnctuniversity@gmail.com
+769,Diamond Harbour Women's University,,24 paraganas,West Bengal,East,http://www.dhwu.ac.in,  ,
+770,Motherhood University,,Distt. Hardwar,Uttarakhand,North,www.motherhooduniversity.edu.in,07060800156  07060800157,info@motherhooduniversity.edu.in
+771,GSFC University,,PO Fertilizernagar,Gujarat,West,http://www.gsfcuni.edu.in,0265-3093740  ,info@gsfcuniversity.ac.in
+772,Akal University,,Talwandi Sabo,Punjab,North,www.auts.ac.in,"7087775533,7087775544  7087775566  7087775588",info@auts.ac.in
+773,Amity University,,New Town,West Bengal,East,http://www.amity.edu,033 44012802  ,registrar@kol.amity.edu
+774,J.S. University,,Shikohabad Firozabad,Uttar Pradesh,North,www.jsu.ac.in,05676-235572  ,jsuniversityshikohabad@gmail.com
+775,Bankura University,,PO Bhagabandh,West Bengal,East,,  ,
+776,West Bengal University of Teachers  Training  Education Planning and Administration,,Road Kolkata,West Bengal,East,,  ,
+777,Sanchi University of Buddhist-Indic Studies,,Square Bhopal,Madhya Pradesh,Central,http://www.sanchiuniv.edu.in,0755-2773256  ,info@subis.edu.in
+778,Indian Institute of Public Health,,Lekawada Gandhinagar,Gujarat,West,,  ,
+779,Institute of Advanced Research,,Koba Gandhinagar,Gujarat,West,https://www.iar.ac.in,079-30514100  ,contact@iar.ac.in
+780,Manav Rachna University,,Sector-43,Delhi,North,http://mru.edu.in/,0129-4268500  ,info@mru.edu.in
+781,Ch. Bansi Lal University,,Bhiwani,Haryana,North,http://www.cblu.ac.in,01664-245210  ,
+782,Maharaja Ranjit Singh Punjab Technical University,,Road Bathinda,Punjab,North,,  ,
+783,Maharaja Chhatrasal Bundelkhand Vishwavidyalaya,,Chhatarpur,Madhya Pradesh,Central,,  ,
+784,Delhi Pharmaceutical Sciences & Research University,,B Road,Delhi,North,www.dpsru.edu.in,"011-29554327,29554649,29553771  ",communication@dpsru.edu.in
+785,A.P.J. Abdul Kalam Technological University,,Campus Thiruvananthapuram,Kerala,South,,  ,
+786,KLE Technological University,,Vidyanagar Hubballi,Karnataka,South,http://kletech.ac.in/,0836-2378102  ,info@kletech.ac.in
+787,University of Horticultural Sciences,,Cross Bagalkot,Karnataka,South,,  ,
+788,Gujarat University of Transplantation Sciences,,Asarwa Ahmedabad,Gujarat,West,http://www.guts.education/,+91 79 22682241  , info@guts.education
+789,Institute of Infrastructure Technology Research and Management,,(East) Ahmedabad,Gujarat,West,http://iitram.ac.in, +91 079 29292910 / 20  ,office@iitram.ac.in
+790,Maharaja Surajmal Brij University,,Campus Bharatpur,Rajasthan,North,http://www.brijuniversity.ac.in/,  ,
+791,Maharishi Arvind University  Jaipur,,Area Jaipur,Rajasthan,North,,  ,
+792,P.K. University,,#NAME?,Madhya Pradesh,Central,http://pkuniversity.edu.in/,  ,pkuniversityhr@gmail.com
+793,RIMT University,,Mandi Gobindgarh,Punjab,North,http://www.rimt.ac.in/,"01765 523230  01265 523156,523157",info@rimt.ac.in
+794,Maharashtra National Law University,,Deonar Mumbai,Maharashtra,West,http://www.nlumumbai.edu.in,022-2548 0042  ,nlumumbai@mnlumumbai.edu.in
+795,Medi-Caps University,,Rau Indore,Madhya Pradesh,Central,http://www.medicaps-institute.ac.in/, 0731-4259500  2856294  ,info@medicaps-institute.ac.in
+796,MIT Art Design and Technology University,,Kalbhor Pune,Maharashtra,West,http://www.mituniversity.edu.in,020- 26912901/02/03  ,enquiry@mituniversity.edu.in
+797,Mandsaur University,,Sh-31 Mandsaur,Madhya Pradesh,Central,mandsauruniversity.edu.in,  ,
+798,Dr. B. R. Ambedkar University of Social Sciences,,Nagar Mhow-453441,Madhya Pradesh,Central,https://brauss.in/,  ,
+799,Central Institute of Buddhist Studies(CIBS),,Leh (,Ladakh,North,http://www.cibs.ac.in/,  ,
+800,Brainware University,,4 Pgs.,West Bengal,East,http://brainwareuniversity.ac.in/,033-7144 5575  ,info@brainwareuniversity.ac.in
+801,Maharaja Bir Bikram University,,Agartala,Tripura,Northeast,,  ,
+802,PDM University,,Aurangabad Bahadurgarh,Haryana,North,,  ,
+803,Dr. A.P.J Abdul Kalam University,,Indore,Madhya Pradesh,Central,www.aku.ac.in,0731-6502390  8718803404  ,registrar_office@aku.ac.in
+804,Shri Vaishnav Vidyapeeth Vishwavidyalaya,,Road Indore,Madhya Pradesh,Central,http://www.svvv.edu.in,0731-2729071-75  ,vc@svvv.edu.in
+805,Sandip University,,Mahiravani Nashik,Maharashtra,West,www.sandipuniversity.edu.in,02594-222541  ,info@sandipuniversity.edu.in
+806,Sankalchand Patel University,,vidyadham Visnagar-384315,Gujarat,West,,  ,
+807,Anant National University,,Road Ahmedabad,Gujarat,West,http://www.anu.edu.in,02717-718300  ,info@anu.edu.in
+808,Bhupal Nobles University,,Circle Udaipur,Rajasthan,North,https://www.bnuniversity.ac.in,0294-2414497  ,registrar@bnuniversity.ac.in
+809,Navsari Agriculture University,,Navsari,Gujarat,West,,  ,
+810,Amity University,,Road Ranchi,Jharkhand,East,http://www.amity.edu/ranchi/,0651-6605200  7282077771/2/3/4,info@rnc.amity.edu
+811,Pragyan International University,,P.O.-RMCH Ranchi,Jharkhand,East,,  ,
+812,Malwanchal University,,Khundel District-Indore,Madhya Pradesh,Central,https://www.malwanchaluniversity.com,0731-4013656  ,info@malwanchaluniversity.com
+813,AISECT University,,Hazaribag Hazaribagh,Jharkhand,East,http://www.aisectuniversityjharkhand.ac.in/,8252299990  8404884433,info@aisetuniversityjharkhand.ac.in
+814,Bhakta Kavi Narsinh Mehta University,,Khadiya Junagadh,Gujarat,West,,  ,
+815,Shri Govind Guru University,,Godhra,Gujarat,West,,  ,
+816,Govind Guru Tribal University,,Campus Banswara,Rajasthan,North,,  ,
+817,Marwadi University,,Highway Rajkot,Gujarat,West,,0281-2923112  ,info@marwadieducation.edu.in
+818,Khallikote University,,-760001,,,,  ,
+819,Siddharth University,,Siddharth Nagar,Uttar Pradesh,North,,  ,
+820,The Sanskrit College and University,,Street Kolkata,West Bengal,East,,  ,
+821,Era University,,Road Lucknow,Uttar Pradesh,North,http://www.erauniversity.in,0522-6600777  6656500  ,info@erauniversity.in
+822,Gangadhar Meher University,,-768004,,,,  ,
+823,Bennett University,,Greater Noida,Uttar Pradesh,North,www.bennett.edu.in,0120 7199300  ,info@bennett.edu.in
+824,Sanskriti University,,Stone Mathura-,Delhi,North,http://www.sanskriti.edu.in/,7500183300,info@sanskriti.edu.in
+825,Rama Devi Women's University,,Bhubaneswar,Odisha,East,,  ,
+826,IIMT University,,Road Meerut,Uttar Pradesh,North,http://iimtu.com/,0121-2793500-506  ,mail@iimtu.com
+827,Allahabad State University,,Lines Allahabad,Uttar Pradesh,North,,  ,
+828,ISBM University,,Block Tehsil-Chhura,Chhattisgarh,Central,,  ,
+829,G.H Raisoni University,,Borgaon Tah-Saunsar,Madhya Pradesh,Central,,  ,
+830,Plastindia International University,,GIDC Vapi,Gujarat,West,http://www.plastindia.edu.in,022026832911-14  ,info@plastindia.edu.in
+831,Jharkhand Raksha Shakti University,,Road Ranchi,Jharkhand,East,,  ,
+832,International Institute of Information Technology (IIIT),,-751003,,,,  ,
+833,Usha Martin University,,NH-75 Ranchi,Jharkhand,East,,  ,
+834,Birla Global University,,-751029,,,http://www.bgu.ac.in,0674-71030001  0674-71030010,enquiry@bgu.ac.in
+835,The Assam Royal Global University,,NH-37 Guwahati,Assam,Northeast,http://www.rgu.ac/,0361 2270100  0361 2270300,registraroffice@rgu.ac
+836,Jharkhand Raksha Shakti University,,Road Ranchi,Jharkhand,East,,  ,
+837,CT University,,Road Ludhiana,Punjab,North,http://www.ctuniversity.in,  ,
+838,Symbiosis University of Applied Sciences (SUAS),,Corridor Indore,Madhya Pradesh,Central,,  ,
+839,St. Joseph University,,Diphupar Dimapur,Nagaland,Northeast,www.stjosephuniv.edu.in ,03862-242069  ,info@stjosephuniv.edu.in
+840,Harcourt Butler Technical University,,Kanpur,Uttar Pradesh,North,,  ,
+841,Bareilly International University,,Road Bareilly,Uttar Pradesh,North,,  ,
+842,Sai Tirupati University,,Girwa Udaipur,Rajasthan,North,,  ,
+843,St. Xavier's University,,Town Kolkata,West Bengal,East,,  ,
+844,Uttarakhand Aawasiya Viswavidyalaya,,Khatyadi Almora,Uttarakhand,North,www.uru.ac.in,05962 233145  ,
+845,Starex University,,Bhorakalan Gurugram,Haryana,North,www.starexuniversity.com,0124-2379990/1/2/3  ,info@starexuniversity.com
+846,Avantika University,,Village Ujjain,Madhya Pradesh,Central,http://www.avantikauniversity.edu.in/,0734-4296600  ,info@avantika.edu.in  adimission.edu.in
+847,Karnataka State Rural Development and Panchayat Raj University,,Circle Gadag,Karnataka,South,www.ksrdpru.in,08372-230338  080-28015428  FAX: 08372-297343  080-28015429,registrarksrdpru@gmail.com
+848,Garden City University,,Indiranagar Banglore,Karnataka,South,https://www.gardencity.university,9019921992   080-0 66487600,gcu@gardencity.university
+849,"Maharashtra National Law University,",,Road Nagpur,Maharashtra,West,,  ,
+850,Mody University of Science & Technology,,#NAME?,Rajasthan,North,,  ,
+851,Mody University of Science & Technology,,#NAME?,Rajasthan,North,www.modyuniversity.ac.in,1573-225001-12  ,contact@modiuniversity.ac.in
+852,Cluster University of Jammu,,Nagar Jammu,Jammu and Kashmir,North,,  ,
+853,Karnavati University,,Uvarsad Ghandhinagar,Gujarat,West,http://www.karnavatiuniversity.com,079-23970000  ,info@karnavatiuniversity.com
+854,Banda University of Agriculture & Technology,,Banda,Uttar Pradesh,North,,  ,
+855,P. P. Savani University,,Ta.: Mangrol,Gujarat,West,,  ,
+856,Dr. Vishwanath Karad MIT World Peace University,,Kothrud Pune,Maharashtra,West,,  ,
+857,Himalayan Garhwal University,,Pauri Garhwal,Uttarakhand,North,,  ,
+858,Himalayan Garhwal University,,Pauri Garhwal,Uttarakhand,North,www.hgu.in,8395874101/02  ,info@hgu.ac.in
+859,Raiganj University,,P.O. Raiganj,West Bengal,East,http://raiganjuniversity.ac.in/,  ,
+860,Vishwakarma University,,Budruk Pune,Maharashtra,West,https://www.vupune.ac.in/,Dr Bipin Sule--9822225577  ,bipin.sule@vit.edu  bipin.sule@vupune.ac.in  bipinsule@gmail.com
+861,Symbiosis Skills and Open University,,Havely Pune,Maharashtra,West,http://www.ssou.ac.in/,020-67187768  ,
+862,University of Technology,,Tehsil-Sanganer Jaipur,Rajasthan,North,https://www.uot.edu.in,8385012345  9829209000,info@uot.edu.in
+863,Sri Guru Ram Das University of Health Sciences,,Sri Amritsar,Punjab,North,,  ,
+864,Uttar Pradesh University of Medical Sciences,,Saifai Etawah,Uttar Pradesh,North,,  ,
+865,JSS Science & Technology University,,Campus Mysuru,Karnataka,South,,  ,
+866,Sandip University,,#NAME?,Bihar,East,,  ,
+867,Maharashtra National Law University,,Padampura Aurangabad,Maharashtra,West,,  ,
+868,Bhartiya Skill Development University,,Road Jaipur,Rajasthan,North,www.ruj-bsdu.in,0141-6655440/41  ,contact@ruj-bsdu.in
+869,K K University,,Berauti Nepura,Bihar,East,,  ,
+870,Manipur Technical University,,Takyelpat Imphal,Manipur,Northeast,,  ,
+871,Jananayak Chandrashekhar University,,Ballia,Uttar Pradesh,North,,  ,
+872,Shri Guru Ram Rai University,,Nagar Dehradun,Uttarakhand,North,,  ,
+873,Sarla Birla University,,Highway Ranchi,Jharkhand,East,,  ,
+874,Bengaluru North University,,Tamaka Kolar,Karnataka,South,,  ,
+875,Swarnim Startup & Innovation University,,Road Gandhinagar,Gujarat,West,,  ,
+876,Sanjay Ghodawat University,,A/P-Atigre Tal-Hatkanangale,Maharashtra,West,http://www.sanjayghodawatuniversity.ac.in/,0230-2463774  0230-2463761,info@sanjayghodawatuniversity.ac.in
+877,Bengaluru Central University,,Veedhi Bengaluru,Karnataka,South,,  ,
+878,Sharnbasva University,,Kalaburgi (Gulbarga),Karnataka,South,,  ,
+879,Haryana Vishwakarma Skill University,,Sector-18 Gurugram,Haryana,North,,  ,
+880,Bhagwant Global University,,Pauri Garhwal,Uttarakhand,North,,  ,
+881,University of Agricultural Sciences,,Road Raichur,Karnataka,South,,  ,
+882,Odisha State Open University,,-768004,,,,  ,
+883,YBN University,,Colony Ranchi,Jharkhand,East,,  ,
+884,Arka Jain University,,Opp. To,Kerala,South,,  ,
+885,Manipur University of Culture,,Imphal East,Manipur,Northeast,,  ,
+886,The Global University,,Hollongi Itanagar,Arunachal Pradesh,Northeast,,  ,
+887,Indrashil University,,Kadi Mehsana,Gujarat,West,http://indrashiluniversity.edu.in/,02764-278813/5  ,info@indrashiluniversity.edu.in
+888,Chinmaya Vishwavidyapeeth,,Veliyanad Ernakulum,Kerala,South,www.chinmayauniversity.ac.in,  ,
+889,Kamdhenu University,,Level Gandhinagar,Gujarat,West,,  ,
+890,Ras Bihari Bose Subharti university,,Nagar Dehradun,Uttarakhand,North,,  ,
+891,International Institute of Information Technology,,Naya Raipur,Chhattisgarh,Central,,  ,
+892,Quantum University,,(NH-73) Roorkee,Uttarakhand,North,http://quantumuniversity.edu.in/,0132-2781728  0135-2657979  ,info@quantumuniversity.edu.in
+893,Rajasthan ILD Skills University (RISU),,Road Jaipur,Rajasthan,North,,  ,
+894,VIT Bhopal University,,Sehore Bhopal,Madhya Pradesh,Central,,7560254500,admission@vitbhopal.ac.in  careers@vitbhopal.ac.in
+895,Cluster University of Srinagar,,Srinagar Srinagar,Jammu and Kashmir,North,,  ,
+896,Pandit S N Shukla University,,Shahdol,Madhya Pradesh,Central,,  ,
+897,Kaloji Narayan Rao University of Health Sciences,,Warangal (U),Telangana,South,http://knruhs.in,  ,knruhswgl15@gmail.com
+898,Sage University,,Rau Indore,Madhya Pradesh,Central,http://sageuniversity.in/,0731-2906986  ,registrar@sageuniversity.in
+899,Sri P V Narsimha Rao Telangana Veterinary University,,Rajendranagar Hyderabad,Telangana,South,,  ,
+900,Maharana Partap Horticultural University,,Karnal,Haryana,North,,  ,
+901,SRM University,,Gantur District,Andhra Pradesh,South,,  ,
+902,Centurion University of Technology and Management,,Mandal Visakhapatnam,Andhra Pradesh,South,http://cutmap.ac.in/ ,08933-220026   ,registrar@cutmap.ac.in
+903,World University Of Design,,City Sonipat,Haryana,North,www.worlduniversityofdesign.ac.in,0130-2205711  ,info@wud.ac.in
+904,Veer Surendra Sai Institute of Medical Science and Research,,-768017,,,,  ,
+905,Sister Nivedita University,,Rajarhat Kolkata,West Bengal,East,,  ,
+906,Amity University,,Road Patna,Bihar,East,,  ,
+907,Sardar Krushinagar Dantiwada Agricultural University,,Sardar Krushinagar,Gujarat,West,,  ,
+908,Himachal Pradesh National Law University,,Dhami Shimla,Himachal Pradesh,North,,  ,
+909,Hemchand Yadav Vishwavidyalaya(Earlier known as Durg Vishwavidyalaya),,Naka Durg,Chhattisgarh,Central,http://www.durguniversity.ac.in,0788-2359100  2359200  0788-2359300  2359400,registrar@durguniversity.ac.in
+910,Renaissance University,,Hospital Indore,Madhya Pradesh,Central,http://renaissance.ac.in/,0731-6684150  ,
+911,Binod Bihari Mahto Koylanchal University,,Dhanbad,Jharkhand,East,,  ,
+912,D Y Patil International University,,Akurdi Pune,Maharashtra,West,http://dypiu.ac.in,020-27653511  ,info@dypiu.ac.in
+913,Dr C. V. Raman University,,Distt.- Vaishali,Bihar,East,,  ,
+914,Dr Shyama Prasad Mukherjee University,,Ranchi,Jharkhand,East,,  ,
+915,Dr. Shyama Prasad University,,Ranchi,Jharkhand,East,,  ,
+916,Gokul Global University,,Patia Sidhpur,Gujarat,West,,  ,
+917,Atmiya University,,Road Rajkot,Gujarat,West,,  ,
+918,VIT-AP University,,Amaravati Guntur,Andhra Pradesh,South,http://vitap.ac.in/,0863- 2370 943  2370 921  2370 922  ,registrar@vitap.ac.in
+919,Indian Association for the Cultivation of Science (IACS),,Jadavpur Kolkata,West Bengal,East,http://www.iacs.res.in/,033-24734971  ,"sspid@iasc.res.in,ictkp@iacs.res.in  pctc@iacs.res.in"
+920,IILM University,,Sector-53 Gurugram,Haryana,North,https://www.iilm.edu/,"0124-2775618,2775656  2775655",iilmuniversity@iilm.edu
+921,Madhyanchal Professional University,,Ratibad Bhopal,Madhya Pradesh,Central,https://www.mpu.ac.in,9425014623,vicechairman@patelcollege.com
+922,Bhabha University,,Jatkhedi Bhopal,Madhya Pradesh,Central,,  ,
+923,Munger University,,Munger,Bihar,East,,  ,
+924,Purnea University,,Purnea,Bihar,East,,  ,
+925,Indira Gandhi Delhi Technical University for Women,,Kashmere Gate,Delhi,North,,01123900220  011-23869497,
+926,Shri Rawatpura Sarkar University,,Road Raipur,Chhattisgarh,Central,http://www.sruraipur.ac.in/,0771-2473300  0771- 2259520,info.srur@gmail.com
+927,Gopal Narayan Singh University,,Jamuhar PO-Jamuhar,Bihar,East,,  ,
+928,Shri Krishna University,,Road Chhatarpur,Madhya Pradesh,Central,,  ,
+929,Patliputra University,,Terminal Patna,Bihar,East,,  ,
+930,National Rail and Transportation Institute,,Vadodara Gujrat,Gujarat,West,,  ,
+931,Dharmashastra National Law University,,Lines Jabalpur,Madhya Pradesh,Central,,  ,
+932,Mansarovar Global University,,Block-Bilkisganj Sehore,Madhya Pradesh,Central,www.mguindia.com,-8989080718,info@mguindia.com
+933,Sardar Patel University,,Dongariya Balaghat,Madhya Pradesh,Central,http://spubgt.ac.in/,7632292001,info@spubgt.ac.in
+934,Dr C V Raman University,,Makhan Khandwa,Madhya Pradesh,Central,,073320-247700  ,
+935,Al-Karim University,,Bagh Katihar,Bihar,East,,  ,
+936,AAFT University of Media and Arts,,Vill-Maath Tehsil-Tilda,Chhattisgarh,Central,,  ,
+937,Birsa Munda Tribal University,,Distt.- Narmada,Gujarat,West,,  ,
+938,Netaji Subhas University,,Pahari PS-MGM,Jharkhand,East,,  ,
+939,Adichunchanagiri University,,Tq- Nagamangala,Karnataka,South,,  ,
+940,Chhatrapati Shivaji Maharaj University,,navi mumbai,Maharashtra,West,,  ,
+941,Khaja Bandanawaz University,,Buzurg Kalaburagi,Karnataka,South,,8472271111  8472245555  236041  228540,kbnuniversity@gmail.com  contact@kbn.university
+942,Dhanamanjuri University,,Imphal,Manipur,Northeast,,  ,
+943,National Sports University,,,Manipur,Northeast,,  ,
+944,Netaji Subhas University of Technology,,Sector-3 Dwarka,Delhi,North,https://www.nsut.ac.in,011-25099023  ,vco@nsut.ac.in
+945,National Sports University,,,Manipur,Northeast,,  ,
+946,Radha Govind University,,Ghati Ramgarh-,Jharkhand,East,,  ,
+947,Krishnaguru Adhyatmik Visvavidyalaya,,Nasatra Barpeta,Assam,Northeast,http://kav.org.in/,"9854074869,8638689406  8638202055",office@kav.org.in
+948,Capital University,,Road District-Koderma,Jharkhand,East,,  ,
+949,Bihar Animal Sciences University,,,Bihar,East,,  ,
+950,Apex university,,jaipur,Rajasthan,North,,  ,
+951,Lords University,,Alwar-Tijara-,Delhi,North,,  ,
+952,Shyam University,,Distt- Dausa,Rajasthan,North,https://shyamuniversity.in/,8890202999  8890205999  8890207999,info@shyamuniversity.in  shyamuniversity@gmail.com
+953,KREA University,,Sri City,Andhra Pradesh,South,,  ,
+954,Central Institute of Technology(CIT),,BTAD Kokrajhar,Assam,Northeast,,  ,
+955,Saveetha Amaravati University,,Club Vijayawada,Andhra Pradesh,South,http://sauniv.in/,9363333434,registrar@saveethaamaravati.university
+956,Sikkim State University,,Gangtok East,Sikkim,Northeast,,  ,
+957,AIPH University,,-752101,,,http://aiph.ac.in/,"0674-2433556,9938213237  ",contact@aiph.ac.in
+958,Shri Khushal Das University,,Jn. Pilibangan,Rajasthan,North,http://skduniversity.com/,8875132111  8875133111  ,skduniversity.edu@gmail.com
+959,Gandhi Institute of Engineering & Technology University.,,Distt. Rayagada,Odisha,East,http://www.giet.edu,06857-250170  ,registrar@giet.edu
+960,Sardar Bhagwan Singh University,,Balawala Dehradun,Uttarakhand,North,,  ,
+961,Bikaner Technical University,,Road Bikaner,Rajasthan,North,,  ,
+962,Maharishi Balmiki Sanskrit University,,Mundri Kaithal,Haryana,North,,  ,
+963,Gurugram University,,Sector-51 Gurugram,Haryana,North,,  ,
+964,Dr. Abdul Haq Urdu University,,Kurnool,Andhra Pradesh,South,,  ,
+965,Manipur International University,,Road Imphal,Manipur,Northeast,,  ,
+966,Ramchandra Chandravansi University,,Bishrampur Palamu,Jharkhand,East,,  ,
+967,Mata Gujri University,,Roa Kishangunj,Bihar,East,,  ,
+968,Om Sterling Global University,,NH-52 Hisar-,Chandigarh,North,https://www.osgu.ac.in/,"8,60,78,99,99,98,25,50,00,000",info@osgu.ac.in
+969,Gujarat Maritime University,,Gandhinagar,Gujarat,West,,  ,
+970,Bharatiya Engineering Science and Technology Innovation University,,Mandal Anantapur,Andhra Pradesh,South,,  ,
+971,Jharkhand University of Technology,,Namkum Ranchi,Jharkhand,East,,  ,
+972,Dr. B.R. Ambedkar National Law University,,Rai Sonipat,Haryana,North,,  ,
+973,Ram Krishna Dharmath Foundation University,,Chouk Ranchi,Jharkhand,East,,  ,
+974,Shri Dharmasthala Manjunatheshwara University,,Sattur Dharwad,Karnataka,South,,  ,
+975,Dr. Ram Manohar Lohia Institute of Medical Sciences,,Nagar Lucknow,Uttar Pradesh,North,,  ,
