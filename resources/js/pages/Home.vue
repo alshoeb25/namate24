@@ -3,52 +3,9 @@
 
     <!-- MAIN CONTENT -->
     <main class="w-full">
-      <!-- Hero Section -->
-      <section class="w-full">
-        <div class="text-black rounded-b-3xl p-6 shadow-lg w-full bg-cover bg-center 
-                   bg-[url('https://image2url.com/images/1765221100057-fff8f4b5-27df-48e0-8d70-7393bebec0ff.png')] 
-                   md:bg-[url('https://image2url.com/images/1765432244131-32eb4e62-559a-40c6-87c3-d046b0b27ae1.png')]">
-          <div class="desktop-bg max-w-3xl mx-auto">
-            <h2 class="text-2xl font-bold text-white">
-              Empowering Teachers & Students Worldwide
-            </h2>
-            <p class="text-sm mt-1 opacity-90 text-white">
-              Expert guidance for every subject, anywhere.
-            </p>
-
-            <div class="mt-4 bg-white p-4 rounded-xl flex flex-col gap-3">
-              <!-- Subject Input -->
-              <div class="flex row gap-2">
-                <div class="flex items-center bg-gray-100 rounded-lg px-3 py-2 flex-1">
-                  <img src="https://img.icons8.com/?size=100&id=McUzNetNtaJK&format=png" alt="search icon"
-                    class="h-5 w-5 object-contain opacity-70" />
-                  <input v-model="searchSubject" type="text" placeholder="Search Subject"
-                    class="ml-2 bg-transparent outline-none w-full text-gray-700">
-                </div>
-              </div>
-
-              <!-- Location + Arrow -->
-              <div class="flex row gap-2">
-                <div class="flex items-center bg-gray-100 rounded-lg px-3 py-2 flex-1">
-                  <img src="https://img.icons8.com/?size=100&id=p5n5ZAUprZsA&format=png" alt="location icon"
-                    class="h-5 w-5 opacity-70" />
-                  <input v-model="searchLocation" type="text" placeholder="Zip Code or City"
-                    class="ml-2 bg-transparent outline-none w-full text-gray-700">
-                </div>
-                <button @click="performSearch"
-                  class="bg-blue-600 hover:bg-blue-700 transition text-white px-2 rounded-lg 
-                         flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M14 5l7 7-7 7M21 12H3" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      
+      <!-- Search Component -->
+      <HeroSearch />
 
       <!-- Trending Categories -->
       <section class="max-w-7xl mx-auto px-4 mt-8">
@@ -155,9 +112,13 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../store';
+import HeroSearch from '../components/HeroSearch.vue';
 
 export default {
   name: 'Home',
+  components: {
+    HeroSearch,
+  },
   setup() {
     const router = useRouter();
     const userStore = useUserStore();

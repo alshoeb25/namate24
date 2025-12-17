@@ -11,6 +11,7 @@
     "@fullcalendar/daygrid": "^6.1.7",
     "@fullcalendar/vue3": "^5.11.5",
     "axios": "^1.4.0",
+    "crypto-js": "^4.2.0",
     "lodash": "^4.17.21",
     "pinia": "^2.0.32",
     "vue": "^3.3.4",

@@ -23,11 +23,16 @@ Route::post('email/send-verification', [EmailVerificationController::class, 'sen
 Route::post('email/verify', [EmailVerificationController::class, 'verifyEmail']);
 Route::post('email/resend-verification', [EmailVerificationController::class, 'resendVerificationEmail']);
 
+// Google OAuth
+Route::post('auth/google/callback', [\App\Http\Controllers\Api\SocialAuthController::class, 'googleCallback']);
+
 Route::get('tutors', [TutorController::class,'index']);
 Route::get('tutors/{id}', [TutorController::class,'show']);
 Route::get('cms/{slug}', [CmsPageController::class,'show']);
 Route::get('credit-packages', [CreditPackageController::class,'index']);
 Route::get('subjects', [SubjectController::class,'index']);
+
+Route::get('/search-subjects', [SubjectController::class, 'search']);
 
 Route::middleware('auth:api')->group(function() {
 

@@ -20,6 +20,32 @@ Route::get('/register', function () {
     return view('welcome');
 })->name('register');
 
+// Search routes (SPA)
+Route::get('/search', function () {
+    return view('welcome');
+})->name('search');
+
+Route::get('/tutors', function () {
+    return view('welcome');
+})->name('tutors');
+
+Route::get('/tutor-jobs', function () {
+    return view('welcome');
+})->name('tutor-jobs');
+
+// Dynamic SEO-friendly routes
+Route::get('/{subject}-tutors-in-{city}', function () {
+    return view('welcome');
+})->where(['subject' => '[a-z0-9\-]+', 'city' => '[a-z0-9\-]+']);
+
+Route::get('/{subject}-tutors', function () {
+    return view('welcome');
+})->where('subject', '[a-z0-9\-]+');
+
+Route::get('/tutors-in-{city}', function () {
+    return view('welcome');
+})->where('city', '[a-z0-9\-]+');
+
 // Tutor profile view route (SPA)
 Route::get('/tutor/{id}', function () {
     return view('welcome');

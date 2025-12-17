@@ -54,4 +54,22 @@ class User extends Authenticatable implements JWTSubject
         return $this->roles->pluck('name')->first();
     }
 
+    /**
+     * Get avatar URL attribute
+     */
+    public function getAvatarUrlAttribute(): string
+    {
+        if ($this->avatar) {
+            // If avatar is a full URL (e.g., from Google), return as is
+            if (filter_var($this->avatar, FILTER_VALIDATE_URL)) {
+                return $this->avatar;
+            }
+            // If it's a local file path
+            return asset('storage/' . $this->avatar);
+        }
+        
+        // Default avatar
+        return asset('images/default-avatar.png');
+    }
+
 }

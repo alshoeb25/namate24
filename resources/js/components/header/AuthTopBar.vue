@@ -33,14 +33,9 @@
         <div class="relative">
           <button @click="profileMenuOpen = !profileMenuOpen" 
                   class="flex items-center gap-2 px-2 py-1 rounded-full hover:bg-gray-100 transition">
-            <img v-if="user?.avatar" 
-                 :src="`/storage/${user.avatar}`" 
+            <img :src="getProfilePhoto()" 
                  alt="Profile" 
                  class="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover">
-            <img v-else 
-                 src="https://via.placeholder.com/40" 
-                 alt="Profile" 
-                 class="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover bg-gray-200">
             <span class="hidden md:inline text-sm font-medium text-gray-700">{{ user?.name }}</span>
             <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -85,7 +80,7 @@ export default {
     };
 
     const logout = async () => {
-      try { 
+      try {
         await userStore.logout(); 
       } catch (e) {}
       
@@ -95,11 +90,33 @@ export default {
       router.push('/login');
     };
 
+    const getProfilePhoto = () => {
+      console.log('User data for profile photo:', user.value);
+      // If user is a tutor and has a photo, use tutor photo
+      if (user.value?.role === 'tutor' && user.value?.tutor?.photo_url) {
+        return user.value.tutor.photo_url;
+      }
+      
+      // If user has avatar (could be URL from Google or local path)
+      if (user.value?.avatar) {
+        // If it's a full URL (from Google OAuth), return as is
+        if (user.value.avatar.startsWith('http')) {
+          return user.value.avatar;
+        }
+        // If it's a local file path
+        return `/storage/${user.value.avatar}`;
+      }
+      
+      // Default placeholder
+      return 'https://via.placeholder.com/40';
+    };
+
     return { 
       profileMenuOpen, 
       user, 
       toggleMobileMenu,
-      logout 
+      logout,
+      getProfilePhoto,
     };
   }
 };

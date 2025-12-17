@@ -824,7 +824,7 @@ class TutorProfileController extends Controller
     public function viewProfile(Request $request, $id = null): JsonResponse
     {
         $tutorId = $id ?? $this->getTutor()->id;
-        $tutor = Tutor::findOrFail($tutorId);
+        $tutor = Tutor::with('subjects')->findOrFail($tutorId);
 
         // Privacy handling: sanitize if do_not_share_contact is true
         $profileData = $tutor->toArray();

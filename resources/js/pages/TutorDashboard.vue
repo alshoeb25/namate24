@@ -1,68 +1,234 @@
 <template>
-  <div class="max-w-7xl mx-auto px-4 mt-10 mb-20">
+  <main class="w-full">
 
-    <h1 class="text-2xl font-bold mb-6">Welcome, {{ user?.name || 'Tutor' }}</h1>
-
-    <!-- Desktop View -->
-    <section class="hidden md:flex justify-center gap-8">
-
-      <!-- Upload Photo -->
-      <router-link to="/tutor/profile/photo" class="w-64 bg-[#F16F63] text-white text-center rounded-xl py-8 shadow-lg hover:scale-105 transition-all">
-        <img src="https://img.icons8.com/?size=60&id=60001&format=png" class="w-16 h-16 mx-auto mb-3" alt="Upload Photo">
-        <p class="font-semibold text-xl">Upload Photo</p>
-      </router-link>
-
-      <!-- Verify Mobile -->
-      <router-link to="/tutor/profile/phone" class="w-64 bg-[#F16F63] text-white text-center rounded-xl py-8 shadow-lg hover:scale-105 transition-all">
-        <img src="https://img.icons8.com/?size=100&id=aYmX3YWIU9T0&format=png" class="w-16 h-16 mx-auto mb-3" alt="Verify Mobile">
-        <p class="font-semibold text-xl">Verify Mobile</p>
-      </router-link>
-
-      <!-- Intro Video -->
-      <router-link to="/tutor/profile/video" class="w-64 bg-[#FFF8D9] text-blue-700 text-center rounded-xl py-8 shadow-lg hover:scale-105 transition-all">
-        <img src="https://img.icons8.com/?size=100&id=Eyki1QLaDgud&format=gif&color=f7f7f7" class="w-16 h-16 mx-auto mb-3" alt="Intro Video">
-        <p class="font-semibold text-xl">Introduction Video</p>
-      </router-link>
-
-      <!-- My Profile -->
-      <router-link to="/tutor/profile/view" class="w-64 bg-[#D8EEFB] text-blue-700 text-center rounded-xl py-8 shadow-lg hover:scale-105 transition-all">
-        <img src="https://img.icons8.com/?size=100&id=7877&format=png" class="w-16 h-16 mx-auto mb-3" alt="My Profile">
-        <p class="font-semibold text-xl">My Profile</p>
-      </router-link>
-
+    <!-- HERO / DASHBOARD HEADER -->
+    <section class="text-black rounded-b-3xl p-6 shadow-lg w-full bg-cover bg-center
+               bg-[url('https://image2url.com/images/1765773528174-f33a81da-0108-401a-a459-3371ca54cae8.png')]
+               md:bg-[url('https://image2url.com/images/1765773881397-02e1b232-0a58-4304-b4ce-36e93cf9caee.png')]">
+    
+        <div class="max-w-7xl mx-auto px-4 py-14 md:py-20 text-white relative z-10">
+            <h1 class="text-3xl md:text-5xl font-bold">Teacher Dashboard</h1>
+            <p class="mt-3 text-lg md:text-xl opacity-90">
+                Welcome back, <span class="font-semibold">{{ user?.name || 'To Your Profile!' }}</span>
+            </p>
+        </div>
     </section>
 
+    <!-- DASHBOARD CARDS -->
+    <section class="max-w-7xl mx-auto px-4 mt-6 md:-mt-6 pb-20">
 
-    <!-- Mobile View -->
-    <section class="grid grid-cols-2 gap-6 md:hidden">
+        <!-- DESKTOP -->
+        <div class="hidden md:grid grid-cols-2 gap-8">
 
-      <!-- Upload Photo -->
-      <router-link to="/tutor/profile/photo" class="bg-[#F16F63] text-white text-center rounded-xl py-6 shadow-md hover:scale-105 transition-all">
-        <img src="https://img.icons8.com/?size=60&id=60001&format=png" class="w-12 h-12 mx-auto mb-2" alt="Upload Photo">
-        <p class="font-semibold text-base">Upload photo</p>
-      </router-link>
+            <!-- Upload Photo -->
+            <router-link to="/tutor/profile/photo"
+                class="flex items-center gap-6 bg-white rounded-2xl p-6 shadow-xl hover:scale-[1.03] transition">
+                <div class="w-20 h-20 bg-white rounded-xl flex items-center justify-center">
+                    <img src="https://img.icons8.com/?size=60&id=60001&format=png" alt="Upload Photo" />
+                </div>
+                <h3 class="text-2xl font-semibold text-gray-800">Upload Photo</h3>
+            </router-link>
+            
+            <!-- Verify Mobile -->
+            <router-link to="/tutor/profile/phone"
+                class="flex items-center gap-6 bg-white rounded-2xl p-6 shadow-xl hover:scale-[1.03] transition">
+                <div class="w-20 h-20 bg-white rounded-xl flex items-center justify-center">
+                    <img src="https://img.icons8.com/?size=100&id=9ievMrCpvQ2c&format=png" alt="Verify Mobile" />
+                </div>
+                <h3 class="text-2xl font-semibold text-gray-800">Verify Mobile</h3>
+            </router-link>
+            
+            <!-- Introduction Video -->
+            <router-link to="/tutor/profile/video"
+                class="flex items-center gap-6 bg-white rounded-2xl p-6 shadow-xl hover:scale-[1.03] transition">
+                <div class="w-20 h-20 bg-white rounded-xl flex items-center justify-center">
+                    <img src="https://img.icons8.com/?size=48&id=111366&format=png" alt="Introduction Video" />
+                </div>
+                <h3 class="text-2xl font-semibold text-gray-800">Introduction Video</h3>
+            </router-link>
+            
+            <!-- My Profile -->
+            <router-link to="/tutor/profile/view"
+                class="flex items-center gap-6 bg-white rounded-2xl p-6 shadow-xl hover:scale-[1.03] transition">
+                <div class="w-20 h-20 bg-white rounded-xl flex items-center justify-center">
+                    <img src="https://img.icons8.com/?size=60&id=NjOjDSZRU0Ma&format=png" alt="My Profile" />
+                </div>
+                <h3 class="text-2xl font-semibold text-gray-800">My Profile</h3>
+            </router-link>
 
-      <!-- Verify Mobile -->
-      <router-link to="/tutor/profile/phone" class="bg-[#F16F63] text-white text-center rounded-xl py-6 shadow-md hover:scale-105 transition-all">
-        <img src="https://img.icons8.com/?size=100&id=aYmX3YWIU9T0&format=png" class="w-12 h-12 mx-auto mb-2" alt="Verify Mobile">
-        <p class="font-semibold text-base">Verify Mobile</p>
-      </router-link>
+            <!-- Personal Details -->
+            <router-link to="/tutor/profile/basic-details"
+                class="flex items-center gap-6 bg-white rounded-2xl p-6 shadow-xl hover:scale-[1.03] transition">
+                <div class="w-20 h-20 bg-white rounded-xl flex items-center justify-center">
+                    <img src="https://img.icons8.com/?size=48&id=88096&format=png" alt="Personal Details" />
+                </div>
+                <h3 class="text-2xl font-semibold text-gray-800">Personal Details</h3>
+            </router-link>
 
-      <!-- Intro Video -->
-      <router-link to="/tutor/profile/video" class="bg-[#FFF8D9] text-blue-700 text-center rounded-xl py-6 shadow-md hover:scale-105 transition-all">
-        <img src="https://img.icons8.com/?size=100&id=Eyki1QLaDgud&format=gif&color=f7f7f7" class="w-12 h-12 mx-auto mb-2" alt="Intro Video">
-        <p class="font-semibold text-base">Introduction Video</p>
-      </router-link>
+            <!-- Subjects -->
+            <router-link to="/tutor/profile/subjects"
+                class="flex items-center gap-6 bg-white rounded-2xl p-6 shadow-xl hover:scale-[1.03] transition">
+                <div class="w-20 h-20 bg-white rounded-xl flex items-center justify-center">
+                    <img src="https://img.icons8.com/?size=160&id=LQs1yRPJKdeX&format=png" alt="Subjects" />
+                </div>
+                <h3 class="text-2xl font-semibold text-gray-800">Subjects</h3>
+            </router-link>
 
-      <!-- My Profile -->
-      <router-link to="/tutor/profile/view" class="bg-[#D8EEFB] text-blue-700 text-center rounded-xl py-6 shadow-md hover:scale-105 transition-all">
-        <img src="https://img.icons8.com/?size=100&id=7877&format=png" class="w-12 h-12 mx-auto mb-2" alt="My Profile">
-        <p class="font-semibold text-base">My Profile</p>
-      </router-link>
+            <!-- Address -->
+            <router-link to="/tutor/profile/address"
+                class="flex items-center gap-6 bg-white rounded-2xl p-6 shadow-xl hover:scale-[1.03] transition">
+                <div class="w-20 h-20 bg-white rounded-xl flex items-center justify-center">
+                    <img src="https://img.icons8.com/?size=60&id=61845&format=png" alt="Address" />
+                </div>
+                <h3 class="text-2xl font-semibold text-gray-800">Address</h3>
+            </router-link>
+
+            <!-- Education -->
+            <router-link to="/tutor/profile/education"
+                class="flex items-center gap-6 bg-white rounded-2xl p-6 shadow-xl hover:scale-[1.03] transition">
+                <div class="w-20 h-20 bg-white rounded-xl flex items-center justify-center">
+                    <img src="https://img.icons8.com/?size=128&id=tP3OXTLBOXKl&format=png" alt="Education" />
+                </div>
+                <h3 class="text-2xl font-semibold text-gray-800">Education</h3>
+            </router-link>
+
+            <!-- Experience -->
+            <router-link to="/tutor/profile/experience"
+                class="flex items-center gap-6 bg-white rounded-2xl p-6 shadow-xl hover:scale-[1.03] transition">
+                <div class="w-20 h-20 bg-white rounded-xl flex items-center justify-center">
+                    <img src="https://img.icons8.com/?size=100&id=58171&format=png" alt="Experience" />
+                </div>
+                <h3 class="text-2xl font-semibold text-gray-800">Experience</h3>
+            </router-link>
+
+            <!-- Teaching Details -->
+            <router-link to="/tutor/profile/teaching-details"
+                class="flex items-center gap-6 bg-white rounded-2xl p-6 shadow-xl hover:scale-[1.03] transition">
+                <div class="w-20 h-20 bg-white rounded-xl flex items-center justify-center">
+                    <img src="https://img.icons8.com/?size=100&id=vKo2l3w3TPSJ&format=png" alt="Teaching Details" />
+                </div>
+                <h3 class="text-2xl font-semibold text-gray-800">Teaching Details</h3>
+            </router-link>
+
+            <!-- Profile Description -->
+            <router-link to="/tutor/profile/description"
+                class="flex items-center gap-6 bg-white rounded-2xl p-6 shadow-xl hover:scale-[1.03] transition">
+                <div class="w-20 h-20 bg-white rounded-xl flex items-center justify-center">
+                    <img src="https://img.icons8.com/?size=100&id=HAwVrqHslq0F&format=png" alt="Profile Description" />
+                </div>
+                <h3 class="text-2xl font-semibold text-gray-800">Profile Description</h3>
+            </router-link>
+
+            <!-- Show Contact Setting -->
+            <router-link to="/tutor/profile/contact-settings"
+                class="flex items-center gap-6 bg-white rounded-2xl p-6 shadow-xl hover:scale-[1.03] transition">
+                <div class="w-20 h-20 bg-white rounded-xl flex items-center justify-center">
+                    <img src="https://img.icons8.com/?size=100&id=39600&format=png" alt="Contact Settings" />
+                </div>
+                <h3 class="text-2xl font-semibold text-gray-800">Show Contact Setting</h3>
+            </router-link>
+
+        </div>
+
+        <!-- MOBILE -->
+        <div class="md:hidden space-y-6">
+
+            <router-link to="/tutor/profile/photo" class="flex items-center gap-4 bg-white rounded-2xl p-4 shadow-lg">
+                <div class="w-16 h-16 bg-white rounded-xl flex items-center justify-center">
+                    <img src="https://img.icons8.com/?size=60&id=60001&format=png" alt="Upload Photo" />
+                </div>
+                <p class="text-lg font-semibold">Upload Photo</p>
+            </router-link>
+            
+            <router-link to="/tutor/profile/phone" class="flex items-center gap-4 bg-white rounded-2xl p-4 shadow-lg">
+                <div class="w-16 h-16 bg-white rounded-xl flex items-center justify-center">
+                    <img src="https://img.icons8.com/?size=100&id=9ievMrCpvQ2c&format=png" alt="Verify Mobile" />
+                </div>
+                <p class="text-lg font-semibold">Verify Mobile</p>
+            </router-link>
+            
+            <router-link to="/tutor/profile/video" class="flex items-center gap-4 bg-white rounded-2xl p-4 shadow-lg">
+                <div class="w-16 h-16 bg-white rounded-xl flex items-center justify-center">
+                    <img src="https://img.icons8.com/?size=48&id=111366&format=png" alt="Introduction Video" />
+                </div>
+                <p class="text-lg font-semibold">Introduction Video</p>
+            </router-link>
+            
+            <router-link to="/tutor/profile/view" class="flex items-center gap-4 bg-white rounded-2xl p-4 shadow-lg">
+                <div class="w-16 h-16 bg-white rounded-xl flex items-center justify-center">
+                    <img src="https://img.icons8.com/?size=60&id=NjOjDSZRU0Ma&format=png" alt="My Profile" />
+                </div>
+                <p class="text-lg font-semibold">My Profile</p>
+            </router-link>
+
+            <!-- Personal Details -->
+            <router-link to="/tutor/profile/basic-details" class="flex items-center gap-4 bg-white rounded-2xl p-4 shadow-lg">
+                <div class="w-16 h-16 bg-white rounded-xl flex items-center justify-center">
+                    <img src="https://img.icons8.com/?size=48&id=88096&format=png" alt="Personal Details" />
+                </div>
+                <p class="text-lg font-semibold">Personal Details</p>
+            </router-link>
+            
+            <!-- Subjects -->
+            <router-link to="/tutor/profile/subjects" class="flex items-center gap-4 bg-white rounded-2xl p-4 shadow-lg">
+                <div class="w-16 h-16 bg-white rounded-xl flex items-center justify-center">
+                    <img src="https://img.icons8.com/?size=160&id=LQs1yRPJKdeX&format=png" alt="Subjects" />
+                </div>
+                <p class="text-lg font-semibold">Subjects</p>
+            </router-link>
+            
+            <!-- Address -->
+            <router-link to="/tutor/profile/address" class="flex items-center gap-4 bg-white rounded-2xl p-4 shadow-lg">
+                <div class="w-16 h-16 bg-white rounded-xl flex items-center justify-center">
+                    <img src="https://img.icons8.com/?size=60&id=61845&format=png" alt="Address" />
+                </div>
+                <p class="text-lg font-semibold">Address</p>
+            </router-link>
+            
+            <!-- Education -->
+            <router-link to="/tutor/profile/education" class="flex items-center gap-4 bg-white rounded-2xl p-4 shadow-lg">
+                <div class="w-16 h-16 bg-white rounded-xl flex items-center justify-center">
+                    <img src="https://img.icons8.com/?size=128&id=tP3OXTLBOXKl&format=png" alt="Education" />
+                </div>
+                <p class="text-lg font-semibold">Education</p>
+            </router-link>
+            
+            <!-- Experience -->
+            <router-link to="/tutor/profile/experience" class="flex items-center gap-4 bg-white rounded-2xl p-4 shadow-lg">
+                <div class="w-16 h-16 bg-white rounded-xl flex items-center justify-center">
+                    <img src="https://img.icons8.com/?size=100&id=58171&format=png" alt="Experience" />
+                </div>
+                <p class="text-lg font-semibold">Experience</p>
+            </router-link>
+            
+            <!-- Teaching Details -->
+            <router-link to="/tutor/profile/teaching-details" class="flex items-center gap-4 bg-white rounded-2xl p-4 shadow-lg">
+                <div class="w-16 h-16 bg-white rounded-xl flex items-center justify-center">
+                    <img src="https://img.icons8.com/?size=100&id=vKo2l3w3TPSJ&format=png" alt="Teaching Details" />
+                </div>
+                <p class="text-lg font-semibold">Teaching Details</p>
+            </router-link>
+            
+            <!-- Profile Description -->
+            <router-link to="/tutor/profile/description" class="flex items-center gap-4 bg-white rounded-2xl p-4 shadow-lg">
+                <div class="w-16 h-16 bg-white rounded-xl flex items-center justify-center">
+                    <img src="https://img.icons8.com/?size=100&id=HAwVrqHslq0F&format=png" alt="Profile Description" />
+                </div>
+                <p class="text-lg font-semibold">Profile Description</p>
+            </router-link>
+            
+            <!-- Show Contact Setting -->
+            <router-link to="/tutor/profile/contact-settings" class="flex items-center gap-4 bg-white rounded-2xl p-4 shadow-lg">
+                <div class="w-16 h-16 bg-white rounded-xl flex items-center justify-center">
+                    <img src="https://img.icons8.com/?size=100&id=39600&format=png" alt="Contact Settings" />
+                </div>
+                <p class="text-lg font-semibold">Show Contact Setting</p>
+            </router-link>
+
+        </div>
 
     </section>
-
-  </div>
+  </main>
 </template>
 
 <script>

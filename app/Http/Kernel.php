@@ -46,6 +46,7 @@ class Kernel extends HttpKernel
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\DecryptSearchQuery::class,
         ],
     ];
 
@@ -72,5 +73,8 @@ class Kernel extends HttpKernel
         'role' => RoleMiddleware::class,
         'permission' => PermissionMiddleware::class,
         'role_or_permission' => RoleOrPermissionMiddleware::class,
+        
+        // Custom Middleware
+        'decrypt.search' => \App\Http\Middleware\DecryptSearchQuery::class,
     ];
 }

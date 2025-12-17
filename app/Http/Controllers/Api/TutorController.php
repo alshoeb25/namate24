@@ -12,10 +12,67 @@ class TutorController extends Controller
     {
         $query = Tutor::with('user','subjects')->where('moderation_status','approved');
 
-        if ($subject = $request->query('subject_id')) {
-            $query->whereHas('subjects', fn($q)=> $q->where('subjects.id', $subject));
+        // Subject search: prioritize subject_id, fallback to subject_search_name or subject
+        if ($subjectId = $request->input('subject_id')) {
+            $query->whereHas('subjects', fn($q) => $q->where('subjects.id', $subjectId));
+        } elseif ($subjectSearchName = $request->input('subject_search_name')) {
+            $query->whereHas('subjects', fn($q) => $q->where('subjects.name', 'LIKE', '%' . $subjectSearchName . '%'));
+        } elseif ($subject = $request->input('subject')) {
+            $query->whereHas('subjects', fn($q) => $q->where('subjects.name', 'LIKE', '%' . $subject . '%'));
         }
 
+        // Location search
+        if ($location = $request->input('location')) {
+            $query->where(function($q) use ($location) {
+                $q->where('city', 'LIKE', '%' . $location . '%')
+                  ->orWhere('state', 'LIKE', '%' . $location . '%')
+                  ->orWhere('zip_code', 'LIKE', '%' . $location . '%');
+            });
+        }
+
+        // Filters
+        if ($request->input('online') === 'true') {
+            $query->where('online_available', true);
+        }
+
+        if ($request->input('home') === 'true') {
+            $query->where(function($q) {
+                $q->where('teaching_mode', 'LIKE', '%home%')
+                  ->orWhere('teaching_mode', 'LIKE', '%offline%');
+            });
+        }
+
+        if ($request->input('verified') === 'true') {
+            $query->where('verified', true);
+        }
+
+        // Experience filter
+        if ($experience = $request->input('experience')) {
+            if (strpos($experience, '+') !== false) {
+                // "5+" means 5 or more
+                $min = (int)str_replace('+', '', $experience);
+                $query->where('experience_total_years', '>=', $min);
+            } elseif (strpos($experience, '-') !== false) {
+                // "3-5" means between 3 and 5
+                [$min, $max] = explode('-', $experience);
+                $query->whereBetween('experience_total_years', [(int)$min, (int)$max]);
+            }
+        }
+
+        // Price range filter
+        if ($priceRange = $request->input('price_range')) {
+            if (strpos($priceRange, '+') !== false) {
+                // "1000+" means 1000 or more
+                $min = (int)str_replace('+', '', $priceRange);
+                $query->where('price_per_hour', '>=', $min);
+            } elseif (strpos($priceRange, '-') !== false) {
+                // "500-1000" means between 500 and 1000
+                [$min, $max] = explode('-', $priceRange);
+                $query->whereBetween('price_per_hour', [(int)$min, (int)$max]);
+            }
+        }
+
+        // Legacy filters for backward compatibility
         if ($mode = $request->query('mode')) $query->where('teaching_mode', $mode);
         if ($city = $request->query('city')) $query->where('city', $city);
         if ($min_price = $request->query('min_price')) $query->where('price_per_hour', '>=', $min_price);

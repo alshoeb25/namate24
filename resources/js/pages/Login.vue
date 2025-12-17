@@ -81,6 +81,18 @@
           </button>
         </form>
 
+        <!-- Divider -->
+        <div class="flex items-center gap-4 mt-6">
+          <div class="flex-1 h-px bg-gray-300"></div>
+          <span class="text-gray-500 text-sm">or</span>
+          <div class="flex-1 h-px bg-gray-300"></div>
+        </div>
+
+        <!-- Google Login Button -->
+        <div class="mt-6">
+          <GoogleLoginButton role="student" />
+        </div>
+
     </div>
 
   </div>
@@ -91,8 +103,12 @@ import { reactive, ref } from 'vue';
 import { useUserStore } from '../store';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
+import GoogleLoginButton from '../components/GoogleLoginButton.vue';
 
 export default {
+  components: {
+    GoogleLoginButton,
+  },
   setup() {
     const payload = reactive({ identifier: '', password: '' });
     const loading = ref(false);

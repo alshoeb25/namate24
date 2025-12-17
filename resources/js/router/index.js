@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { useUserStore } from '../store';
 import Home from '../pages/Home.vue';
 import Search from '../pages/Search.vue';
+import SearchResults from '../pages/SearchResults.vue';
 import TutorProfile from '../pages/TutorProfile.vue';
 import Login from '../pages/Login.vue';
 import Register from '../pages/Register.vue';
@@ -29,7 +30,15 @@ import Settings from '../components/tutor/profile/Settings.vue';
 
 const routes = [
   { path: '/', name: 'home', component: Home },
-  { path: '/search', name: 'search', component: Search },
+  { path: '/search', name: 'search', component: SearchResults },
+  { path: '/tutors', name: 'tutors', component: SearchResults },
+  { path: '/tutor-jobs', name: 'tutor-jobs', component: SearchResults },
+  
+  // Dynamic SEO-friendly routes: /{subject}-tutors-in-{city}
+  { path: '/:subject-tutors-in-:city', name: 'tutors.subject.city', component: SearchResults },
+  { path: '/:subject-tutors', name: 'tutors.subject', component: SearchResults },
+  { path: '/tutors-in-:city', name: 'tutors.city', component: SearchResults },
+  
   { path: '/tutor/:id', name: 'tutor.show', component: TutorProfile, props: true },
   
   // Tutor Profile Routes
@@ -50,6 +59,7 @@ const routes = [
       { path: 'phone', name: 'tutor.profile.phone', component: PhoneOtp },
       { path: 'courses', name: 'tutor.profile.courses', component: Courses },
       { path: 'settings', name: 'tutor.profile.settings', component: Settings },
+      { path: 'view', name: 'tutor.profile.view', component: TutorProfile },
     ]
   },
   
@@ -76,24 +86,24 @@ router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore();
 
   // If we have a token but no user loaded (refresh), fetch user
-  if (userStore.token && !userStore.user) {
-    try {
-      await userStore.fetchUser();
-    } catch (e) {
-      // token invalid — clear and send to login
-      userStore.logout();
-      if (to.path !== '/login') {
-        return next('/login');
-      }
-    }
-  }
+  // if (userStore.token && !userStore.user) {
+  //   try {
+  //     await userStore.fetchUser();
+  //   } catch (e) {
+  //     // token invalid — clear and send to login
+  //     userStore.logout();
+  //     if (to.path !== '/login') {
+  //       return next('/login');
+  //     }
+  //   }
+  // }
 
-  const user = userStore.user;
+  // const user = userStore.user;
 
   // Tutors visiting home should go to their profile dashboard
-  if (user && user.role === 'tutor' && to.path === '/') {
-    return next('/tutor/profile');
-  }
+  // if (user && user.role === 'tutor' && to.path === '/') {
+  //   return next('/tutor/profile');
+  // }
 
   return next();
 });
