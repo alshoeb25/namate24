@@ -59,9 +59,13 @@ class Tutor extends Model
 
     public function getPhotoUrlAttribute()
     {
-        return $this->photo
-            ? asset('storage/' . $this->photo)
-            : asset('images/default-avatar.png');
+        if ($this->photo) {
+            return asset('storage/' . $this->photo);
+        }
+        
+        // Default photo - use user's name for personalized placeholder
+        $userName = $this->user->name ?? 'Tutor';
+        return 'https://ui-avatars.com/api/?name=' . urlencode($userName) . '&size=400&background=9333ea&color=ffffff';
     }
 
     /**

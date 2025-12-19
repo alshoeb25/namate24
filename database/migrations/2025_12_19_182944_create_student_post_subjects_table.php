@@ -1,0 +1,32 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('student_post_subjects', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('student_requirement_id')->constrained('student_requirements')->cascadeOnDelete();
+            $table->foreignId('subject_id')->constrained('subjects')->cascadeOnDelete();
+            $table->timestamps();
+            
+            // Prevent duplicate entries
+            $table->unique(['student_requirement_id', 'subject_id']);
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('student_post_subjects');
+    }
+};

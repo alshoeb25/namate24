@@ -13,18 +13,26 @@ class User extends Authenticatable implements JWTSubject
 {
     use Notifiable, HasRoles;
 
-    protected $fillable = ['name','email','phone','password','avatar','role','phone_otp','phone_otp_expires_at','phone_verified_at','email_verified_at','email_verification_token','email_verification_token_expires_at'];
+    protected $fillable = ['name','email','phone','password','avatar','role','phone_otp','phone_otp_expires_at','phone_verified_at','email_verified_at','email_verification_token','email_verification_token_expires_at','coins','referral_code','referred_by'];
 
     protected $hidden = ['password'];
+
+    protected $appends = ['avatar_url'];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
         'email_verification_token_expires_at' => 'datetime',
+        'coins' => 'integer',
     ];
 
     public function tutor(): HasOne
     {
         return $this->hasOne(Tutor::class);
+    }
+
+    public function student(): HasOne
+    {
+        return $this->hasOne(Student::class);
     }
 
     public function wallet(): HasOne
@@ -35,6 +43,21 @@ class User extends Authenticatable implements JWTSubject
     public function requirements(): HasMany
     {
         return $this->hasMany(StudentRequirement::class, 'student_id');
+    }
+
+    public function coinTransactions(): HasMany
+    {
+        return $this->hasMany(CoinTransaction::class);
+    }
+
+    public function referrals(): HasMany
+    {
+        return $this->hasMany(Referral::class, 'referrer_id');
+    }
+
+    public function referredBy()
+    {
+        return $this->belongsTo(User::class, 'referred_by');
     }
     public function getJWTIdentifier()
     {
@@ -65,11 +88,11 @@ class User extends Authenticatable implements JWTSubject
                 return $this->avatar;
             }
             // If it's a local file path
-            return asset('storage/' . $this->avatar);
+            return url('storage/' . $this->avatar);
         }
         
-        // Default avatar
-        return asset('images/default-avatar.png');
+        // Default avatar - reliable placeholder
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name ?? 'User') . '&size=200&background=ec4899&color=ffffff';
     }
 
 }

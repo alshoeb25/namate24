@@ -152,6 +152,8 @@ export default {
         // If logged in user is a tutor, send them to the tutor dashboard in the SPA
         if (userStore.user && userStore.user.role === 'tutor') {
           router.push('/tutor/profile');
+        } else if (userStore.user && userStore.user.role === 'student') {
+          router.push('/student/dashboard');
         } else {
           router.push(response.data.redirect_url || '/');
         }

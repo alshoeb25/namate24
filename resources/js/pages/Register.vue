@@ -67,15 +67,82 @@
 
             <!-- Role -->
             <div class="mt-4">
+              <label class="block text-gray-700 font-medium mb-2">Register as</label>
               <select v-model="payload.role" class="w-full rounded-full border border-gray-300 px-4 py-3">
-                <option value="student">Student</option>
-                <option value="tutor">Tutor</option>
+                <option value="student">Student / Parent</option>
+                <option value="tutor">Teacher / Tutor</option>
               </select>
+              <p class="text-sm text-gray-500 mt-2">You can add the other role later from your profile</p>
+            </div>
+
+            <!-- Referral Code -->
+            <div class="mt-4">
+              <div class="flex items-center justify-between mb-2">
+                <label class="block text-gray-700 font-medium">Referral Code (Optional)</label>
+                <button 
+                  v-if="payload.referralCode && !referralValidated" 
+                  @click.prevent="validateReferral" 
+                  type="button"
+                  class="text-xs text-pink-600 font-semibold hover:underline"
+                  :disabled="validatingReferral"
+                >
+                  {{ validatingReferral ? 'Checking...' : 'Validate' }}
+                </button>
+              </div>
+              <div class="relative">
+                <input 
+                  v-model="payload.referralCode" 
+                  type="text" 
+                  placeholder="Enter referral code"
+                  :class="[
+                    'w-full rounded-full border px-4 py-3 outline-none text-gray-700 placeholder-gray-400 uppercase',
+                    referralValidated ? 'border-green-500 bg-green-50' : 
+                    referralError ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  ]"
+                  maxlength="20"
+                />
+                <div v-if="referralValidated" class="absolute right-4 top-3.5 text-green-600">
+                  <i class="fas fa-check-circle"></i>
+                </div>
+                <div v-if="referralError" class="absolute right-4 top-3.5 text-red-600">
+                  <i class="fas fa-times-circle"></i>
+                </div>
+              </div>
+              
+              <!-- Referral Success Message -->
+              <div v-if="referralValidated && referrerInfo" class="mt-2 bg-green-50 border border-green-200 rounded-lg p-3">
+                <div class="flex items-start gap-2">
+                  <i class="fas fa-gift text-green-600 mt-0.5"></i>
+                  <div class="text-sm">
+                    <p class="text-green-800 font-semibold">
+                      Valid referral code from {{ referrerInfo.name }}!
+                    </p>
+                    <p class="text-green-700 mt-1">
+                      🎁 You'll earn <strong>{{ referrerInfo.reward?.referred_coins || 25 }} coins</strong> when you sign up!
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Referral Error Message -->
+              <div v-if="referralError" class="mt-2 text-sm text-red-600">
+                <i class="fas fa-exclamation-circle mr-1"></i>{{ referralError }}
+              </div>
+
+              <!-- Referral Info -->
+              <div v-if="!payload.referralCode" class="mt-2 text-sm text-gray-500">
+                <i class="fas fa-info-circle mr-1"></i>Have a friend's referral code? Enter it to earn bonus coins!
+              </div>
             </div>
 
             <!-- Error message -->
             <div v-if="errorMessage" class="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
               {{ errorMessage }}
+            </div>
+
+            <!-- Success message for referral -->
+            <div v-if="successMessage" class="mt-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+              {{ successMessage }}
             </div>
 
             <!-- Signup Button -->
@@ -107,9 +174,9 @@
 </template>
 
 <script>
-import { reactive, ref } from 'vue';
+import { reactive, ref, onMounted } from 'vue';
 import { useUserStore } from '../store';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
 import GoogleLoginButton from '../components/GoogleLoginButton.vue';
 
@@ -118,17 +185,77 @@ export default {
     GoogleLoginButton,
   },
   setup() {
-    const payload = reactive({ name: '', identifier: '', password: '', confirmPassword: '', role: 'student' });
+    const payload = reactive({ 
+      name: '', 
+      identifier: '', 
+      password: '', 
+      confirmPassword: '', 
+      role: 'student',
+      referralCode: ''
+    });
     const userStore = useUserStore();
     const router = useRouter();
+    const route = useRoute();
 
     const loading = ref(false);
     const verificationSent = ref(false);
     const registeredEmail = ref('');
     const errorMessage = ref('');
+    const successMessage = ref('');
+    
+    // Referral validation states
+    const validatingReferral = ref(false);
+    const referralValidated = ref(false);
+    const referralError = ref('');
+    const referrerInfo = ref(null);
+
+    // Set role and referral code from URL parameters if present
+    onMounted(() => {
+      const type = route.query.type;
+      if (type === 'tutor' || type === 'teacher') {
+        payload.role = 'tutor';
+      } else if (type === 'student' || type === 'parent') {
+        payload.role = 'student';
+      }
+
+      // Pre-fill referral code from URL
+      const ref = route.query.ref;
+      if (ref) {
+        payload.referralCode = ref.toUpperCase();
+        // Auto-validate if provided via URL
+        validateReferral();
+      }
+    });
+
+    async function validateReferral() {
+      if (!payload.referralCode) return;
+      
+      validatingReferral.value = true;
+      referralError.value = '';
+      referralValidated.value = false;
+      referrerInfo.value = null;
+
+      try {
+        const response = await axios.post('/api/validate-referral-code', {
+          referral_code: payload.referralCode.toUpperCase()
+        });
+        
+        if (response.data.valid) {
+          referralValidated.value = true;
+          referrerInfo.value = response.data.referrer;
+          referrerInfo.value.reward = response.data.reward;
+        }
+      } catch (e) {
+        referralError.value = e.response?.data?.message || 'Invalid referral code';
+        referralValidated.value = false;
+      } finally {
+        validatingReferral.value = false;
+      }
+    }
 
     async function submit() {
       errorMessage.value = '';
+      successMessage.value = '';
       loading.value = true;
       try {
         // validate
@@ -142,6 +269,12 @@ export default {
         }
 
         const data = { name: payload.name, password: payload.password, role: payload.role };
+        
+        // Add referral code if provided
+        if (payload.referralCode) {
+          data.referral_code = payload.referralCode.toUpperCase();
+        }
+        
         // detect email or phone
         const id = (payload.identifier || '').trim();
         if (id.includes('@')) {
@@ -151,6 +284,11 @@ export default {
         }
 
         const response = await axios.post('/api/register', data);
+        
+        // Show success message if referral was applied
+        if (response.data.referral_applied && response.data.referral_reward) {
+          successMessage.value = `🎉 You earned ${response.data.referral_reward.coins} coins from ${response.data.referral_reward.referrer_name}'s referral!`;
+        }
         
         if (response.data.email_sent) {
           registeredEmail.value = data.email || data.phone;
@@ -189,7 +327,22 @@ export default {
       }
     }
 
-    return { payload, submit, loading, verificationSent, registeredEmail, goToLogin, resendEmail, errorMessage };
+    return { 
+      payload, 
+      submit, 
+      loading, 
+      verificationSent, 
+      registeredEmail, 
+      goToLogin, 
+      resendEmail, 
+      errorMessage,
+      successMessage,
+      validateReferral,
+      validatingReferral,
+      referralValidated,
+      referralError,
+      referrerInfo
+    };
   }
 };
 </script>

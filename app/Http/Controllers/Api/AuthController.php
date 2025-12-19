@@ -23,6 +23,7 @@ class AuthController extends Controller
             'phone' => 'nullable|unique:users,phone',
             'password' => 'required|min:6',
             'role' => ['required', Rule::in(['student', 'tutor', 'admin'])],
+            'referral_code' => 'nullable|string|exists:users,referral_code',
         ]);
 
         // Generate email verification token if email is provided
@@ -30,6 +31,9 @@ class AuthController extends Controller
         if ($data['email']) {
             $emailVerificationToken = Str::random(64);
         }
+
+        // Generate unique referral code for new user
+        $userReferralCode = $this->generateReferralCode();
 
         $user = User::create([
             'name'     => $data['name'],
@@ -39,6 +43,8 @@ class AuthController extends Controller
             'role'     => $data['role'],
             'email_verification_token' => $emailVerificationToken,
             'email_verification_token_expires_at' => $data['email'] ? Carbon::now()->addHours(24) : null,
+            'referral_code' => $userReferralCode,
+            'coins' => 0, // Initialize with 0 coins
         ]);
 
         // Sync role with Spatie roles table
@@ -52,16 +58,35 @@ class AuthController extends Controller
             Tutor::create(['user_id' => $user->id]);
         }
 
+        // Create student profile if role is student
+        if ($data['role'] === 'student') {
+            \App\Models\Student::create(['user_id' => $user->id]);
+        }
+
+        // Process referral code if provided
+        $referralReward = null;
+        if (!empty($data['referral_code'])) {
+            $referralReward = $this->processReferral($user, $data['referral_code']);
+        }
+
         // Send verification email if email provided
         if ($data['email']) {
             $this->sendVerificationEmail($user);
         }
 
+        $message = $data['email'] ? 'Registration successful! Please check your email to verify your account.' : 'Registration successful!';
+        if ($referralReward) {
+            $message .= " You earned {$referralReward['coins']} coins from the referral!";
+        }
+
         return response()->json([
-            'message' => $data['email'] ? 'Registration successful! Please check your email to verify your account.' : 'Registration successful!',
+            'message' => $message,
             'user'    => $user->load('roles'),
             'roles'   => $user->getRoleNames(),
             'email_sent' => (bool) $data['email'],
+            'referral_applied' => !empty($data['referral_code']),
+            'referral_reward' => $referralReward,
+            'coins' => $user->coins,
         ], 201);
     }
 
@@ -82,7 +107,10 @@ class AuthController extends Controller
             return response()->json(['message' => 'Invalid credentials'], 422);
         }
 
-        $user = auth('api')->user()->load('roles');
+        $user = auth('api')->user()
+            ->load(['roles', 'tutor', 'student', 'wallet'])
+            ->append('avatar_url');
+
 
         // Check if email is not verified
         if ($user->email && !$user->email_verified_at) {
@@ -142,7 +170,13 @@ class AuthController extends Controller
      */
     private function getRedirectUrl(User $user): string
     {
-        if ($user->role === 'tutor') {
+        // Admin always goes to admin dashboard
+        if ($user->role === 'admin') {
+            return route('filament.admin.pages.dashboard');
+        }
+
+        // If user has tutor relationship
+        if ($user->tutor) {
             $tutor = $user->tutor;
             $sections = [
                 'personal_details' => $user && $user->name && $user->email && $user->phone,
@@ -165,10 +199,14 @@ class AuthController extends Controller
             }
 
             return route('tutor.profile.dashboard');
-        } elseif ($user->role === 'admin') {
-            return route('filament.admin.pages.dashboard');
         }
 
+        // If user has student relationship, go to student dashboard
+        if ($user->student) {
+            return '/student/dashboard';
+        }
+
+        // Default home
         return '/';
     }
 
@@ -185,6 +223,116 @@ class AuthController extends Controller
             'token_type' => 'bearer',
             'expires_in' => auth('api')->factory()->getTTL() * 60,
         ]);
+    }
+
+    /**
+     * Validate referral code
+     */
+    public function validateReferralCode(Request $request)
+    {
+        $request->validate([
+            'referral_code' => 'required|string',
+        ]);
+
+        $referrer = User::where('referral_code', $request->referral_code)->first();
+
+        if (!$referrer) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Invalid referral code',
+            ], 404);
+        }
+
+        return response()->json([
+            'valid' => true,
+            'message' => 'Valid referral code',
+            'referrer' => [
+                'name' => $referrer->name,
+                'referral_code' => $referrer->referral_code,
+            ],
+            'reward' => [
+                'referrer_coins' => 50,
+                'referred_coins' => 25,
+            ],
+        ]);
+    }
+
+    /**
+     * Generate unique referral code
+     */
+    private function generateReferralCode(): string
+    {
+        do {
+            $code = strtoupper(Str::random(8));
+        } while (User::where('referral_code', $code)->exists());
+
+        return $code;
+    }
+
+    /**
+     * Process referral code during registration
+     */
+    private function processReferral(User $newUser, string $referralCode): ?array
+    {
+        $referrer = User::where('referral_code', $referralCode)->first();
+
+        if (!$referrer || $referrer->id === $newUser->id) {
+            return null;
+        }
+
+        try {
+            \DB::beginTransaction();
+
+            $referrerCoins = 50; // Coins for referrer
+            $referredCoins = 25; // Coins for new user
+
+            // Credit coins to referrer
+            $referrer->increment('coins', $referrerCoins);
+            
+            // Credit coins to new user
+            $newUser->increment('coins', $referredCoins);
+            $newUser->update(['referred_by' => $referrer->id]);
+
+            // Create referral record
+            \App\Models\Referral::create([
+                'referrer_id' => $referrer->id,
+                'referred_id' => $newUser->id,
+                'referrer_coins' => $referrerCoins,
+                'referred_coins' => $referredCoins,
+                'reward_given' => true,
+                'reward_given_at' => now(),
+            ]);
+
+            // Create transaction records
+            \App\Models\CoinTransaction::create([
+                'user_id' => $referrer->id,
+                'type' => 'referral_reward',
+                'amount' => $referrerCoins,
+                'balance_after' => $referrer->coins,
+                'description' => "Referral reward for {$newUser->name}",
+                'meta' => ['referred_user_id' => $newUser->id],
+            ]);
+
+            \App\Models\CoinTransaction::create([
+                'user_id' => $newUser->id,
+                'type' => 'referral_bonus',
+                'amount' => $referredCoins,
+                'balance_after' => $newUser->coins,
+                'description' => "Welcome bonus for using {$referrer->name}'s referral code",
+                'meta' => ['referrer_user_id' => $referrer->id],
+            ]);
+
+            \DB::commit();
+
+            return [
+                'coins' => $referredCoins,
+                'referrer_name' => $referrer->name,
+            ];
+        } catch (\Throwable $e) {
+            \DB::rollBack();
+            \Log::error('Referral processing failed during registration: ' . $e->getMessage());
+            return null;
+        }
     }
 }
 

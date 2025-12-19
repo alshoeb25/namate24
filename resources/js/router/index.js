@@ -28,6 +28,18 @@ import PhoneOtp from '../components/tutor/profile/PhoneOtp.vue';
 import Courses from '../components/tutor/profile/Courses.vue';
 import Settings from '../components/tutor/profile/Settings.vue';
 
+// Student Components
+import StudentLayout from '../components/layout/StudentLayout.vue';
+import StudentDashboard from '../pages/StudentDashboard.vue';
+import RequestTutor from '../pages/RequestTutor.vue';
+import RequirementsList from '../pages/RequirementsList.vue';
+import StudentReviews from '../pages/StudentReviews.vue';
+import StudentWallet from '../pages/StudentWallet.vue';
+import StudentSettings from '../pages/StudentSettings.vue';
+
+// Profile Management
+import ProfileManagement from '../pages/ProfileManagement.vue';
+
 const routes = [
   { path: '/', name: 'home', component: Home },
   { path: '/search', name: 'search', component: SearchResults },
@@ -67,6 +79,31 @@ const routes = [
   { path: '/register', name: 'register', component: Register },
   { path: '/verify-email', name: 'verify-email', component: VerifyEmail },
 
+  // Tutor Wallet Routes
+  { path: '/tutor/wallet', name: 'tutor.wallet', component: () => import('../pages/TutorWallet.vue') },
+  { path: '/tutor/wallet/payment-history', name: 'tutor.payment-history', component: () => import('../pages/PaymentHistory.vue') },
+  { path: '/tutor/wallet/referrals', name: 'tutor.referrals', component: () => import('../pages/ReferralPage.vue') },
+
+  // Profile Management
+  { path: '/profile', name: 'profile', component: ProfileManagement },
+
+  // Student Routes
+  {
+    path: '/student',
+    component: StudentLayout,
+    children: [
+      { path: 'dashboard', name: 'student.dashboard', component: StudentDashboard },
+      { path: 'request-tutor', name: 'student.request-tutor', component: RequestTutor },
+      { path: 'requirements', name: 'student.requirements', component: RequirementsList },
+      { path: 'requirements/:id/edit', name: 'student.requirement-edit', component: RequestTutor },
+      { path: 'wallet', name: 'student.wallet', component: () => import('../pages/StudentWallet.vue') },
+      { path: 'wallet/payment-history', name: 'student.payment-history', component: () => import('../pages/PaymentHistory.vue') },
+      { path: 'wallet/referrals', name: 'student.referrals', component: () => import('../pages/ReferralPage.vue') },
+      { path: 'reviews', name: 'student.reviews', component: StudentReviews },
+      { path: 'settings', name: 'student.settings', component: () => import('../pages/StudentSettings.vue') },
+    ]
+  },
+
   // messaging
   { path: '/conversations', name: 'conversations.index', component: Conversations },
   { path: '/conversations/:id', name: 'conversations.show', component: ConversationMessages },
@@ -81,29 +118,46 @@ const router = createRouter({
   routes,
 });
 
-// Navigation guard: hydrate user on refresh and redirect tutors to their dashboard
+// Navigation guard: hydrate user on refresh and handle role-based redirects
 router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore();
 
   // If we have a token but no user loaded (refresh), fetch user
-  // if (userStore.token && !userStore.user) {
-  //   try {
-  //     await userStore.fetchUser();
-  //   } catch (e) {
-  //     // token invalid — clear and send to login
-  //     userStore.logout();
-  //     if (to.path !== '/login') {
-  //       return next('/login');
-  //     }
-  //   }
-  // }
+  if (userStore.token && !userStore.user) {
+    try {
+      await userStore.fetchUser();
+    } catch (e) {
+      // token invalid — clear and send to login
+      userStore.logout();
+      if (to.path !== '/login' && to.path !== '/register') {
+        return next('/login');
+      }
+    }
+  }
 
-  // const user = userStore.user;
+  const user = userStore.user;
 
-  // Tutors visiting home should go to their profile dashboard
-  // if (user && user.role === 'tutor' && to.path === '/') {
-  //   return next('/tutor/profile');
-  // }
+  // After login, redirect based on available roles
+  if (user && to.path === '/') {
+    // If user has tutor role, go to tutor dashboard
+    if (user.tutor) {
+      return next('/tutor/profile');
+    }
+    // If user has student role, go to student dashboard
+    if (user.student) {
+      return next('/student/dashboard');
+    }
+  }
+
+  // Protect tutor routes - require tutor record
+  if (to.path.startsWith('/tutor/') && user && !user.tutor) {
+    return next('/');
+  }
+
+  // Protect student routes - require student record
+  if (to.path.startsWith('/student/') && user && !user.student) {
+    return next('/');
+  }
 
   return next();
 });

@@ -192,7 +192,9 @@ function performSearch() {
   const subject = searchSubject.value.trim();
   const location = searchLocation.value.trim();
   
+  // If both are empty, redirect to /tutors
   if (!subject && !location) {
+    router.push('/tutors');
     return;
   }
   

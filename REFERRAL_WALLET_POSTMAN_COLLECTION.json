@@ -1,0 +1,523 @@
+{
+  "info": {
+    "name": "Namate24 - Referral & Wallet System",
+    "description": "Complete API collection for testing referral and wallet functionality",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "referral_code",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Register User (Alice - Referrer)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('referral_code', response.user.referral_code);",
+                  "    console.log('Referral Code:', response.user.referral_code);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alice Referrer\",\n  \"email\": \"alice@example.com\",\n  \"phone\": \"+919876543210\",\n  \"password\": \"password123\",\n  \"role\": \"student\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/register",
+              "host": ["{{base_url}}"],
+              "path": ["register"]
+            }
+          }
+        },
+        {
+          "name": "Validate Referral Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"referral_code\": \"{{referral_code}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/validate-referral-code",
+              "host": ["{{base_url}}"],
+              "path": ["validate-referral-code"]
+            }
+          }
+        },
+        {
+          "name": "Register User with Referral (Bob)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bob Referred\",\n  \"email\": \"bob@example.com\",\n  \"phone\": \"+919876543211\",\n  \"password\": \"password123\",\n  \"role\": \"student\",\n  \"referral_code\": \"{{referral_code}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/register",
+              "host": ["{{base_url}}"],
+              "path": ["register"]
+            }
+          }
+        },
+        {
+          "name": "Login (Alice)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('token', response.token);",
+                  "    console.log('Token saved');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": ["{{base_url}}"],
+              "path": ["login"]
+            }
+          }
+        },
+        {
+          "name": "Get Authenticated User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user",
+              "host": ["{{base_url}}"],
+              "path": ["user"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Wallet Operations",
+      "item": [
+        {
+          "name": "Get Wallet Balance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/wallet",
+              "host": ["{{base_url}}"],
+              "path": ["wallet"]
+            }
+          }
+        },
+        {
+          "name": "Get Payment History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/wallet/payment-history",
+              "host": ["{{base_url}}"],
+              "path": ["wallet", "payment-history"]
+            }
+          }
+        },
+        {
+          "name": "Get Payment History (Filtered)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/wallet/payment-history?type=referral_reward&per_page=10",
+              "host": ["{{base_url}}"],
+              "path": ["wallet", "payment-history"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "referral_reward"
+                },
+                {
+                  "key": "per_page",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Coin Packages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/wallet/packages",
+              "host": ["{{base_url}}"],
+              "path": ["wallet", "packages"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Referral System",
+      "item": [
+        {
+          "name": "Get Referral Information",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/wallet/referral",
+              "host": ["{{base_url}}"],
+              "path": ["wallet", "referral"]
+            }
+          }
+        },
+        {
+          "name": "Apply Referral Code (Post-Registration)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"referral_code\": \"{{referral_code}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/wallet/apply-referral",
+              "host": ["{{base_url}}"],
+              "path": ["wallet", "apply-referral"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Coin Purchase",
+      "item": [
+        {
+          "name": "Purchase Coins (Create Order)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"package_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/wallet/purchase",
+              "host": ["{{base_url}}"],
+              "path": ["wallet", "purchase"]
+            }
+          }
+        },
+        {
+          "name": "Verify Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction_id\": 1,\n  \"razorpay_payment_id\": \"pay_test123\",\n  \"razorpay_order_id\": \"order_test123\",\n  \"razorpay_signature\": \"signature_test123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/wallet/verify-payment",
+              "host": ["{{base_url}}"],
+              "path": ["wallet", "verify-payment"]
+            }
+          }
+        },
+        {
+          "name": "Get Order Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/wallet/order/order_test123/status",
+              "host": ["{{base_url}}"],
+              "path": ["wallet", "order", "order_test123", "status"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/wallet/order/order_test123/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["wallet", "order", "order_test123", "cancel"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Test Scenarios",
+      "item": [
+        {
+          "name": "Scenario: Complete Referral Flow",
+          "item": [
+            {
+              "name": "Step 1: Register Referrer",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('User registered successfully', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "",
+                      "pm.test('Referral code generated', function () {",
+                      "    const response = pm.response.json();",
+                      "    pm.expect(response.user.referral_code).to.be.a('string');",
+                      "    pm.collectionVariables.set('referral_code', response.user.referral_code);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Test Referrer\",\n  \"email\": \"referrer{{$timestamp}}@test.com\",\n  \"password\": \"password123\",\n  \"role\": \"student\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/register",
+                  "host": ["{{base_url}}"],
+                  "path": ["register"]
+                }
+              }
+            },
+            {
+              "name": "Step 2: Validate Referral Code",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Referral code is valid', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "    const response = pm.response.json();",
+                      "    pm.expect(response.valid).to.be.true;",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"referral_code\": \"{{referral_code}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/validate-referral-code",
+                  "host": ["{{base_url}}"],
+                  "path": ["validate-referral-code"]
+                }
+              }
+            },
+            {
+              "name": "Step 3: Register with Referral",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('User registered with referral', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "",
+                      "pm.test('Referral applied successfully', function () {",
+                      "    const response = pm.response.json();",
+                      "    pm.expect(response.referral_applied).to.be.true;",
+                      "    pm.expect(response.coins).to.equal(25);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Test Referred\",\n  \"email\": \"referred{{$timestamp}}@test.com\",\n  \"password\": \"password123\",\n  \"role\": \"student\",\n  \"referral_code\": \"{{referral_code}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/register",
+                  "host": ["{{base_url}}"],
+                  "path": ["register"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Scenario: Invalid Referral Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"referral_code\": \"INVALID123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/validate-referral-code",
+              "host": ["{{base_url}}"],
+              "path": ["validate-referral-code"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

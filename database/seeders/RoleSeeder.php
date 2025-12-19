@@ -12,13 +12,21 @@ class RoleSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create roles
-        $roles = ['student', 'tutor', 'admin'];
+        // Create roles with guard_name for API
+        $roles = [
+            ['name' => 'admin', 'guard_name' => 'api'],
+            ['name' => 'tutor', 'guard_name' => 'api'],
+            ['name' => 'student', 'guard_name' => 'api'],
+        ];
 
-        foreach ($roles as $roleName) {
-            Role::firstOrCreate(['name' => $roleName]);
+        foreach ($roles as $roleData) {
+            Role::firstOrCreate(
+                ['name' => $roleData['name'], 'guard_name' => $roleData['guard_name']],
+                $roleData
+            );
         }
 
-        $this->command->info('Roles created successfully: ' . implode(', ', $roles));
+        $this->command->info('✓ Roles created successfully for API guard!');
+        $this->command->info('Available roles: admin, tutor, student');
     }
 }

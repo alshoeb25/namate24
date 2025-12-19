@@ -66,6 +66,21 @@ Route::get('/tutor/profile/{any?}', function () {
     return view('welcome');
 })->where('any', '.*');
 
+// Tutor wallet page
+Route::get('/tutor/wallet', function () {
+    return view('welcome');
+});
+
+// Student pages are handled by the SPA (Vue Router)
+Route::get('/student/{any?}', function () {
+    return view('welcome');
+})->where('any', '.*');
+
+// Profile management route (SPA)
+Route::get('/profile', function () {
+    return view('welcome');
+});
+
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('admin/tutors/{tutor}/pdf', [TutorPdfController::class, 'show'])->name('admin.tutors.pdf');
 });

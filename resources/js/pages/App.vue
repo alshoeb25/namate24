@@ -6,6 +6,8 @@
     <main class="max-w-6xl mx-auto p-4">
       <router-view />
     </main>
+
+    <Footer />
   </div>
 </template>
 
@@ -14,10 +16,12 @@ import { useUserStore } from '../store';
 import { useRouter } from 'vue-router';
 import { computed, onMounted } from 'vue';
 import HeaderRoot from '../components/header/HeaderRoot.vue';
+import Footer from '../components/Footer.vue';
 
 export default {
   components: {
     HeaderRoot,
+    Footer,
   },
   setup() {
     const store = useUserStore();

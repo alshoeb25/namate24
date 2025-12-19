@@ -5,6 +5,7 @@ export const useUserStore = defineStore('user', {
   state: () => ({
     user: null,
     token: localStorage.getItem('api_token') || null,
+    activeRole: localStorage.getItem('active_role') || 'tutor', // Default to tutor for dual-role users
   }),
   actions: {
     setUser(user) {
@@ -19,6 +20,10 @@ export const useUserStore = defineStore('user', {
         localStorage.removeItem('api_token');
         delete axios.defaults.headers.common['Authorization'];
       }
+    },
+    setActiveRole(role) {
+      this.activeRole = role;
+      localStorage.setItem('active_role', role);
     },
     async login(credentials) {
       const res = await axios.post('/api/login', credentials);
@@ -40,6 +45,26 @@ export const useUserStore = defineStore('user', {
       const res = await axios.get('/api/user');
       this.setUser(res.data);
       return res.data;
+    },
+    async enrollAsTeacher() {
+      try {
+        const res = await axios.post('/api/user/enroll-teacher');
+        await this.fetchUser(); // Refresh user data
+        return res.data;
+      } catch (error) {
+        console.error('Error enrolling as teacher:', error);
+        throw error;
+      }
+    },
+    async enrollAsStudent() {
+      try {
+        const res = await axios.post('/api/user/enroll-student');
+        await this.fetchUser(); // Refresh user data
+        return res.data;
+      } catch (error) {
+        console.error('Error enrolling as student:', error);
+        throw error;
+      }
     },
     logout() {
       // If Sanctum cookie-auth, call logout API; otherwise just clear token

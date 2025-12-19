@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\EmailVerificationController;
 
 Route::post('register', [AuthController::class,'register']);
 Route::post('login', [AuthController::class,'login']);
+Route::post('validate-referral-code', [AuthController::class, 'validateReferralCode']);
 Route::post('email/send-verification', [EmailVerificationController::class, 'sendVerificationEmail']);
 Route::post('email/verify', [EmailVerificationController::class, 'verifyEmail']);
 Route::post('email/resend-verification', [EmailVerificationController::class, 'resendVerificationEmail']);
@@ -34,14 +35,89 @@ Route::get('subjects', [SubjectController::class,'index']);
 
 Route::get('/search-subjects', [SubjectController::class, 'search']);
 
+// Razorpay Webhook and Callback (Public Routes)
+Route::post('wallet/webhook', [WalletController::class, 'webhook']); // Razorpay webhook
+Route::get('wallet/payment-callback', [WalletController::class, 'paymentCallback']); // Payment redirect callback
+
 Route::middleware('auth:api')->group(function() {
 
-    // Return authenticated user (used by frontend `fetchUser`)
+    // Return authenticated user with relationships (used by frontend `fetchUser`)
     Route::get('user', function (Request $request) {
-        return $request->user();
+        $user = $request->user();
+        
+        // Manually load relationships without causing circular references
+        $tutor = null;
+        if ($user->tutor) {
+            $tutor = $user->tutor->only([
+                'id', 'user_id', 'headline', 'about', 'experience_years', 
+                'price_per_hour', 'teaching_mode', 'city', 'verified', 
+                'rating_avg', 'rating_count', 'gender', 'photo', 'moderation_status',
+                'current_role', 'speciality', 'strength'
+            ]);
+            $tutor['photo_url'] = $user->tutor->photo_url;
+        }
+        
+        $student = null;
+        if ($user->student) {
+            $student = $user->student->only([
+                'id', 'user_id', 'grade_level', 'learning_goals', 'preferred_subjects', 'budget_range'
+            ]);
+        }
+        
+        $wallet = null;
+        if ($user->wallet) {
+            $wallet = $user->wallet->only(['id', 'user_id', 'balance']);
+        }
+        
+        // Get roles
+        $userRoles = $user->roles->pluck('name')->toArray();
+        
+        // Build clean response
+        return response()->json([
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'avatar' => $user->avatar,
+            'avatar_url' => $user->avatar_url,
+            'role' => $user->role,
+            'email_verified_at' => $user->email_verified_at,
+            'coins' => $user->coins,
+            'referral_code' => $user->referral_code,
+            'referred_by' => $user->referred_by,
+            'tutor' => $tutor,
+            'student' => $student,
+            'wallet' => $wallet,
+            'roles' => $userRoles,
+        ]);
     });
 
     Route::post('logout', [AuthController::class,'logout']);
+
+    // User Management & Enrollment
+    Route::post('user/enroll-teacher', [\App\Http\Controllers\Api\UserController::class, 'enrollAsTeacher']);
+    Route::post('user/enroll-student', [\App\Http\Controllers\Api\UserController::class, 'enrollAsStudent']);
+    Route::put('user/profile', [\App\Http\Controllers\Api\UserController::class, 'updateProfile']);
+    Route::post('user/photo', [\App\Http\Controllers\Api\UserController::class, 'uploadPhoto']);
+    Route::post('user/phone/send-otp', [\App\Http\Controllers\Api\UserController::class, 'sendPhoneOtp']);
+    Route::post('user/phone/verify-otp', [\App\Http\Controllers\Api\UserController::class, 'verifyPhoneOtp']);
+
+    // Profile Management (aliases for frontend compatibility)
+    Route::put('profile', [\App\Http\Controllers\Api\UserController::class, 'updateProfile']);
+    Route::post('profile/photo', [\App\Http\Controllers\Api\UserController::class, 'uploadPhoto']);
+    Route::post('profile/phone/otp', [\App\Http\Controllers\Api\UserController::class, 'sendPhoneOtp']);
+    Route::post('profile/phone/verify', [\App\Http\Controllers\Api\UserController::class, 'verifyPhoneOtp']);
+    Route::post('profile/email/verification', [\App\Http\Controllers\Api\UserController::class, 'sendEmailVerification']);
+
+    // Student Routes
+    Route::prefix('student')->group(function () {
+        Route::post('request-tutor', [\App\Http\Controllers\Api\StudentController::class, 'requestTutor']);
+        Route::get('requirements', [\App\Http\Controllers\Api\StudentController::class, 'getRequirements']);
+        Route::get('requirements/{id}', [\App\Http\Controllers\Api\StudentController::class, 'getRequirement']);
+        Route::put('requirements/{id}', [\App\Http\Controllers\Api\StudentController::class, 'updateRequirement']);
+        Route::post('requirements/{id}/close', [\App\Http\Controllers\Api\StudentController::class, 'closeRequirement']);
+        Route::delete('requirements/{id}', [\App\Http\Controllers\Api\StudentController::class, 'deleteRequirement']);
+    });
     Route::post('tutors', [TutorController::class,'store']);
 
     Route::post('requirements', [RequirementController::class,'store']);
@@ -50,9 +126,18 @@ Route::middleware('auth:api')->group(function() {
 
     Route::post('tutors/{tutor}/reviews', [ReviewController::class,'store']);
 
-    Route::get('wallet', [WalletController::class,'index']);
-    Route::get('wallet/packages', [WalletController::class,'packages']);
-    Route::post('wallet/buy', [WalletController::class,'buy']);
+    // Coin Wallet Routes
+    Route::prefix('wallet')->group(function () {
+        Route::get('/', [WalletController::class, 'index']); // Get balance and transactions
+        Route::get('payment-history', [WalletController::class, 'paymentHistory']); // Get payment history with filters
+        Route::get('packages', [WalletController::class, 'packages']); // Get coin packages
+        Route::post('purchase', [WalletController::class, 'purchaseCoins']); // Create Razorpay order
+        Route::post('verify-payment', [WalletController::class, 'verifyPayment']); // Verify payment and credit coins
+        Route::get('referral', [WalletController::class, 'getReferralInfo']); // Get referral code and stats
+        Route::post('apply-referral', [WalletController::class, 'applyReferralCode']); // Apply referral code
+        Route::get('order/{orderId}/status', [WalletController::class, 'getOrderStatus']); // Get order status
+        Route::post('order/{orderId}/cancel', [WalletController::class, 'cancelPayment']); // Cancel pending payment
+    });
 
     Route::post('payouts', [PayoutController::class,'store']);
 

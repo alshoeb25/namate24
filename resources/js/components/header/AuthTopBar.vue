@@ -44,19 +44,64 @@
 
           <!-- Dropdown Menu -->
           <div v-if="profileMenuOpen" 
-               class="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg overflow-hidden border z-[999]">
+               class="absolute right-0 mt-2 w-56 bg-white shadow-lg rounded-lg overflow-hidden border z-[999]">
+            
+            <!-- Teacher/Expert Section -->
+            <div class="border-b">
+              <div class="px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-600 uppercase">
+                <i class="fas fa-chalkboard-teacher mr-2"></i>Teacher / Expert
+              </div>
+              <router-link v-if="user?.tutor" 
+                           to="/tutor/profile" 
+                           @click="switchToTutorDashboard" 
+                           class="block px-4 py-2 text-gray-700 text-sm hover:bg-pink-50 hover:text-pink-600 transition-colors">
+                <i class="fas fa-user-tie mr-2"></i>Tutor Dashboard
+              </router-link>
+              <button v-else 
+                      @click="openEnrollModal('teacher')" 
+                      class="w-full text-left px-4 py-2 text-gray-700 text-sm hover:bg-pink-50 hover:text-pink-600 transition-colors">
+                <i class="fas fa-user-plus mr-2"></i>Enroll as Teacher
+              </button>
+            </div>
+
+            <!-- Student/Parent Section -->
+            <div class="border-b">
+              <div class="px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-600 uppercase">
+                <i class="fas fa-user-graduate mr-2"></i>Student / Parent
+              </div>
+              <router-link v-if="user?.student" 
+                           to="/student/dashboard" 
+                           @click="switchToStudentDashboard" 
+                           class="block px-4 py-2 text-gray-700 text-sm hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                <i class="fas fa-graduation-cap mr-2"></i>Student Dashboard
+              </router-link>
+              <button v-else 
+                      @click="openEnrollModal('student')" 
+                      class="w-full text-left px-4 py-2 text-gray-700 text-sm hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                <i class="fas fa-user-plus mr-2"></i>Enroll as Student
+              </button>
+            </div>
+
+            <!-- Common Section -->
             <router-link to="/profile" @click="profileMenuOpen = false" 
                          class="block px-4 py-2 text-gray-700 text-sm hover:bg-gray-100">
-              My Account
+              <i class="fas fa-user-circle mr-2"></i>My Profile
             </router-link>
             <button @click="logout" 
                     class="w-full text-left px-4 py-2 text-gray-700 text-sm hover:bg-gray-100">
-              Logout
+              <i class="fas fa-sign-out-alt mr-2"></i>Logout
             </button>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Enrollment Modal -->
+    <EnrollmentModal 
+      :show="showEnrollModal" 
+      :type="enrollType" 
+      @close="closeEnrollModal" 
+    />
   </div>
 </template>
 
@@ -64,15 +109,21 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../../store';
+import EnrollmentModal from '../EnrollmentModal.vue';
 
 export default {
   name: 'AuthTopBar',
+  components: {
+    EnrollmentModal
+  },
   emits: ['toggle-mobile-menu'],
   setup(props, { emit }) {
     const router = useRouter();
     const userStore = useUserStore();
     
     const profileMenuOpen = ref(false);
+    const showEnrollModal = ref(false);
+    const enrollType = ref('');
     const user = computed(() => userStore.user);
 
     const toggleMobileMenu = () => {
@@ -90,25 +141,36 @@ export default {
       router.push('/login');
     };
 
-    const getProfilePhoto = () => {
-      console.log('User data for profile photo:', user.value);
-      // If user is a tutor and has a photo, use tutor photo
-      if (user.value?.role === 'tutor' && user.value?.tutor?.photo_url) {
-        return user.value.tutor.photo_url;
-      }
+   const getProfilePhoto = () => {
+    return (
+      user.value?.avatar_url ||
+      user.value?.tutor?.photo_url ||
+      'https://via.placeholder.com/40'
+    );
+  };
+
+
+    const openEnrollModal = (type) => {
+      enrollType.value = type;
+      showEnrollModal.value = true;
+      profileMenuOpen.value = false;
+    };
+
+    const closeEnrollModal = () => {
+      showEnrollModal.value = false;
+      enrollType.value = '';
+    };
+
+    const switchToTutorDashboard = () => {
+      userStore.setActiveRole('tutor');
+      profileMenuOpen.value = false;
       
-      // If user has avatar (could be URL from Google or local path)
-      if (user.value?.avatar) {
-        // If it's a full URL (from Google OAuth), return as is
-        if (user.value.avatar.startsWith('http')) {
-          return user.value.avatar;
-        }
-        // If it's a local file path
-        return `/storage/${user.value.avatar}`;
-      }
+    };
+
+    const switchToStudentDashboard = () => {
+      userStore.setActiveRole('student');
+      profileMenuOpen.value = false;
       
-      // Default placeholder
-      return 'https://via.placeholder.com/40';
     };
 
     return { 
@@ -117,6 +179,12 @@ export default {
       toggleMobileMenu,
       logout,
       getProfilePhoto,
+      showEnrollModal,
+      enrollType,
+      openEnrollModal,
+      closeEnrollModal,
+      switchToTutorDashboard,
+      switchToStudentDashboard,
     };
   }
 };
