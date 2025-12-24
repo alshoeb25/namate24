@@ -1,40 +1,7 @@
 <template>
   <div class="w-full min-h-screen bg-gray-50">
     <!-- Header -->
-    <header class="w-full bg-white shadow-md">
-      <div class="max-w-7xl mx-auto flex items-center justify-between px-4 py-3">
-        <router-link to="/" class="flex items-center gap-1">
-          <img src="https://image2url.com/images/1765179057005-967d0875-ac5d-4a43-b65f-a58abd9f651d.png"
-            alt="Namate 24 Logo" class="w-10 h-10 object-contain">
-          <span class="text-pink-600 font-bold text-lg md:text-xl">Namate 24</span>
-        </router-link>
-
-        <!-- Right: Profile + Hamburger -->
-        <div class="flex items-center gap-4">
-          <div class="relative">
-            <button @click="profileMenuOpen = !profileMenuOpen"
-              class="w-10 h-10 rounded-full object-cover bg-gray-200 flex items-center justify-center">
-              <svg v-if="!isAuthenticated" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" />
-              </svg>
-            </button>
-            <div v-if="profileMenuOpen"
-              class="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-lg overflow-hidden border z-50">
-              <router-link v-if="!isAuthenticated" to="/login"
-                class="block text-center bg-gradient-to-r from-pink-500 to-pink-600 text-white
-                  font-medium text-sm py-2 hover:opacity-90">
-                Sign in / Sign up
-              </router-link>
-              <div v-else class="py-2">
-                <button @click="logout" class="w-full text-left px-4 py-2 text-gray-700 text-sm hover:bg-gray-100">
-                  Logout
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </header>
+    <HeaderRoot />
 
     <!-- Search Results -->
     <main class="max-w-7xl mx-auto px-4 py-8">
@@ -84,19 +51,20 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useUserStore } from '../store';
 import axios from 'axios';
+import HeaderRoot from '../components/header/HeaderRoot.vue';
 
 export default {
   name: 'Search',
+  components: {
+    HeaderRoot
+  },
   setup() {
     const route = useRoute();
     const userStore = useUserStore();
 
-    const profileMenuOpen = ref(false);
     const searchQuery = ref('');
     const tutors = ref([]);
     const loading = ref(false);
-
-    const isAuthenticated = computed(() => userStore.token !== null);
 
     const search = async () => {
       loading.value = true;
@@ -115,24 +83,16 @@ export default {
       }
     };
 
-    const logout = async () => {
-      await userStore.logout();
-      profileMenuOpen.value = false;
-    };
-
     onMounted(() => {
       searchQuery.value = route.query.subject || '';
       search();
     });
 
     return {
-      profileMenuOpen,
       searchQuery,
       tutors,
       loading,
-      isAuthenticated,
       search,
-      logout,
     };
   }
 };

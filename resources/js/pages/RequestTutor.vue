@@ -62,6 +62,13 @@
                  isSectionCompleted(index + 1) ? 'bg-green-500' : 'bg-gray-200'
                ]"></div>
         </div>
+          <div class="mb-6 bg-blue-50 border border-blue-100 text-blue-800 px-4 py-3 rounded-lg text-sm flex items-start gap-2">
+            <i class="fas fa-info-circle mt-0.5"></i>
+            <div>
+              <div class="font-semibold">Coin info</div>
+              <div>Posting an enquiry costs <strong>{{ enquiryConfig.post_fee }}</strong> coins. Tutors spend <strong>{{ enquiryConfig.unlock_fee }}</strong> coins to unlock your contact. Each enquiry is shown to a maximum of <strong>{{ enquiryConfig.max_leads }}</strong> tutors.</div>
+            </div>
+          </div>
       </div>
 
       <!-- Mobile Progress Bar -->
@@ -95,6 +102,15 @@
                   ]">
             {{ index + 1 }}
           </button>
+        </div>
+        
+        <!-- Coin Info for Mobile -->
+        <div class="mt-4 bg-blue-50 border border-blue-100 text-blue-800 px-3 py-2 rounded-lg text-xs flex items-start gap-2">
+          <i class="fas fa-info-circle mt-0.5 text-sm"></i>
+          <div>
+            <div class="font-semibold">Coin Info</div>
+            <div>Posting an enquiry costs <strong>{{ enquiryConfig.post_fee }}</strong> coins. Tutors spend <strong>{{ enquiryConfig.unlock_fee }}</strong> coins to unlock your contact. Each enquiry is shown to a maximum of <strong>{{ enquiryConfig.max_leads }}</strong> tutors.</div>
+          </div>
         </div>
       </div>
 
@@ -170,10 +186,14 @@
               </div>
               <div class="md:col-span-3">
                 <div class="flex gap-3">
-                  <input type="text" value="+91" disabled
-                         class="w-16 border border-gray-300 rounded-lg px-3 py-3 bg-gray-100 text-center font-medium">
+                  <select v-model="form.country_code"
+                          class="border border-gray-300 rounded-lg px-3 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[140px]">
+                    <option v-for="country in countryCodes" :key="country.iso" :value="country.code">
+                      {{ country.flag }} {{ country.code }}
+                    </option>
+                  </select>
                   <input v-model="phoneNumber" @input="formatPhoneNumber"
-                         type="tel" placeholder="9876543210" maxlength="10"
+                         type="tel" placeholder="9876543210" maxlength="15"
                          class="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
               </div>
@@ -186,10 +206,14 @@
               </div>
               <div class="md:col-span-3">
                 <div class="flex gap-3">
-                  <input type="text" value="+91" disabled
-                         class="w-16 border border-gray-300 rounded-lg px-3 py-3 bg-gray-100 text-center font-medium">
+                  <select v-model="form.alternate_country_code"
+                          class="border border-gray-300 rounded-lg px-3 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[140px]">
+                    <option v-for="country in countryCodes" :key="country.iso" :value="country.code">
+                      {{ country.flag }} {{ country.code }}
+                    </option>
+                  </select>
                   <input v-model="alternatePhoneNumber" @input="formatAlternatePhone"
-                         type="tel" placeholder="9876543210" maxlength="10"
+                         type="tel" placeholder="9876543210" maxlength="15"
                          class="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
               </div>
@@ -616,6 +640,40 @@
       <div v-if="errorMessage" class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
         <i class="fas fa-exclamation-circle mr-2"></i>{{ errorMessage }}
       </div>
+
+      <!-- Insufficient Coins Modal -->
+      <div v-if="showInsufficientCoinsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-8">
+          <!-- Icon -->
+          <div class="text-center mb-4">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
+              <i class="fas fa-coins text-red-600 text-3xl"></i>
+            </div>
+          </div>
+
+          <!-- Message -->
+          <h2 class="text-2xl font-bold text-gray-800 text-center mb-2">Insufficient Coins</h2>
+          <p class="text-gray-600 text-center mb-2">
+            You need <strong>{{ enquiryConfig.post_fee }} coins</strong> to post an enquiry.
+          </p>
+          <p class="text-gray-500 text-center text-sm mb-6">
+            Your current balance: <strong class="text-blue-600">{{ userBalance }} coins</strong>
+          </p>
+
+          <!-- Buttons -->
+          <div class="space-y-3">
+            <router-link to="/student/wallet" 
+                         class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition text-center block">
+              <i class="fas fa-plus-circle mr-2"></i>Buy Coins
+            </router-link>
+            <button @click="showInsufficientCoinsModal = false" 
+                    type="button"
+                    class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 px-4 rounded-lg transition">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -625,6 +683,7 @@ import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '../store';
 import axios from '../bootstrap';
+import { countryCodes } from '../utils/countryCodes';
 
 export default {
   name: 'RequestTutor',
@@ -636,8 +695,10 @@ export default {
     const submitting = ref(false);
     const errorMessage = ref('');
     const showSuccess = ref(false);
+    const showInsufficientCoinsModal = ref(false);
     const isEditMode = ref(false);
     const requirementId = ref(null);
+    const userBalance = ref(0);
 
     // Phone handling
     const phoneNumber = ref('');
@@ -660,6 +721,7 @@ export default {
     ]);
     const languageSearch = ref('');
     const showLanguageDropdown = ref(false);
+    const enquiryConfig = ref({ post_fee: 0, unlock_fee: 0, max_leads: 5 });
 
     const form = reactive({
       student_id: null,
@@ -667,7 +729,9 @@ export default {
       area: '',
       pincode: '',
       phone: '',
+      country_code: '+91',
       alternate_phone: '',
+      alternate_country_code: '+91',
       student_name: '',
       description: '',
       subjects: [],
@@ -766,6 +830,10 @@ export default {
         // Fetch levels
         const levelsRes = await axios.get('/api/tutor/levels/all');
         levelOptions.value = levelsRes.data;
+
+        // Fetch enquiry coin config
+        const configRes = await axios.get('/api/enquiries/config');
+        enquiryConfig.value = configRes.data;
       } catch (error) {
         console.error('Failed to fetch form data:', error);
         // Fallback to hardcoded values if API fails
@@ -782,6 +850,7 @@ export default {
           { id: 2, name: 'Intermediate' },
           { id: 3, name: 'Advanced' }
         ];
+        enquiryConfig.value = { post_fee: 0, unlock_fee: 0, max_leads: 5 };
       }
     };
 
@@ -789,19 +858,44 @@ export default {
     const loadUserData = () => {
       const user = userStore.user;
       if (user) {
-        // Set student_id from user->students->id relationship, otherwise null
-        form.student_id = user.students?.id || user.student_id || null;
+        // Set student_id from user->students->id relationship
+        form.student_id = user.students?.id;
         
         // Pre-fill phone if exists
         if (user.phone) {
-          const cleanPhone = user.phone.replace(/^\+91/, '').trim();
-          phoneNumber.value = cleanPhone;
-          form.phone = '+91' + cleanPhone;
+          phoneNumber.value = user.phone;
+          form.phone = user.phone;
         }
+        
+        // Pre-fill country code if exists
+        if (user.country_code) {
+          form.country_code = user.country_code;
+        }
+        
+        // Pre-fill location from profile (tutor or student)
+        const profile = user.tutor || user.student;
+        if (profile) {
+          if (profile.city) form.city = profile.city;
+          if (profile.area) form.area = profile.area;
+          // Optional: map tutor postal_code to pincode if present
+          if (!form.pincode && profile.postal_code) form.pincode = profile.postal_code;
+        }
+        
         // Pre-fill student name
         if (user.name) {
           form.student_name = user.name;
         }
+      }
+    };
+
+    // Fetch user wallet balance
+    const fetchWalletBalance = async () => {
+      try {
+        const { data } = await axios.get('/api/wallet');
+        userBalance.value = data.balance || 0;
+      } catch (error) {
+        console.error('Failed to fetch wallet balance:', error);
+        userBalance.value = 0;
       }
     };
 
@@ -817,7 +911,9 @@ export default {
         form.area = req.area || '';
         form.pincode = req.pincode || '';
         form.phone = req.phone || '';
+        form.country_code = req.country_code || '+91';
         form.alternate_phone = req.alternate_phone || '';
+        form.alternate_country_code = req.alternate_country_code || '+91';
         form.student_name = req.student_name || '';
         form.description = req.details || '';
         form.level = req.level || '';
@@ -839,10 +935,10 @@ export default {
         
         // Format phone numbers
         if (req.phone) {
-          phoneNumber.value = req.phone.replace(/^\+91/, '').trim();
+           phoneNumber.value = req.phone;
         }
         if (req.alternate_phone) {
-          alternatePhoneNumber.value = req.alternate_phone.replace(/^\+91/, '').trim();
+           alternatePhoneNumber.value = req.alternate_phone;
         }
       } catch (error) {
         console.error('Failed to load requirement:', error);
@@ -857,20 +953,20 @@ export default {
     // Phone number formatting
     const formatPhoneNumber = (event) => {
       let value = event.target.value.replace(/\D/g, '');
-      if (value.length > 10) {
-        value = value.slice(0, 10);
+      if (value.length > 15) {
+        value = value.slice(0, 15);
       }
       phoneNumber.value = value;
-      form.phone = value ? '+91' + value : '';
+      form.phone = value ? value : '';
     };
 
     const formatAlternatePhone = (event) => {
       let value = event.target.value.replace(/\D/g, '');
-      if (value.length > 10) {
-        value = value.slice(0, 10);
+      if (value.length > 15) {
+        value = value.slice(0, 15);
       }
       alternatePhoneNumber.value = value;
-      form.alternate_phone = value ? '+91' + value : '';
+      form.alternate_phone = value ? value : '';
     };
 
     // Subject handlers
@@ -954,6 +1050,7 @@ export default {
 
     onMounted(() => {
       fetchFormData();
+      fetchWalletBalance();
       
       // Check if we're in edit mode
       if (route.params.id) {
@@ -980,6 +1077,12 @@ export default {
     const submitRequest = async () => {
       if (!validateStep()) return;
 
+      // Check coin balance before submission
+      if (!isEditMode.value && userBalance.value < enquiryConfig.value.post_fee) {
+        showInsufficientCoinsModal.value = true;
+        return;
+      }
+
       submitting.value = true;
       errorMessage.value = '';
       
@@ -1003,7 +1106,13 @@ export default {
           router.push('/student/requirements');
         }, 2000);
       } catch (error) {
-        errorMessage.value = error.response?.data?.message || `Error ${isEditMode.value ? 'updating' : 'submitting'} request. Please try again.`;
+        // Check if error is due to insufficient coins
+        if (error.response?.status === 422 && error.response?.data?.message?.includes('Insufficient coins')) {
+          showInsufficientCoinsModal.value = true;
+          userBalance.value = error.response?.data?.balance || userBalance.value;
+        } else {
+          errorMessage.value = error.response?.data?.message || `Error ${isEditMode.value ? 'updating' : 'submitting'} request. Please try again.`;
+        }
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } finally {
         submitting.value = false;
@@ -1021,9 +1130,11 @@ export default {
       submitting,
       errorMessage,
       showSuccess,
+      showInsufficientCoinsModal,
       isEditMode,
       phoneNumber,
       alternatePhoneNumber,
+      countryCodes,
       subjectOptions,
       subjectSearch,
       showSubjectDropdown,
@@ -1043,7 +1154,10 @@ export default {
       addCustomSubject,
       toggleLanguage,
       removeLanguage,
-      submitRequest
+      submitRequest,
+      enquiryConfig,
+      userBalance,
+      fetchWalletBalance
     };
   }
 };

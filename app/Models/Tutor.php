@@ -12,7 +12,7 @@ class Tutor extends Model
     
     protected $fillable = [
         'user_id','headline','about','experience_years','price_per_hour',
-        'teaching_mode','city','lat','lng','verified','rating_avg','rating_count',
+        'teaching_mode','city','area','phone','country_code','lat','lng','verified','rating_avg','rating_count',
         'gender','badges','moderation_status','address','state','country','postal_code',
         'introductory_video','video_title','youtube_intro_url','teaching_methodology','educations','experiences',
         'speciality','strength','current_role',

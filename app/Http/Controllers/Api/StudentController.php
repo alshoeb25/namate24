@@ -3,12 +3,19 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Exceptions\InsufficientBalanceException;
 use App\Models\StudentRequirement;
+use App\Models\Subject;
 use App\Models\User;
+use App\Services\EnquiryService;
 use Illuminate\Http\Request;
 
 class StudentController extends Controller
 {
+    public function __construct(private EnquiryService $enquiryService)
+    {
+    }
+
     /**
      * Create a new tutor request/requirement
      */
@@ -28,7 +35,9 @@ class StudentController extends Controller
             
             // Section 1: Basic Information - Contact
             'phone' => 'required|string|max:20',
+            'country_code' => 'required|string|max:10',
             'alternate_phone' => 'nullable|string|max:20',
+            'alternate_country_code' => 'nullable|string|max:10',
             
             // Section 2: Requirement Details - Details
             'student_name' => 'required|string|max:255',
@@ -77,18 +86,18 @@ class StudentController extends Controller
             $location .= ' - ' . $data['pincode'];
         }
 
-        // Use student_id from request if provided, otherwise use authenticated user
-        $studentId = $data['student_id'] ?? $user->id;
+        $subjectIds = Subject::whereIn('name', $data['subjects'])->pluck('id')->toArray();
 
-        // Create the requirement
-        $requirement = StudentRequirement::create([
-            'student_id' => $studentId,
+        $payload = [
+            'student_id' => $data['student_id'] ?? $user->students->id,
             'location' => $location,
             'city' => $data['city'],
             'area' => $data['area'],
             'pincode' => $data['pincode'] ?? null,
             'phone' => $data['phone'],
+            'country_code' => $data['country_code'],
             'alternate_phone' => $data['alternate_phone'] ?? null,
+            'alternate_country_code' => $data['alternate_country_code'] ?? null,
             'student_name' => $data['student_name'],
             'details' => $data['description'] ?? '',
             'other_subject' => $data['other_subject'] ?? null,
@@ -103,16 +112,22 @@ class StudentController extends Controller
             'languages' => $data['languages'],
             'tutor_location_preference' => $data['tutor_location'],
             'status' => 'active',
-        ]);
+            'post_fee' => config('enquiry.post_fee'),
+            'unlock_price' => config('enquiry.unlock_fee'),
+            'max_leads' => config('enquiry.max_leads'),
+            'lead_status' => 'open',
+            'posted_at' => now(),
+        ];
 
-        // Attach subjects via pivot table (student_post_subjects)
-        if (!empty($data['subjects'])) {
-            $subjectIds = \App\Models\Subject::whereIn('name', $data['subjects'])->pluck('id')->toArray();
-            $requirement->subjects()->attach($subjectIds);
+        try {
+            $requirement = $this->enquiryService->createForStudent($payload, $user, $subjectIds);
+        } catch (InsufficientBalanceException $e) {
+            return response()->json([
+                'message' => 'Insufficient coins to post this enquiry. Please recharge your wallet.',
+                'required' => config('enquiry.post_fee'),
+                'balance' => $user->coins,
+            ], 422);
         }
-
-        // Load relationships for response
-        $requirement->load('subjects');
 
         return response()->json([
             'message' => 'Tutor request submitted successfully!',
@@ -176,7 +191,9 @@ class StudentController extends Controller
             
             // Section 1: Basic Information - Contact
             'phone' => 'required|string|max:20',
+            'country_code' => 'required|string|max:10',
             'alternate_phone' => 'nullable|string|max:20',
+            'alternate_country_code' => 'nullable|string|max:10',
             
             // Section 2: Requirement Details - Details
             'student_name' => 'required|string|max:255',
@@ -235,7 +252,9 @@ class StudentController extends Controller
             'area' => $data['area'],
             'pincode' => $data['pincode'] ?? null,
             'phone' => $data['phone'],
+                'country_code' => $data['country_code'],
             'alternate_phone' => $data['alternate_phone'] ?? null,
+                'alternate_country_code' => $data['alternate_country_code'] ?? null,
             'student_name' => $data['student_name'],
             'details' => $data['description'] ?? '',
             'other_subject' => $data['other_subject'] ?? null,
@@ -281,6 +300,11 @@ class StudentController extends Controller
 
         $requirement->update(['status' => 'closed']);
 
+        if ($requirement->current_leads === 0 && $requirement->post_fee > 0) {
+            $this->enquiryService->refundIfNoUnlocks($requirement, $user);
+            $requirement->update(['lead_status' => 'cancelled']);
+        }
+
         return response()->json([
             'message' => 'Requirement closed successfully.',
             'requirement' => $requirement->fresh()
@@ -298,6 +322,10 @@ class StudentController extends Controller
         $requirement = StudentRequirement::where('student_id', $studentId)
             ->where('id', $id)
             ->firstOrFail();
+
+        if ($requirement->current_leads === 0 && $requirement->post_fee > 0) {
+            $this->enquiryService->refundIfNoUnlocks($requirement, $user);
+        }
 
         $requirement->delete();
 

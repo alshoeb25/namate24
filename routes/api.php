@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\PayoutController;
 use App\Http\Controllers\Api\CmsPageController;
 use App\Http\Controllers\Api\WalletController;
+use App\Http\Controllers\Api\EnquiryController;
 use App\Http\Controllers\Api\TutorProfileController;
 use App\Http\Controllers\Api\Admin\SubjectModuleController;
 use App\Http\Controllers\Payment\RazorpayWebhookController;
@@ -34,6 +35,9 @@ Route::get('credit-packages', [CreditPackageController::class,'index']);
 Route::get('subjects', [SubjectController::class,'index']);
 
 Route::get('/search-subjects', [SubjectController::class, 'search']);
+
+// Public Tutor Endpoints
+Route::get('tutor/levels/all', [TutorProfileController::class, 'getAllLevels']);
 
 // Razorpay Webhook and Callback (Public Routes)
 Route::post('wallet/webhook', [WalletController::class, 'webhook']); // Razorpay webhook
@@ -108,6 +112,7 @@ Route::middleware('auth:api')->group(function() {
     Route::post('profile/phone/otp', [\App\Http\Controllers\Api\UserController::class, 'sendPhoneOtp']);
     Route::post('profile/phone/verify', [\App\Http\Controllers\Api\UserController::class, 'verifyPhoneOtp']);
     Route::post('profile/email/verification', [\App\Http\Controllers\Api\UserController::class, 'sendEmailVerification']);
+    Route::put('profile/location', [\App\Http\Controllers\Api\UserController::class, 'updateLocation']);
 
     // Student Routes
     Route::prefix('student')->group(function () {
@@ -123,6 +128,14 @@ Route::middleware('auth:api')->group(function() {
     Route::post('requirements', [RequirementController::class,'store']);
     Route::get('requirements', [RequirementController::class,'index']);
     Route::get('requirements/{id}', [RequirementController::class,'show']);
+
+    // Enquiry (lead-based) routes
+    Route::get('enquiries/config', [EnquiryController::class, 'config']);
+    Route::middleware('role:tutor')->group(function () {
+        Route::get('tutor-jobs', [EnquiryController::class, 'index']);
+        Route::post('enquiries/{enquiry}/unlock', [EnquiryController::class, 'unlock']);
+    });
+    Route::get('enquiries/{enquiry}', [EnquiryController::class, 'show']);
 
     Route::post('tutors/{tutor}/reviews', [ReviewController::class,'store']);
 

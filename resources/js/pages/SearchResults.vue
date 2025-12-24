@@ -56,7 +56,8 @@
           <!-- Results Count -->
           <div class="mb-6">
             <h2 class="text-2xl font-bold text-gray-900">
-              {{ filteredTutors.length }} {{ filteredTutors.length === 1 ? 'Tutor' : 'Tutors' }} Found
+              {{ filteredTutors.length }}
+              {{ isJobsSearch ? (filteredTutors.length === 1 ? 'Enquiry' : 'Enquiries') : (filteredTutors.length === 1 ? 'Tutor' : 'Tutors') }} Found
             </h2>
             <p v-if="searchQuery.subject || searchQuery.location" class="text-gray-600 mt-1">
               <span v-if="searchQuery.subject">Subject: <strong>{{ searchQuery.subject }}</strong></span>
@@ -81,9 +82,16 @@
 
           <!-- Tutors List -->
           <div v-else-if="filteredTutors.length > 0" class="space-y-6">
-            <TutorCard v-for="tutor in filteredTutors" 
-                       :key="tutor.id" 
-                       :tutor="tutor" />
+            <template v-if="isJobsSearch">
+              <JobCard v-for="enquiry in filteredTutors" 
+                       :key="enquiry.id" 
+                       :enquiry="enquiry" />
+            </template>
+            <template v-else>
+              <TutorCard v-for="tutor in filteredTutors" 
+                         :key="tutor.id" 
+                         :tutor="tutor" />
+            </template>
           </div>
 
           <!-- No Results State -->
@@ -91,7 +99,7 @@
             <div class="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center">
               <i class="fas fa-search text-gray-400 text-3xl"></i>
             </div>
-            <h3 class="text-xl font-semibold text-gray-800 mb-2">No tutors found</h3>
+            <h3 class="text-xl font-semibold text-gray-800 mb-2">No results found</h3>
             <p class="text-gray-600 mb-4">Try adjusting your search filters or location</p>
             <button @click="resetFilters"
                     class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
@@ -102,8 +110,8 @@
 
         <!-- Sidebar -->
         <aside class="lg:w-1/4">
-          <!-- Locations Card -->
-          <div class="bg-white rounded-xl shadow-sm p-6 mb-6 sticky top-24">
+          <!-- Locations & stats shown only for tutor search -->
+          <div v-if="!isJobsSearch" class="bg-white rounded-xl shadow-sm p-6 mb-6 sticky top-24">
             <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <i class="fas fa-map-marker-alt text-blue-600"></i>
               Teaching Locations
@@ -173,9 +181,10 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import axios from 'axios';
+import axios from '../bootstrap';
 import HeroSearch from '../components/HeroSearch.vue';
 import TutorCard from '../components/TutorCard.vue';
+import JobCard from '../components/JobCard.vue';
 import { decryptQueryParams } from '../utils/encryption';
 
 const route = useRoute();
@@ -190,7 +199,7 @@ const searchQuery = computed(() => {
     return decrypted || { subject: '', location: '' };
   }
   // Fallback to regular query params for backward compatibility
-  return {
+  const query = {
     subject: route.query.subject || '',
     location: route.query.location || '',
     subject_id: route.query.subject_id || '',
@@ -199,6 +208,13 @@ const searchQuery = computed(() => {
     subject_search_name: route.query.subject_search_name || '',
     search_type: route.query.search_type || 'tutors'
   };
+
+  // If navigating via /tutor-jobs path, force jobs search mode
+  if (route.name === 'tutor-jobs') {
+    query.search_type = 'jobs';
+  }
+
+  return query;
 });
 
 const filters = ref({
@@ -217,7 +233,13 @@ const hasActiveFilters = computed(() => {
          filters.value.priceRange;
 });
 
+const isJobsSearch = computed(() => searchQuery.value.search_type === 'jobs');
+
 const filteredTutors = computed(() => {
+  if (isJobsSearch.value) {
+    return tutors.value;
+  }
+
   let result = [...tutors.value];
 
   // Apply filters
@@ -317,7 +339,7 @@ async function loadTutors() {
     if (filters.value.priceRange) params.price_range = filters.value.priceRange;
 
     // Determine API endpoint based on search_type
-    const endpoint = searchQuery.value.search_type === 'jobs' ? '/api/tutor-jobs' : '/api/tutors';
+    const endpoint = isJobsSearch.value ? '/api/tutor-jobs' : '/api/tutors';
     
     // Send encrypted query to API
     const response = await axios.get(endpoint, { 

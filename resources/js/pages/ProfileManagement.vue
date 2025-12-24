@@ -1,6 +1,8 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-4xl mx-auto px-4">
+  <div class="min-h-screen bg-gray-50">
+    
+    
+    <div class="max-w-4xl mx-auto px-4 py-8">
       <!-- Header -->
       <div class="bg-white rounded-2xl shadow-md p-6 mb-6">
         <h1 class="text-3xl font-bold text-gray-800 mb-2">
@@ -91,9 +93,17 @@
             Phone Number<span class="text-red-500">*</span>
           </label>
           <div class="flex gap-2">
+            <!-- Country Code Dropdown -->
+            <select v-model="form.country_code" 
+                    class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-pink-500 focus:border-transparent min-w-[140px]">
+              <option v-for="country in countryCodes" :key="country.iso" :value="country.code">
+                {{ country.flag }} {{ country.code }}
+              </option>
+            </select>
+            
             <input v-model="form.phone" 
                    type="tel" 
-                   placeholder="+91 9876543210"
+                   placeholder="9876543210"
                    class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                    :class="{'border-red-500': errors.phone}">
             <button v-if="form.phone !== user?.phone && !showOtpInput" 
@@ -138,6 +148,121 @@
         </button>
       </div>
 
+      <!-- Location Information -->
+      <div class="bg-white rounded-2xl shadow-md p-6 mb-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+          <i class="fas fa-map-marker-alt mr-2 text-pink-600"></i>Location
+        </h2>
+
+        <!-- Toggle between Map and Manual -->
+        <div class="mb-4 flex gap-2">
+          <button @click="locationMode = 'map'" 
+                  :class="locationMode === 'map' ? 'bg-pink-600 text-white' : 'bg-gray-200 text-gray-700'"
+                  class="flex-1 px-4 py-2 rounded-lg font-medium transition hover:opacity-90">
+            <i class="fas fa-map mr-2"></i>Use Google Maps
+          </button>
+          <button @click="locationMode = 'manual'" 
+                  :class="locationMode === 'manual' ? 'bg-pink-600 text-white' : 'bg-gray-200 text-gray-700'"
+                  class="flex-1 px-4 py-2 rounded-lg font-medium transition hover:opacity-90">
+            <i class="fas fa-keyboard mr-2"></i>Enter Manually
+          </button>
+        </div>
+
+        <!-- Google Maps Autocomplete -->
+        <div v-if="locationMode === 'map'" class="mb-4">
+          <label class="block text-gray-700 font-medium mb-2">
+            Search Location
+          </label>
+          <input ref="locationInput"
+                 type="text" 
+                 placeholder="Search for your location..."
+                 class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+          <p class="text-sm text-gray-500 mt-2">
+            <i class="fas fa-info-circle mr-1"></i>Start typing to search for your address
+          </p>
+          
+          <!-- Selected Location Display -->
+          <div v-if="form.location.address" class="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <p class="text-sm font-medium text-gray-700 mb-1">
+              <i class="fas fa-check-circle text-green-600 mr-1"></i>Selected Location:
+            </p>
+            <p class="text-gray-600">{{ form.location.address }}</p>
+            <p class="text-xs text-gray-500 mt-1">{{ form.location.city }}, {{ form.location.area }}</p>
+          </div>
+        </div>
+
+        <!-- Manual Entry -->
+        <div v-if="locationMode === 'manual'" class="space-y-4">
+          <div>
+            <label class="block text-gray-700 font-medium mb-2">
+              City<span class="text-red-500">*</span>
+            </label>
+            <input v-model="form.location.city" 
+                   type="text" 
+                   placeholder="Enter your city"
+                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                   :class="{'border-red-500': errors.city}">
+            <p v-if="errors.city" class="text-red-500 text-sm mt-1">{{ errors.city }}</p>
+          </div>
+
+          <div>
+            <label class="block text-gray-700 font-medium mb-2">
+              Area/Locality<span class="text-red-500">*</span>
+            </label>
+            <input v-model="form.location.area" 
+                   type="text" 
+                   placeholder="Enter your area or locality"
+                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                   :class="{'border-red-500': errors.area}">
+            <p v-if="errors.area" class="text-red-500 text-sm mt-1">{{ errors.area }}</p>
+          </div>
+
+          <div>
+            <label class="block text-gray-700 font-medium mb-2">
+              Full Address
+            </label>
+            <textarea v-model="form.location.address" 
+                      rows="3"
+                      placeholder="Enter your complete address"
+                      class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-pink-500 focus:border-transparent"></textarea>
+            <p class="text-sm text-gray-500 mt-1">
+              <i class="fas fa-info-circle mr-1"></i>Optional: Provide detailed address
+            </p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-gray-700 font-medium mb-2">
+                Latitude
+              </label>
+              <input v-model="form.location.lat" 
+                     type="text" 
+                     placeholder="e.g., 19.0760"
+                     class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+            </div>
+            <div>
+              <label class="block text-gray-700 font-medium mb-2">
+                Longitude
+              </label>
+              <input v-model="form.location.lng" 
+                     type="text" 
+                     placeholder="e.g., 72.8777"
+                     class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+            </div>
+          </div>
+          <p class="text-sm text-gray-500">
+            <i class="fas fa-info-circle mr-1"></i>Optional: Add coordinates for precise location
+          </p>
+        </div>
+
+        <!-- Save Location Button -->
+        <button @click="saveLocation" 
+                :disabled="savingLocation"
+                class="w-full mt-4 bg-pink-600 hover:bg-pink-700 text-white px-6 py-3 rounded-lg font-semibold transition disabled:opacity-50">
+          <i class="fas fa-save mr-2"></i>{{ savingLocation ? 'Saving...' : 'Save Location' }}
+        </button>
+      </div>
+
       <!-- Success Message -->
       <div v-if="successMessage" class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
         <i class="fas fa-check-circle mr-2"></i>{{ successMessage }}
@@ -147,12 +272,17 @@
 </template>
 
 <script>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, nextTick } from 'vue';
 import { useUserStore } from '../store';
 import axios from '../bootstrap';
+import HeaderRoot from '../components/header/HeaderRoot.vue';
+import { countryCodes } from '../utils/countryCodes';
 
 export default {
   name: 'ProfileManagement',
+  components: {
+    HeaderRoot
+  },
   setup() {
     const userStore = useUserStore();
     const user = computed(() => userStore.user);
@@ -161,12 +291,22 @@ export default {
       name: '',
       email: '',
       phone: '',
+      country_code: '+91',
+      location: {
+        city: '',
+        area: '',
+        address: '',
+        lat: null,
+        lng: null,
+      }
     });
 
     const errors = reactive({
       name: '',
       email: '',
       phone: '',
+      city: '',
+      area: '',
     });
 
     const profilePhotoPreview = ref(null);
@@ -175,15 +315,35 @@ export default {
     const showOtpInput = ref(false);
     const otpCode = ref('');
     const saving = ref(false);
+    const savingLocation = ref(false);
     const emailVerificationSent = ref(false);
     const successMessage = ref('');
+    const locationMode = ref('map');
+    const locationInput = ref(null);
+    let autocomplete = null;
 
-    onMounted(() => {
+    onMounted(async () => {
       if (user.value) {
         form.name = user.value.name || '';
         form.email = user.value.email || '';
         form.phone = user.value.phone || '';
+        form.country_code = user.value.country_code || '+91';
+        
+        // Load location data from tutor or student profile
+        const profile = user.value.tutor || user.value.student;
+        if (profile) {
+          form.location.city = profile.city || '';
+          form.location.area = profile.area || '';
+          form.location.address = profile.address || '';
+          form.location.lat = profile.lat || null;
+          form.location.lng = profile.lng || null;
+        }
       }
+      
+      // Load Google Maps script
+      await loadGoogleMapsScript();
+      await nextTick();
+      initAutocomplete();
     });
 
     const getProfilePhoto = () => {
@@ -303,6 +463,116 @@ export default {
       return valid;
     };
 
+    const loadGoogleMapsScript = () => {
+      return new Promise((resolve, reject) => {
+        // Check if already loaded
+        if (window.google && window.google.maps) {
+          resolve();
+          return;
+        }
+
+        // Check if script is already being loaded
+        if (document.querySelector('script[src*="maps.googleapis.com"]')) {
+          // Wait for it to load
+          const checkGoogleMaps = setInterval(() => {
+            if (window.google && window.google.maps) {
+              clearInterval(checkGoogleMaps);
+              resolve();
+            }
+          }, 100);
+          return;
+        }
+
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places`;
+        script.async = true;
+        script.defer = true;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    };
+
+    const initAutocomplete = () => {
+      if (!locationInput.value || !window.google) return;
+
+      autocomplete = new google.maps.places.Autocomplete(locationInput.value, {
+        types: ['geocode'],
+        componentRestrictions: { country: 'in' } // Restrict to India, change as needed
+      });
+
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+        
+        if (!place.geometry) {
+          return;
+        }
+
+        // Extract location details
+        let city = '';
+        let area = '';
+        
+        place.address_components.forEach(component => {
+          if (component.types.includes('locality')) {
+            city = component.long_name;
+          }
+          if (component.types.includes('sublocality') || component.types.includes('sublocality_level_1')) {
+            area = component.long_name;
+          }
+        });
+
+        form.location.address = place.formatted_address;
+        form.location.city = city;
+        form.location.area = area;
+        form.location.lat = place.geometry.location.lat();
+        form.location.lng = place.geometry.location.lng();
+      });
+    };
+
+    const validateLocation = () => {
+      errors.city = '';
+      errors.area = '';
+      let valid = true;
+
+      if (!form.location.city || form.location.city.trim().length < 2) {
+        errors.city = 'City is required';
+        valid = false;
+      }
+
+      if (!form.location.area || form.location.area.trim().length < 2) {
+        errors.area = 'Area/Locality is required';
+        valid = false;
+      }
+
+      return valid;
+    };
+
+    const saveLocation = async () => {
+      if (!validateLocation()) return;
+
+      savingLocation.value = true;
+      try {
+        await axios.put('/api/profile/location', {
+          city: form.location.city,
+          area: form.location.area,
+          address: form.location.address,
+          lat: form.location.lat,
+          lng: form.location.lng,
+        });
+        await userStore.fetchUser();
+        successMessage.value = 'Location updated successfully!';
+        setTimeout(() => successMessage.value = '', 3000);
+      } catch (error) {
+        if (error.response?.data?.errors) {
+          Object.assign(errors, error.response.data.errors);
+        } else {
+          alert('Error updating location. Please try again.');
+        }
+      } finally {
+        savingLocation.value = false;
+      }
+    };
+
     const saveProfile = async () => {
       if (!validateForm()) return;
 
@@ -312,6 +582,7 @@ export default {
           name: form.name,
           email: form.email,
           phone: form.phone,
+          country_code: form.country_code,
         });
         await userStore.fetchUser();
         successMessage.value = 'Profile updated successfully!';
@@ -336,8 +607,12 @@ export default {
       showOtpInput,
       otpCode,
       saving,
+      savingLocation,
       emailVerificationSent,
       successMessage,
+      locationMode,
+      locationInput,
+      countryCodes,
       getProfilePhoto,
       handlePhotoUpload,
       saveProfilePhoto,
@@ -345,6 +620,7 @@ export default {
       sendOtp,
       verifyOtp,
       saveProfile,
+      saveLocation,
     };
   }
 };

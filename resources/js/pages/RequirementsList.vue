@@ -25,6 +25,15 @@
                 <span v-if="req.area" class="ml-2">• {{ req.area }}</span>
                 <span v-if="req.level" class="ml-2">• {{ req.level }}</span>
               </p>
+              <div class="flex items-center gap-2 mt-2 text-sm">
+                <span class="px-3 py-1 rounded-full bg-blue-50 text-blue-700 font-semibold">
+                  {{ req.current_leads || 0 }}/{{ req.max_leads || 0 }} tutors
+                </span>
+                <span class="px-3 py-1 rounded-full text-xs font-semibold"
+                      :class="req.lead_status === 'full' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'">
+                  {{ req.lead_status || 'open' }}
+                </span>
+              </div>
             </div>
             <div class="flex items-center gap-2">
               <span class="px-3 py-1 rounded-full text-sm font-medium" 

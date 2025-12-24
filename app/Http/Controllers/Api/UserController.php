@@ -98,6 +98,7 @@ class UserController extends Controller
             'name' => 'sometimes|string|max:255',
             'email' => 'sometimes|email|unique:users,email,' . $user->id,
             'phone' => 'sometimes|string|unique:users,phone,' . $user->id,
+               'country_code' => 'sometimes|string|max:10',
         ]);
 
         // If email is being changed, generate verification token
@@ -264,5 +265,48 @@ class UserController extends Controller
         } catch (\Exception $e) {
             \Log::error('Email sending failed: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Update user location
+     */
+    public function updateLocation(Request $request)
+    {
+        $user = $request->user();
+
+        $data = $request->validate([
+            'city' => 'required|string|max:255',
+            'area' => 'required|string|max:255',
+            'address' => 'nullable|string|max:500',
+            'lat' => 'nullable|numeric',
+            'lng' => 'nullable|numeric',
+        ]);
+
+        // Update tutor profile if exists
+        if ($user->tutor) {
+            $user->tutor->update([
+                'city' => $data['city'],
+                'area' => $data['area'],
+                'address' => $data['address'] ?? null,
+                'lat' => $data['lat'] ?? null,
+                'lng' => $data['lng'] ?? null,
+            ]);
+        }
+
+        // Update student profile if exists
+        if ($user->student) {
+            $user->student->update([
+                'city' => $data['city'],
+                'area' => $data['area'],
+                'address' => $data['address'] ?? null,
+                'lat' => $data['lat'] ?? null,
+                'lng' => $data['lng'] ?? null,
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Location updated successfully.',
+            'user' => $user->fresh()->load(['tutor', 'student', 'wallet', 'roles'])
+        ]);
     }
 }

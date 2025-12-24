@@ -53,6 +53,16 @@
                 <h3 class="text-xl font-semibold text-gray-800 text-center">Upload Photo</h3>
                 <p class="text-sm text-gray-500 text-center mt-1">Add a professional profile picture</p>
             </router-link>
+
+            <!-- Student Leads -->
+            <router-link to="/tutor-jobs"
+                class="dashboard-card flex flex-col items-center justify-center gap-4 bg-white rounded-2xl p-6 shadow-md hover:shadow-xl">
+                <div class="icon-container">
+                    <i class="fas fa-users text-white text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-800 text-center">Student Leads</h3>
+                <p class="text-sm text-gray-500 text-center mt-1">View and unlock student requirements</p>
+            </router-link>
             
             <!-- Verify Mobile -->
             <router-link to="/tutor/profile/phone"
@@ -187,6 +197,18 @@
                 <div>
                     <p class="text-lg font-semibold text-gray-800">Verify Mobile</p>
                     <p class="text-sm text-gray-500">Secure your account with verification</p>
+                </div>
+                <i class="fas fa-chevron-right text-gray-400 ml-auto"></i>
+            </router-link>
+
+            <!-- Student Leads -->
+            <router-link to="/tutor-jobs" class="dashboard-card flex items-center gap-4 bg-white rounded-2xl p-4 shadow-md">
+                <div class="icon-container">
+                    <i class="fas fa-users text-white"></i>
+                </div>
+                <div>
+                    <p class="text-lg font-semibold text-gray-800">Student Leads</p>
+                    <p class="text-sm text-gray-500">Browse and unlock enquiries</p>
                 </div>
                 <i class="fas fa-chevron-right text-gray-400 ml-auto"></i>
             </router-link>

@@ -52,6 +52,13 @@ export default {
       const currentPath = route.path.toLowerCase();
       const isTutorPath = currentPath.includes('tutor') || currentPath.includes('teacher');
       const isTutorUser = user.value?.role === 'tutor' || user.value?.tutor;
+      
+      // Show tutor menu on search and profile routes if user is tutor (single role)
+      const isSearchOrProfile = currentPath === '/search' || currentPath === '/profile' || currentPath.includes('/tutors');
+      if (isSearchOrProfile && isTutorUser && !user.value?.student) {
+        return true;
+      }
+      
       return isTutorPath && isTutorUser;
     });
     
@@ -66,6 +73,13 @@ export default {
       const currentPath = route.path.toLowerCase();
       const isStudentPath = currentPath.includes('student');
       const isStudentUser = user.value?.role === 'student' || user.value?.student;
+      
+      // Show student menu on search and profile routes if user is student (single role)
+      const isSearchOrProfile = currentPath === '/search' || currentPath === '/profile' || currentPath.includes('/tutors');
+      if (isSearchOrProfile && isStudentUser && !user.value?.tutor) {
+        return true;
+      }
+      
       return isStudentPath && isStudentUser;
     });
 

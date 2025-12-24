@@ -108,6 +108,12 @@
                        active-class="text-pink-600 font-semibold">
             <i class="fas fa-eye mr-2"></i>View Profile
           </router-link>
+
+          <router-link to="/tutor-jobs"
+                       class="text-gray-700 hover:text-pink-600 font-medium transition"
+                       active-class="text-pink-600 font-semibold">
+            <i class="fas fa-briefcase mr-2"></i>Student Leads
+          </router-link>
         </nav>
       </div>
 
@@ -156,6 +162,13 @@
             <router-link to="/tutor/profile/view" @click="closeMobileMenu" 
                          class="block px-4 py-2 text-gray-700 font-medium hover:bg-gray-50 rounded-md">
               <i class="fas fa-eye mr-2"></i>View Profile
+            </router-link>
+          </li>
+
+          <li>
+            <router-link to="/tutor-jobs" @click="closeMobileMenu"
+                         class="block px-4 py-2 text-gray-700 font-medium hover:bg-gray-50 rounded-md">
+              <i class="fas fa-briefcase mr-2"></i>Student Leads
             </router-link>
           </li>
         </ul>

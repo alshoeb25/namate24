@@ -15,7 +15,9 @@
         </div>
 
         <div class="flex gap-4 overflow-x-auto pb-2 scrollbar-hidden">
-          <div v-for="(category, idx) in categories" :key="idx" class="flex flex-col items-center">
+          <div v-for="(category, idx) in categories" :key="idx" 
+               class="flex flex-col items-center cursor-pointer transition-transform hover:scale-105"
+               @click="searchBySubject(category.name)">
             <div class="w-20 h-20 rounded-2xl flex items-center justify-center" :style="{ backgroundColor: category.bgColor }">
               <img :src="category.icon" class="w-8 h-8" />
             </div>
@@ -113,6 +115,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../store';
 import HeroSearch from '../components/HeroSearch.vue';
+import axios from 'axios';
 
 export default {
   name: 'Home',
@@ -128,13 +131,32 @@ export default {
     const searchSubject = ref('');
     const searchLocation = ref('');
 
-    const categories = [
-      { name: 'Math', bgColor: '#FEF3C7', icon: 'https://img.icons8.com/ios-filled/50/FD7E14/calculator.png' },
-      { name: 'Science', bgColor: '#DBEAFE', icon: 'https://img.icons8.com/ios-filled/50/1E90FF/test-tube.png' },
-      { name: 'English', bgColor: '#E9D5FF', icon: 'https://img.icons8.com/ios-filled/50/9C27B0/letter-e.png' },
-      { name: 'Coding', bgColor: '#DCFCE7', icon: 'https://img.icons8.com/ios-filled/50/4CAF50/code.png' },
-      { name: 'Music', bgColor: '#FCE7F3', icon: 'https://img.icons8.com/ios-filled/50/E91E63/musical-notes.png' },
-    ];
+    const categories = ref([]);
+
+    // Icon mapping for subjects with colors
+    const subjectIconMap = {
+      'Mathematics': { icon: 'https://img.icons8.com/ios-filled/50/FD7E14/calculator.png', bgColor: '#FEF3C7' },
+      'Math': { icon: 'https://img.icons8.com/ios-filled/50/FD7E14/calculator.png', bgColor: '#FEF3C7' },
+      'Physics': { icon: 'https://img.icons8.com/ios-filled/50/1E90FF/test-tube.png', bgColor: '#DBEAFE' },
+      'Chemistry': { icon: 'https://img.icons8.com/ios-filled/50/00BFA5/flask.png', bgColor: '#E0F2F1' },
+      'Biology': { icon: 'https://img.icons8.com/ios-filled/50/4CAF50/dna.png', bgColor: '#E8F5E9' },
+      'Science': { icon: 'https://img.icons8.com/ios-filled/50/1E90FF/test-tube.png', bgColor: '#DBEAFE' },
+      'English': { icon: 'https://img.icons8.com/ios-filled/50/9C27B0/book.png', bgColor: '#E9D5FF' },
+      'Coding': { icon: 'https://img.icons8.com/ios-filled/50/4CAF50/code.png', bgColor: '#DCFCE7' },
+      'Programming': { icon: 'https://img.icons8.com/ios-filled/50/4CAF50/code.png', bgColor: '#DCFCE7' },
+      'Computer Science': { icon: 'https://img.icons8.com/ios-filled/50/4CAF50/laptop.png', bgColor: '#DCFCE7' },
+      'Music': { icon: 'https://img.icons8.com/ios-filled/50/E91E63/musical-notes.png', bgColor: '#FCE7F3' },
+      'Art': { icon: 'https://img.icons8.com/ios-filled/50/FF5722/paint-palette.png', bgColor: '#FFEBEE' },
+      'History': { icon: 'https://img.icons8.com/ios-filled/50/795548/hourglass.png', bgColor: '#EFEBE9' },
+      'Geography': { icon: 'https://img.icons8.com/ios-filled/50/2196F3/globe.png', bgColor: '#E3F2FD' },
+      'Economics': { icon: 'https://img.icons8.com/ios-filled/50/FFC107/money.png', bgColor: '#FFF9C4' },
+      'Accountancy': { icon: 'https://img.icons8.com/ios-filled/50/4CAF50/accounting.png', bgColor: '#F1F8E9' },
+      'Business Studies': { icon: 'https://img.icons8.com/ios-filled/50/607D8B/business.png', bgColor: '#ECEFF1' },
+      'Political Science': { icon: 'https://img.icons8.com/ios-filled/50/3F51B5/vote.png', bgColor: '#E8EAF6' },
+      'Sociology': { icon: 'https://img.icons8.com/ios-filled/50/9C27B0/people.png', bgColor: '#F3E5F5' },
+      'Psychology': { icon: 'https://img.icons8.com/ios-filled/50/673AB7/brain.png', bgColor: '#EDE7F6' },
+      'default': { icon: 'https://img.icons8.com/ios-filled/50/3F51B5/book.png', bgColor: '#E8EAF6' }
+    };
 
     const featuredTeachers = ref([
       {
@@ -166,12 +188,49 @@ export default {
     const isAuthenticated = computed(() => userStore.token !== null);
     const user = computed(() => userStore.user);
 
+    // Fetch subjects from database
+    const fetchSubjects = async () => {
+      try {
+        const response = await axios.get('/api/subjects');
+        const subjects = response.data;
+        
+        // Map subjects with icons, limit to 10
+        categories.value = subjects.slice(0, 10).map(subject => {
+          const iconData = subjectIconMap[subject.name] || subjectIconMap['default'];
+          return {
+            name: subject.name,
+            bgColor: iconData.bgColor,
+            icon: iconData.icon
+          };
+        });
+      } catch (error) {
+        console.error('Failed to fetch subjects:', error);
+        // Fallback to default categories if fetch fails
+        categories.value = [
+          { name: 'Math', bgColor: '#FEF3C7', icon: 'https://img.icons8.com/ios-filled/50/FD7E14/calculator.png' },
+          { name: 'Science', bgColor: '#DBEAFE', icon: 'https://img.icons8.com/ios-filled/50/1E90FF/test-tube.png' },
+          { name: 'English', bgColor: '#E9D5FF', icon: 'https://img.icons8.com/ios-filled/50/9C27B0/book.png' },
+          { name: 'Coding', bgColor: '#DCFCE7', icon: 'https://img.icons8.com/ios-filled/50/4CAF50/code.png' },
+          { name: 'Music', bgColor: '#FCE7F3', icon: 'https://img.icons8.com/ios-filled/50/E91E63/musical-notes.png' },
+        ];
+      }
+    };
+
     const performSearch = () => {
       router.push({
         name: 'search',
         query: {
           subject: searchSubject.value,
           location: searchLocation.value,
+        }
+      });
+    };
+
+    const searchBySubject = (subjectName) => {
+      router.push({
+        name: 'search',
+        query: {
+          subject: subjectName,
         }
       });
     };
@@ -187,6 +246,7 @@ export default {
 
     onMounted(async () => {
       await userStore.fetchUser();
+      await fetchSubjects();
     });
 
     return {
@@ -199,6 +259,7 @@ export default {
       isAuthenticated,
       user,
       performSearch,
+      searchBySubject,
       viewMoreTeachers,
       logout,
     };

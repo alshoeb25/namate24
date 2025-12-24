@@ -14,10 +14,19 @@ class Student extends Model
         'learning_goals',
         'preferred_subjects',
         'budget_range',
+        'phone',
+        'country_code',
+        'city',
+        'area',
+        'address',
+        'lat',
+        'lng',
     ];
 
     protected $casts = [
         'preferred_subjects' => 'array',
+        'lat' => 'float',
+        'lng' => 'float',
     ];
 
     /**
