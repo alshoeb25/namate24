@@ -150,7 +150,11 @@ Route::middleware('auth:api')->group(function() {
         Route::post('apply-referral', [WalletController::class, 'applyReferralCode']); // Apply referral code
         Route::get('order/{orderId}/status', [WalletController::class, 'getOrderStatus']); // Get order status
         Route::post('order/{orderId}/cancel', [WalletController::class, 'cancelPayment']); // Cancel pending payment
+        Route::get('order/{orderId}/receipt', [WalletController::class, 'downloadReceipt']); // Download receipt
     });
+
+    // Backward/alternate path for receipt downloads used by frontend
+    Route::get('orders/{orderId}/receipt', [WalletController::class, 'downloadReceipt']);
 
     Route::post('payouts', [PayoutController::class,'store']);
 

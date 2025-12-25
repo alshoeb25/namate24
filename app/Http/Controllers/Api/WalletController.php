@@ -7,6 +7,7 @@ use App\Models\CoinPackage;
 use App\Models\CoinTransaction;
 use App\Models\Referral;
 use App\Models\User;
+use App\Models\Order;
 use Illuminate\Http\Request;
 use Razorpay\Api\Api as RazorpayApi;
 use Illuminate\Support\Facades\DB;
@@ -119,6 +120,12 @@ class WalletController extends Controller
 
     /**
      * Create Razorpay order for coin purchase
+     * 
+     * Flow:
+     * 1. Create Order record (pending)
+     * 2. Create Razorpay order
+     * 3. Create Transaction record (pending)
+     * 4. Return order details to frontend
      */
     public function purchaseCoins(Request $request)
     {
@@ -130,76 +137,116 @@ class WalletController extends Controller
         $user = $request->user();
 
         DB::beginTransaction();
+
         try {
-            // Create Razorpay order
+            // STEP 1: Create internal order FIRST
+            $receipt = 'coin_' . $user->id . '_' . time();
+
+            $order = Order::create([
+                'user_id' => $user->id,
+                'amount' => $package->price,
+                'currency' => 'INR',
+                'package_id' => $package->id,
+                'coins' => $package->coins,
+                'bonus_coins' => $package->bonus_coins,
+                'status' => 'PENDING',
+                'receipt' => $receipt,
+            ]);
+
+            // STEP 2: Create Razorpay order
             $rzp = new RazorpayApi(
-                config('services.razorpay.key'), 
+                config('services.razorpay.key'),
                 config('services.razorpay.secret')
             );
-            
-            $order = $rzp->order->create([
-                'amount' => intval($package->price * 100), // Convert to paise
+
+            $razorpayOrder = $rzp->order->create([
+                'amount' => (int) ($package->price * 100),
                 'currency' => 'INR',
-                'receipt' => 'coin_' . $user->id . '_' . time(),
+                'receipt' => $receipt,
                 'payment_capture' => 1,
                 'notes' => [
+                    'db_order_id' => $order->id,
                     'user_id' => $user->id,
                     'package_id' => $package->id,
                     'type' => 'coin_purchase',
                 ],
             ]);
 
-            // Create pending transaction record
+            // Update order with Razorpay ID
+            $order->update([
+                'razorpay_order_id' => $razorpayOrder['id'],
+            ]);
+
+            // STEP 3: Create transaction (INITIATED)
             $transaction = CoinTransaction::create([
                 'user_id' => $user->id,
-                'type' => 'purchase',
-                'amount' => 0, // Will be updated after payment
+                'order_id' => $order->id,
+                'razorpay_order_id' => $razorpayOrder['id'],
+                'type' => 'CREDIT',
+                'amount' => $package->price,
+                'coins' => $package->coins + $package->bonus_coins,
                 'balance_after' => $user->coins,
-                'description' => "Purchase {$package->name} (Pending)",
-                'order_id' => $order['id'],
+                'status' => 'INITIATED',
+                'description' => "Coin purchase: {$package->name}",
                 'meta' => [
                     'package_id' => $package->id,
                     'package_name' => $package->name,
+                    // Persist coin breakdown so verification can rely on it later
                     'coins' => $package->coins,
                     'bonus_coins' => $package->bonus_coins,
-                    'price' => $package->price,
-                    'status' => 'pending',
                 ],
             ]);
 
             DB::commit();
 
-            $isProduction = app()->environment('production');
-            $baseUrl = $isProduction ? config('app.url') : url('/');
-
             return response()->json([
-                'order' => $order,
+                'success' => true,
+                'order' => [
+                    'id' => $razorpayOrder['id'],
+                    'db_order_id' => $order->id,
+                    'razorpay_order_id' => $razorpayOrder['id'],
+                    'amount' => intval($package->price * 100),
+                    'currency' => 'INR',
+                ],
                 'transaction_id' => $transaction->id,
-                'package' => $package,
+                'package' => [
+                    'id' => $package->id,
+                    'name' => $package->name,
+                    'coins' => $package->coins,
+                    'bonus_coins' => $package->bonus_coins,
+                    'price' => $package->price,
+                ],
                 'user' => [
                     'name' => $user->name,
                     'email' => $user->email,
                     'phone' => $user->phone,
                 ],
-                'callback_url' => $baseUrl . '/api/wallet/payment-callback',
-                'redirect' => [
-                    'success_url' => $user->hasRole('tutor') 
-                        ? url('/tutor/wallet?payment=success')
-                        : url('/student/wallet?payment=success'),
-                    'cancel_url' => $user->hasRole('tutor')
-                        ? url('/tutor/wallet?payment=cancelled')
-                        : url('/student/wallet?payment=cancelled'),
-                ],
             ]);
         } catch (\Throwable $e) {
             DB::rollBack();
-            \Log::error('Coin purchase failed: ' . $e->getMessage());
-            return response()->json(['error' => 'Could not create purchase order'], 500);
+
+            \Log::error('Coin purchase failed', [
+                'user_id' => $user->id,
+                'package_id' => $package->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to create order',
+            ], 500);
         }
     }
 
     /**
      * Verify Razorpay payment and credit coins
+     * 
+     * Flow:
+     * 1. Verify payment signature
+     * 2. Update Order record (completed)
+     * 3. Update Transaction record (completed + amount)
+     * 4. Add coins to user wallet
+     * 5. Return success with new balance
      */
     public function verifyPayment(Request $request)
     {
@@ -213,25 +260,30 @@ class WalletController extends Controller
         $transaction = CoinTransaction::findOrFail($data['transaction_id']);
         $user = $request->user();
 
-        // Ensure transaction belongs to user
+        // Verify transaction belongs to user
         if ($transaction->user_id !== $user->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized',
+            ], 403);
         }
 
         // Check if already processed
         if ($transaction->payment_id) {
             return response()->json([
+                'success' => true,
                 'message' => 'Payment already processed',
-                'balance' => $user->coins
+                'balance' => $user->coins,
+                'coins_added' => 0,
             ]);
         }
 
-        // Verify Razorpay signature
+        // Step 1: Verify Razorpay signature
         $payload = $data['razorpay_order_id'] . '|' . $data['razorpay_payment_id'];
         $expectedSig = hash_hmac('sha256', $payload, config('services.razorpay.secret'));
 
         if (!hash_equals($expectedSig, $data['razorpay_signature'])) {
-            // Mark transaction as failed
+            // Update transaction as failed
             $meta = $transaction->meta;
             $transaction->update([
                 'meta' => array_merge($meta, [
@@ -239,38 +291,187 @@ class WalletController extends Controller
                     'failure_reason' => 'Invalid signature',
                 ]),
             ]);
-            return response()->json(['message' => 'Invalid payment signature'], 422);
+
+            // Update order as failed
+            Order::where('razorpay_order_id', $data['razorpay_order_id'])
+                ->update(['status' => 'failed']);
+
+            \Log::warning('Payment signature verification failed', [
+                'user_id' => $user->id,
+                'order_id' => $data['razorpay_order_id'],
+                'payment_id' => $data['razorpay_payment_id'],
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid payment signature. Payment rejected.',
+            ], 422);
         }
 
         DB::beginTransaction();
         try {
-            $meta = $transaction->meta;
-            $totalCoins = $meta['coins'] + $meta['bonus_coins'];
+            // Get order from database
+            $order = Order::where('razorpay_order_id', $data['razorpay_order_id'])
+                ->where('user_id', $user->id)
+                ->firstOrFail();
 
-            // Credit coins to user
-            $user->increment('coins', $totalCoins);
+            // Step 2: Update Order record
+            $order->update([
+                'razorpay_payment_id' => $data['razorpay_payment_id'],
+                'razorpay_signature' => $data['razorpay_signature'],
+                'status' => 'completed',
+                'paid_at' => now(),
+            ]);
 
-            // Update transaction
+            // Get coins from meta
+            $meta = $transaction->meta ?? [];
+            $coins = $meta['coins']
+                ?? ($order->coins ?? null)
+                ?? $transaction->coins
+                ?? 0;
+            $bonusCoins = $meta['bonus_coins']
+                ?? ($order->bonus_coins ?? null)
+                ?? 0;
+
+            // If we only have a total coin count, treat it as base coins with zero bonus
+            $totalCoins = $coins + $bonusCoins;
+
+            // Step 3: Update the pending transaction to completed
             $transaction->update([
                 'amount' => $totalCoins,
-                'balance_after' => $user->coins,
+                'balance_after' => $user->coins + $totalCoins,
                 'payment_id' => $data['razorpay_payment_id'],
-                'description' => "Purchased {$meta['package_name']} - {$meta['coins']} coins" . 
-                    ($meta['bonus_coins'] > 0 ? " + {$meta['bonus_coins']} bonus" : ""),
-                'meta' => array_merge($meta, ['status' => 'completed']),
+                'description' => "{$meta['package_name']}: {$coins} coins" . 
+                    ($bonusCoins > 0 ? " + {$bonusCoins} bonus" : ""),
+                'meta' => array_merge($meta, [
+                    'status' => 'completed',
+                    'razorpay_payment_id' => $data['razorpay_payment_id'],
+                    'razorpay_signature' => $data['razorpay_signature'],
+                ]),
             ]);
+
+            // Step 4: Add coins to user wallet
+            $user->increment('coins', $totalCoins);
+            $user->refresh();
 
             DB::commit();
 
-            return response()->json([
-                'message' => 'Payment successful! Coins credited.',
+            \Log::info('Payment completed successfully', [
+                'user_id' => $user->id,
+                'transaction_id' => $transaction->id,
+                'order_id' => $order->id,
+                'razorpay_order_id' => $data['razorpay_order_id'],
+                'payment_id' => $data['razorpay_payment_id'],
                 'coins_added' => $totalCoins,
-                'balance' => $user->coins,
             ]);
+
+            // Step 5: Return response
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment successful! Coins credited to your wallet.',
+                'coins_added' => $totalCoins,
+                'coins_breakdown' => [
+                    'base_coins' => $coins,
+                    'bonus_coins' => $bonusCoins,
+                ],
+                'balance' => $user->coins,
+                'transaction' => [
+                    'id' => $transaction->id,
+                    'status' => 'completed',
+                    'amount' => $transaction->amount,
+                    'updated_at' => $transaction->updated_at,
+                ],
+                'order' => [
+                    'id' => $order->id,
+                    'razorpay_order_id' => $order->razorpay_order_id,
+                    'razorpay_payment_id' => $order->razorpay_payment_id,
+                    'amount' => $order->amount,
+                    'status' => $order->status,
+                    'paid_at' => $order->paid_at,
+                ],
+            ], 200);
+
         } catch (\Throwable $e) {
             DB::rollBack();
-            \Log::error('Payment verification failed: ' . $e->getMessage());
-            return response()->json(['error' => 'Could not process payment'], 500);
+            \Log::error('Payment verification failed', [
+                'user_id' => $user->id,
+                'order_id' => $data['razorpay_order_id'],
+                'payment_id' => $data['razorpay_payment_id'],
+                'error' => $e->getMessage(),
+            ]);
+
+            // Mark transaction as failed
+            $meta = $transaction->meta;
+            $transaction->update([
+                'meta' => array_merge($meta, [
+                    'status' => 'failed',
+                    'failure_reason' => 'Server error: ' . $e->getMessage(),
+                ]),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment verification failed. Please contact support.',
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
+    }
+
+    /**
+     * Download a simple HTML receipt for a wallet order
+     */
+    public function downloadReceipt(Request $request, $orderId)
+    {
+        $user = $request->user();
+
+        $order = Order::where(function ($q) use ($orderId) {
+                $q->where('id', $orderId)
+                    ->orWhere('razorpay_order_id', $orderId);
+            })
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$order) {
+            return response()->json([
+                'message' => 'Order not found',
+            ], 404);
+        }
+
+        $transaction = CoinTransaction::where('order_id', $order->id)
+            ->where('user_id', $user->id)
+            ->latest()
+            ->first();
+
+        $coins = $transaction->meta['coins'] ?? $order->coins ?? $transaction->coins ?? 0;
+        $bonus = $transaction->meta['bonus_coins'] ?? $order->bonus_coins ?? 0;
+        $totalCoins = $coins + $bonus;
+
+        $html = view('receipts.wallet', [
+            'order' => $order,
+            'transaction' => $transaction,
+            'user' => $user,
+            'coins' => $coins,
+            'bonus' => $bonus,
+            'totalCoins' => $totalCoins,
+        ])->render();
+
+        // Use DOMPDF for PDF generation
+        try {
+            $pdf = \PDF::loadHTML($html)
+                ->setPaper('a4')
+                ->setOption('margin-top', 0)
+                ->setOption('margin-bottom', 0)
+                ->setOption('margin-left', 0)
+                ->setOption('margin-right', 0);
+
+            return $pdf->download('receipt-' . $order->id . '.pdf');
+        } catch (\Exception $e) {
+            // Fallback to HTML if PDF generation fails
+            \Log::warning('PDF generation failed for order ' . $order->id . ': ' . $e->getMessage());
+            return response($html, 200, [
+                'Content-Type' => 'text/html; charset=UTF-8',
+                'Content-Disposition' => 'inline; filename="wallet-receipt-' . $order->id . '.html"'
+            ]);
         }
     }
 
@@ -626,18 +827,27 @@ class WalletController extends Controller
             return response()->json(['error' => 'Order not found'], 404);
         }
 
-        $meta = $transaction->meta;
+        $meta = $transaction->meta ?? [];
 
-        if (isset($meta['status']) && $meta['status'] !== 'pending') {
+        if (isset($meta['status']) && !in_array($meta['status'], ['pending', 'initiated', 'INITIATED'])) {
             return response()->json(['error' => 'Cannot cancel this payment'], 400);
         }
 
+        $reason = $request->input('reason', 'Cancelled by user');
+
         $transaction->update([
+            'status' => 'FAILED',
             'meta' => array_merge($meta, [
-                'status' => 'cancelled',
+                'status' => 'failed',
+                'failure_reason' => $reason,
                 'cancelled_at' => now(),
             ]),
         ]);
+
+        // Mark order as failed too
+        Order::where('id', $orderId)
+            ->orWhere('razorpay_order_id', $orderId)
+            ->update(['status' => 'failed']);
 
         return response()->json([
             'message' => 'Payment cancelled successfully',

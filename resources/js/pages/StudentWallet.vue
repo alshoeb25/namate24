@@ -96,9 +96,17 @@
         <!-- Buy Coins Tab -->
         <div v-show="activeTab === 'buy'">
           <BuyCoins
+            ref="buyCoinsComponent"
             :packages="packages"
             :loading="loading"
-            @purchase="purchasePackage"
+            :prefill="{
+              name: $store?.state?.user?.name || '',
+              email: $store?.state?.user?.email || '',
+              contact: $store?.state?.user?.phone || ''
+            }"
+            @order-created="handleOrderCreated"
+            @payment-success="handlePaymentSuccess"
+            @payment-failed="handlePaymentFailed"
           />
         </div>
 
@@ -159,6 +167,16 @@
         </div>
       </div>
     </div>
+
+    <TransactionDetailsModal
+      :visible="transactionModal.visible"
+      :status="transactionModal.status"
+      :details="transactionModal.details"
+      @close="transactionModal.visible = false"
+      @retry="retryPayment"
+      @download="downloadReceipt"
+      @support="contactSupport"
+    />
   </div>
 </template>
 
@@ -167,18 +185,21 @@ import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import ReferralShareCard from '../components/Wallet/ReferralShareCard.vue';
 import BuyCoins from '../components/Wallet/BuyCoins.vue';
+import TransactionDetailsModal from '../components/Wallet/TransactionDetailsModal.vue';
 
 export default {
   name: 'StudentWallet',
   components: {
     ReferralShareCard,
-    BuyCoins
+    BuyCoins,
+    TransactionDetailsModal
   },
   setup() {
     const wallet = ref({});
     const packages = ref([]);
     const loading = ref(true);
     const activeTab = ref('buy');
+    const transactionModal = ref({ visible: false, status: 'success', details: {} });
 
     const fetchWallet = async () => {
       try {
@@ -210,72 +231,100 @@ export default {
       }, 3000);
     };
 
-    const purchasePackage = async (pkg) => {
-      if (!window.Razorpay) {
-        showToast('Payment gateway not loaded. Please refresh the page.', 'error');
-        return;
+    const normalizeAmount = (amount) => {
+      if (amount === null || amount === undefined) return null;
+      return amount > 1000 ? amount / 100 : amount;
+    };
+
+    // Handle order created event from BuyCoins component
+    const handleOrderCreated = ({ pkg, order }) => {
+      console.log('Order created:', { pkg, order });
+      // Optional: Show loading state or track order
+    };
+
+    // Handle successful payment
+    const handlePaymentSuccess = async ({ pkg, response, result }) => {
+      console.log('Payment success:', { pkg, response, result });
+      // Reload wallet to get updated balance
+      await fetchWallet();
+      
+      // Show success message
+      const totalCoins = pkg.coins + (pkg.bonus_coins || 0);
+      showToast(`🎉 Payment successful! ${totalCoins} coins added to your wallet.`, 'success');
+
+      const order = result?.order || {};
+      const amount = normalizeAmount(order.amount ?? pkg.price);
+      const baseCoins = result?.coins_breakdown?.base_coins ?? pkg.coins;
+      const bonusCoins = result?.coins_breakdown?.bonus_coins ?? pkg.bonus_coins ?? 0;
+
+      transactionModal.value = {
+        visible: true,
+        status: 'success',
+        details: {
+          transactionId: result?.transaction?.id || response?.razorpay_payment_id || order?.razorpay_order_id,
+          paymentId: response?.razorpay_payment_id,
+          orderId: order?.razorpay_order_id || order?.id,
+          date: order?.paid_at || new Date().toISOString(),
+          amount,
+          totalAmount: amount,
+          basePrice: normalizeAmount(pkg.price),
+          discount: 0,
+          tax: null,
+          plan: pkg.name,
+          paymentMethod: 'Razorpay',
+          baseCoins,
+          bonusCoins
+        }
+      };
+    };
+
+    // Handle payment failure
+    const handlePaymentFailed = ({ pkg, error, isRetryable = false }) => {
+      console.error('Payment failed:', { pkg, error, isRetryable });
+      
+      const errorMsg = error?.response?.data?.message 
+        || error?.error?.description 
+        || error?.message 
+        || 'Payment failed. Please try again.';
+      
+      showToast(errorMsg, 'error');
+
+      transactionModal.value = {
+        visible: true,
+        status: 'failed',
+        details: {
+          transactionId: error?.error?.metadata?.order_id || error?.error?.payment_id,
+          plan: pkg?.name,
+          amount: normalizeAmount(pkg?.price),
+          totalAmount: normalizeAmount(pkg?.price),
+          baseCoins: pkg?.coins,
+          bonusCoins: pkg?.bonus_coins || 0,
+          errorMessage: errorMsg,
+          basePrice: pkg?.price,
+          isRetryable
+        }
+      };
+    };
+
+    const retryPayment = () => {
+      transactionModal.value.visible = false;
+      // Call BuyCoins retry method to create new order and open Razorpay
+      if (this.$refs.buyCoinsComponent?.retryPayment) {
+        this.$refs.buyCoinsComponent.retryPayment();
       }
+    };
 
-      try {
-        // Create Razorpay order
-        const { data } = await axios.post('/api/wallet/purchase', {
-          package_id: pkg.id
-        });
-
-        // Initialize Razorpay
-        const options = {
-          key: import.meta.env.VITE_RAZORPAY_KEY || 'rzp_test_xxxxxxxxxxxx',
-          amount: data.order.amount,
-          currency: 'INR',
-          order_id: data.order.id,
-          name: 'Namate24',
-          description: `Purchase ${pkg.name}`,
-          image: 'https://image2url.com/images/1765179057005-967d0875-ac5d-4a43-b65f-a58abd9f651d.png',
-          handler: async function (response) {
-            try {
-              // Verify payment
-              await axios.post('/api/wallet/verify-payment', {
-                transaction_id: data.transaction_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature
-              });
-
-              // Reload wallet
-              await fetchWallet();
-              showToast(`Payment successful! ${pkg.coins} coins added to your wallet.`, 'success');
-            } catch (error) {
-              console.error('Payment verification failed:', error);
-              const errorMsg = error.response?.data?.message || 'Payment verification failed. Please contact support.';
-              showToast(errorMsg, 'error');
-            }
-          },
-          prefill: {
-            name: '',
-            email: '',
-            contact: ''
-          },
-          theme: {
-            color: '#3b82f6'
-          },
-          modal: {
-            ondismiss: function() {
-              showToast('Payment cancelled', 'error');
-            }
-          }
-        };
-
-        const rzp = new window.Razorpay(options);
-        rzp.on('payment.failed', function (response) {
-          console.error('Payment failed:', response.error);
-          showToast(`Payment failed: ${response.error.description}`, 'error');
-        });
-        rzp.open();
-      } catch (error) {
-        console.error('Failed to initiate purchase:', error);
-        const errorMsg = error.response?.data?.message || 'Failed to initiate purchase. Please try again.';
-        showToast(errorMsg, 'error');
+    const downloadReceipt = () => {
+      const orderId = transactionModal.value.details?.orderId;
+      if (orderId) {
+        window.open(`/api/orders/${orderId}/receipt`, '_blank');
+      } else {
+        window.print();
       }
+    };
+
+    const contactSupport = () => {
+      window.location.href = 'mailto:support@namate24.com?subject=Payment%20support&body=Please%20help%20with%20my%20wallet%20transaction.';
     };
 
     const copyReferralCode = () => {
@@ -330,12 +379,18 @@ export default {
       loading,
       toast,
       activeTab,
-      purchasePackage,
+      handleOrderCreated,
+      handlePaymentSuccess,
+      handlePaymentFailed,
       copyReferralCode,
       getTransactionIconClass,
       getTransactionIcon,
       formatDate,
-      showToast
+      showToast,
+      transactionModal,
+      retryPayment,
+      downloadReceipt,
+      contactSupport
     };
   }
 };
