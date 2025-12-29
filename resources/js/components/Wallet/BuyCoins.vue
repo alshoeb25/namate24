@@ -49,10 +49,10 @@
           <!-- Buy Button -->
           <button
             @click="onBuy(pkg)"
-            :disabled="processingId === pkg.id"
+            :disabled="isProcessing || processingId === pkg.id"
             class="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold py-3 rounded-lg hover:from-pink-600 hover:to-purple-700 transition transform hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            <span v-if="processingId === pkg.id">
+            <span v-if="processingId === pkg.id || isProcessing">
               <i class="fas fa-spinner fa-spin mr-2"></i>Processing...
             </span>
             <span v-else>
@@ -136,10 +136,11 @@ export default {
       default: () => ({ name: '', email: '', contact: '' })
     }
   },
-  emits: ['purchase', 'order-created', 'payment-success', 'payment-failed'],
+  emits: ['purchase', 'order-created', 'payment-success', 'payment-failed', 'payment-notify'],
   data() {
     return {
       processingId: null,
+      isProcessing: false, // global lock to prevent multiple simultaneous purchases
       razorpayReady: !!(typeof window !== 'undefined' && window.Razorpay),
       currentTransactionId: null,
       failedPackage: null
@@ -184,6 +185,7 @@ export default {
           return;
         }
         this.processingId = pkg.id;
+        this.isProcessing = true;
         this.failedPackage = pkg;
         await this.ensureRazorpay();
 
@@ -205,6 +207,7 @@ export default {
         console.error('Order creation failed', err);
         this.$emit('payment-failed', { pkg, error: err, isRetryable: false });
         this.processingId = null;
+        this.isProcessing = false;
       }
     },
 
@@ -218,6 +221,7 @@ export default {
       if (!window.Razorpay) {
         console.error('Razorpay not ready');
         this.processingId = null;
+        this.isProcessing = false;
         return;
       }
 
@@ -241,6 +245,7 @@ export default {
         modal: {
           ondismiss: () => {
             this.processingId = null;
+            this.isProcessing = false;
           }
         }
       };
@@ -254,9 +259,14 @@ export default {
           }).catch(() => {});
         }
         // Gateway failures are retryable; store package for retry
-        this.failedPackage = { ...this.failedPackage, id: resp?.error?.metadata?.package_id };
+        this.failedPackage = this.failedPackage || pkg;
+        // ensure we remember original package id if Razorpay metadata not set
+        if (!this.failedPackage.id) {
+          this.failedPackage = { ...pkg };
+        }
         this.$emit('payment-failed', { pkg: this.failedPackage, error: resp.error, isRetryable: true });
         this.processingId = null;
+        this.isProcessing = false;
       });
       rzp.open();
     },
@@ -271,13 +281,28 @@ export default {
           razorpay_signature: response.razorpay_signature
         };
         const { data } = await axios.post(this.verifyPaymentUrl, verifyPayload);
+        const notify = {
+          type: 'success',
+          title: 'Payment successful',
+          message: 'Coins credited to your wallet. View transaction history.',
+          ctaUrl: '/wallet/payment-history'
+        };
         this.$emit('payment-success', { pkg, response, result: data });
+        this.$emit('payment-notify', notify);
       } catch (err) {
         console.error('Payment verification failed', err);
         // Verification failures are NOT retryable (backend issue, not gateway)
+        const notify = {
+          type: 'error',
+          title: 'Payment failed',
+          message: 'Your payment was not completed. Check transactions or retry.',
+          ctaUrl: '/wallet/payment-history'
+        };
         this.$emit('payment-failed', { pkg, error: err, isRetryable: false });
+        this.$emit('payment-notify', notify);
       } finally {
         this.processingId = null;
+        this.isProcessing = false;
       }
     }
   }

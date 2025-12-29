@@ -277,6 +277,7 @@ import { useUserStore } from '../store';
 import axios from '../bootstrap';
 import HeaderRoot from '../components/header/HeaderRoot.vue';
 import { countryCodes } from '../utils/countryCodes';
+import { loadGoogleMaps } from '../utils/googleMaps';
 
 export default {
   name: 'ProfileManagement',
@@ -340,10 +341,13 @@ export default {
         }
       }
       
-      // Load Google Maps script
-      await loadGoogleMapsScript();
-      await nextTick();
-      initAutocomplete();
+      try {
+        await loadGoogleMaps();
+        await nextTick();
+        initAutocomplete();
+      } catch (error) {
+        console.error('Failed to load Google Maps', error);
+      }
     });
 
     const getProfilePhoto = () => {
@@ -463,40 +467,13 @@ export default {
       return valid;
     };
 
-    const loadGoogleMapsScript = () => {
-      return new Promise((resolve, reject) => {
-        // Check if already loaded
-        if (window.google && window.google.maps) {
-          resolve();
-          return;
-        }
-
-        // Check if script is already being loaded
-        if (document.querySelector('script[src*="maps.googleapis.com"]')) {
-          // Wait for it to load
-          const checkGoogleMaps = setInterval(() => {
-            if (window.google && window.google.maps) {
-              clearInterval(checkGoogleMaps);
-              resolve();
-            }
-          }, 100);
-          return;
-        }
-
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places`;
-        script.async = true;
-        script.defer = true;
-        script.onload = resolve;
-        script.onerror = reject;
-        document.head.appendChild(script);
-      });
-    };
-
     const initAutocomplete = () => {
-      if (!locationInput.value || !window.google) return;
+      if (!locationInput.value || !window.google?.maps?.places?.Autocomplete) {
+        console.warn('Google Maps Places API not available');
+        return;
+      }
 
-      autocomplete = new google.maps.places.Autocomplete(locationInput.value, {
+      autocomplete = new window.google.maps.places.Autocomplete(locationInput.value, {
         types: ['geocode'],
         componentRestrictions: { country: 'in' } // Restrict to India, change as needed
       });

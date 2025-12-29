@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\InsufficientBalanceException;
+use App\Notifications\CoinSpentNotification;
 use App\Models\EnquiryUnlock;
 use App\Models\StudentRequirement;
 use App\Models\User;
@@ -25,13 +26,16 @@ class EnquiryService
 
         return DB::transaction(function () use ($data, $ownerId, $subjectIds, $postFee, $unlockPrice, $maxLeads) {
             if ($postFee > 0) {
-                $this->walletService->debit(
-                    User::findOrFail($ownerId),
+                $owner = User::findOrFail($ownerId);
+                $transaction = $this->walletService->debit(
+                    $owner,
                     $postFee,
                     'enquiry_post',
                     'Posted a new enquiry',
                     ['reason' => 'enquiry_post']
                 );
+
+                $owner->notify(new CoinSpentNotification($transaction));
             }
 
             $enquiry = StudentRequirement::create(array_merge($data, [
@@ -75,7 +79,7 @@ class EnquiryService
             $unlockPrice = (int)($lockedEnquiry->unlock_price ?? config('enquiry.unlock_fee', 0));
 
             if ($unlockPrice > 0) {
-                $this->walletService->debit(
+                $transaction = $this->walletService->debit(
                     $lockedTutor,
                     $unlockPrice,
                     'enquiry_unlock',
@@ -85,6 +89,8 @@ class EnquiryService
                         'student_id' => $lockedEnquiry->student->id,
                     ]
                 );
+
+                $lockedTutor->notify(new CoinSpentNotification($transaction));
             }
 
             $unlock = EnquiryUnlock::create([
@@ -126,8 +132,8 @@ class EnquiryService
             'max_leads' => $enquiry->max_leads,
         ]);
 
-        // TODO: Send actual notification (email, SMS, push notification)
-        // Example: $student->notify(new TeacherInterestedNotification($enquiry, $teacher));
+        // Send notification (queued and broadcast)
+        $student->notify(new \App\Notifications\TeacherInterestedNotification($enquiry, $teacher));
     }
 
     /**
@@ -144,8 +150,8 @@ class EnquiryService
             'max_leads_reached' => $enquiry->max_leads,
         ]);
 
-        // TODO: Send actual notification
-        // Example: $student->notify(new EnquiryFullNotification($enquiry));
+        // Send notification (queued and broadcast)
+        $student->notify(new \App\Notifications\EnquiryFullNotification($enquiry));
     }
 
     public function refundIfNoUnlocks(StudentRequirement $enquiry, User $student): ?array

@@ -22,12 +22,9 @@
       <!-- Right: Notification + Avatar (Desktop & Mobile) -->
       <div class="flex items-center gap-4">
         <!-- Notification Bell -->
-        <button class="relative p-2 hover:bg-gray-100 rounded-full transition">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14V11a6 6 0 10-12 0v3c0 .386-.149.735-.395 1.0L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-          </svg>
-          <span class="absolute top-1 right-1 block w-2 h-2 rounded-full bg-red-500"></span>
-        </button>
+        <div class="notification-bell-root">
+          <NotificationBell />
+        </div>
 
         <!-- Avatar Dropdown -->
         <div class="relative">
@@ -110,11 +107,13 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../../store';
 import EnrollmentModal from '../EnrollmentModal.vue';
+import NotificationBell from './NotificationBell.vue';
 
 export default {
   name: 'AuthTopBar',
   components: {
-    EnrollmentModal
+    EnrollmentModal,
+    NotificationBell
   },
   emits: ['toggle-mobile-menu'],
   setup(props, { emit }) {

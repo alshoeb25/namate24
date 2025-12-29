@@ -20,6 +20,7 @@ export const useUserStore = defineStore('user', {
         localStorage.removeItem('api_token');
         delete axios.defaults.headers.common['Authorization'];
       }
+      window.dispatchEvent(new CustomEvent('auth:token-set'));
     },
     setActiveRole(role) {
       this.activeRole = role;

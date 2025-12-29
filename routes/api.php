@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\EnquiryController;
 use App\Http\Controllers\Api\TutorProfileController;
 use App\Http\Controllers\Api\Admin\SubjectModuleController;
 use App\Http\Controllers\Payment\RazorpayWebhookController;
+use App\Http\Controllers\Api\PasswordResetController;
 
 use App\Http\Controllers\Api\EmailVerificationController;
 
@@ -24,6 +25,8 @@ Route::post('validate-referral-code', [AuthController::class, 'validateReferralC
 Route::post('email/send-verification', [EmailVerificationController::class, 'sendVerificationEmail']);
 Route::post('email/verify', [EmailVerificationController::class, 'verifyEmail']);
 Route::post('email/resend-verification', [EmailVerificationController::class, 'resendVerificationEmail']);
+Route::post('password/forgot', [PasswordResetController::class, 'sendResetLink']);
+Route::post('password/reset', [PasswordResetController::class, 'reset']);
 
 // Google OAuth
 Route::post('auth/google/callback', [\App\Http\Controllers\Api\SocialAuthController::class, 'googleCallback']);
@@ -139,6 +142,13 @@ Route::middleware('auth:api')->group(function() {
 
     Route::post('tutors/{tutor}/reviews', [ReviewController::class,'store']);
 
+    // Tutor Documents (Tutor role)
+    Route::middleware('role:tutor')->prefix('tutor/documents')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\TutorDocumentController::class, 'index']);
+        Route::post('/', [\App\Http\Controllers\Api\TutorDocumentController::class, 'store']);
+        Route::delete('{id}', [\App\Http\Controllers\Api\TutorDocumentController::class, 'destroy']);
+    });
+
     // Coin Wallet Routes
     Route::prefix('wallet')->group(function () {
         Route::get('/', [WalletController::class, 'index']); // Get balance and transactions
@@ -151,6 +161,23 @@ Route::middleware('auth:api')->group(function() {
         Route::get('order/{orderId}/status', [WalletController::class, 'getOrderStatus']); // Get order status
         Route::post('order/{orderId}/cancel', [WalletController::class, 'cancelPayment']); // Cancel pending payment
         Route::get('order/{orderId}/receipt', [WalletController::class, 'downloadReceipt']); // Download receipt
+            Route::post('order/{orderId}/retry', [WalletController::class, 'retryPayment'])->name('order.retry'); // Retry failed payment
+            Route::get('order/{orderId}/check-pending', [WalletController::class, 'checkPendingPayment'])->name('order.check-pending'); // Check pending payment
+        
+            // Invoice routes
+            Route::get('invoices', [WalletController::class, 'getInvoices'])->name('invoices'); // Get all invoices
+            Route::get('invoice/{invoiceId}', [WalletController::class, 'getInvoice'])->name('invoice'); // Get invoice details
+            Route::get('invoice/{invoiceId}/download', [WalletController::class, 'downloadInvoice'])->name('invoice.download'); // Download invoice PDF
+    });
+
+    // Notifications API
+    Route::middleware('auth:api')->group(function () {
+        Route::get('notifications', [\App\Http\Controllers\Api\NotificationController::class, 'index']);
+        // Bulk read (supports optional ids[])
+        Route::post('notifications/read', [\App\Http\Controllers\Api\NotificationController::class, 'markAllRead']);
+        Route::post('notifications/read-all', [\App\Http\Controllers\Api\NotificationController::class, 'markAllRead']);
+        // Single read
+        Route::post('notifications/{id}/read', [\App\Http\Controllers\Api\NotificationController::class, 'markRead']);
     });
 
     // Backward/alternate path for receipt downloads used by frontend
@@ -261,7 +288,28 @@ Route::middleware('auth:api')->group(function() {
             // Reorder
             Route::post('subjects/{subjectId}/reorder', [SubjectModuleController::class, 'reorder'])->name('reorder');
         });
+
+        // Tutor Documents Review (Admin)
+        Route::prefix('admin/tutor-documents')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Admin\TutorDocumentReviewController::class, 'index']);
+            Route::post('{document}/approve', [\App\Http\Controllers\Api\Admin\TutorDocumentReviewController::class, 'approve']);
+            Route::post('{document}/reject', [\App\Http\Controllers\Api\Admin\TutorDocumentReviewController::class, 'reject']);
+        });
+
+        // Tutor Verification (Admin)
+        Route::prefix('admin/tutor')->group(function () {
+            Route::get('{user}/verification-status', [\App\Http\Controllers\Api\Admin\TutorVerificationController::class, 'status']);
+            Route::post('{user}/email/verify', [\App\Http\Controllers\Api\Admin\TutorVerificationController::class, 'emailVerify']);
+            Route::post('{user}/email/unverify', [\App\Http\Controllers\Api\Admin\TutorVerificationController::class, 'emailUnverify']);
+            Route::post('{user}/photo/verify', [\App\Http\Controllers\Api\Admin\TutorVerificationController::class, 'photoVerify']);
+            Route::post('{user}/photo/unverify', [\App\Http\Controllers\Api\Admin\TutorVerificationController::class, 'photoUnverify']);
+            Route::post('{user}/photo/delete', [\App\Http\Controllers\Api\Admin\TutorVerificationController::class, 'photoDelete']);
+        });
     });
 });
+
+// Notifications API routes are defined within the authenticated group above
+// via App\Http\Controllers\Api\NotificationController.
+// Removing duplicate inline definitions to avoid route collisions.
 
 Route::post('razorpay/webhook', [RazorpayWebhookController::class, 'handle']);

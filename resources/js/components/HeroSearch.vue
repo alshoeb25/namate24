@@ -60,15 +60,25 @@
 
           <!-- Location + Arrow -->
           <div class="flex row gap-2">
-            <div class="flex items-center bg-gray-100 rounded-lg px-3 py-2 flex-1">
+            <div class="flex items-center bg-gray-100 rounded-lg px-3 py-2 flex-1 relative">
               <img src="https://img.icons8.com/?size=100&id=p5n5ZAUprZsA&format=png" 
                    alt="location icon"
                    class="h-5 w-5 opacity-70" />
-              <input v-model="searchLocation" 
+              <input ref="locationInput"
+                     v-model="searchLocation" 
                      type="text" 
-                     placeholder="Zip Code or City"
+                     placeholder="City"
+                     @input="handleLocationInput"
                      @keyup.enter="performSearch"
                      class="ml-2 bg-transparent outline-none w-full text-gray-700">
+              
+              <!-- Location Details Display -->
+              <div v-if="locationDetails.placeId && locationDetails.address" class="absolute left-0 right-0 top-full mt-2 bg-green-50 border border-green-300 rounded-lg p-3 shadow-lg z-40 text-sm">
+                <p class="font-medium text-green-900">
+                  <i class="fas fa-map-pin mr-1"></i>{{ locationDetails.address }}
+                </p>
+                <p v-if="locationDetails.city" class="text-green-700 text-xs mt-1">{{ locationDetails.city }}<span v-if="locationDetails.area">, {{ locationDetails.area }}</span></p>
+              </div>
             </div>
             <button @click="performSearch"
                     class="bg-blue-600 hover:bg-blue-700 transition text-white px-2 rounded-lg 
@@ -87,10 +97,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, reactive } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
 import { encryptQueryParams, decryptQueryParams } from '../utils/encryption';
+import { loadGoogleMaps } from '../utils/googleMaps';
 
 const router = useRouter();
 const route = useRoute();
@@ -99,6 +110,15 @@ const searchLocation = ref('');
 const subjectSuggestions = ref([]);
 const showDropdown = ref(false);
 const loadingSubjects = ref(false);
+const locationInput = ref(null);
+const locationDetails = reactive({
+  address: '',
+  city: '',
+  area: '',
+  lat: null,
+  lng: null,
+  placeId: ''
+});
 
 // Hidden input values
 const subjectId = ref('');
@@ -130,6 +150,18 @@ async function handleSubjectInput(event) {
   searchTimeout = setTimeout(async () => {
     await fetchSubjects(value);
   }, 300);
+}
+
+function handleLocationInput(event) {
+  const value = event.target.value;
+  searchLocation.value = value;
+  // Clear stored place details when the user edits manually
+  locationDetails.address = '';
+  locationDetails.city = '';
+  locationDetails.area = '';
+  locationDetails.lat = null;
+  locationDetails.lng = null;
+  locationDetails.placeId = '';
 }
 
 async function fetchSubjects(query) {
@@ -251,6 +283,16 @@ function performSearch() {
   if (location) {
     queryData.location = location;
   }
+
+  // Include Google Places details when available so backend can persist
+  if (locationDetails.placeId) {
+    queryData.location_place_id = locationDetails.placeId;
+    queryData.location_lat = locationDetails.lat;
+    queryData.location_lng = locationDetails.lng;
+    queryData.location_address = locationDetails.address;
+    queryData.location_city = locationDetails.city;
+    queryData.location_area = locationDetails.area;
+  }
   
   queryData.search_type = searchType.value;
   
@@ -275,6 +317,23 @@ function populateFromRoute() {
     // Fallback to plain query params
     queryData = route.query;
   }
+
+  // If reset flag present, clear all search and location fields
+  if (queryData.reset) {
+    searchSubject.value = '';
+    searchLocation.value = '';
+    subjectId.value = '';
+    subjectUrl.value = '';
+    subjectSearchId.value = '';
+    subjectSearchName.value = '';
+    locationDetails.address = '';
+    locationDetails.city = '';
+    locationDetails.area = '';
+    locationDetails.lat = null;
+    locationDetails.lng = null;
+    locationDetails.placeId = '';
+    return;
+  }
   
   // Populate fields from decrypted data
   if (queryData.subject) {
@@ -282,6 +341,14 @@ function populateFromRoute() {
   }
   if (queryData.location) {
     searchLocation.value = queryData.location;
+  }
+  if (queryData.location_place_id) {
+    locationDetails.placeId = queryData.location_place_id;
+    locationDetails.lat = queryData.location_lat ? Number(queryData.location_lat) : null;
+    locationDetails.lng = queryData.location_lng ? Number(queryData.location_lng) : null;
+    locationDetails.address = queryData.location_address || queryData.location || '';
+    locationDetails.city = queryData.location_city || '';
+    locationDetails.area = queryData.location_area || '';
   }
   if (queryData.subject_id) {
     subjectId.value = queryData.subject_id;
@@ -295,12 +362,54 @@ function populateFromRoute() {
 }
 
 // Populate fields on mount
-onMounted(() => {
+onMounted(async () => {
   populateFromRoute();
+  await initGooglePlaces();
 });
 
 // Watch for route changes to update fields
 watch(() => route.query, () => {
   populateFromRoute();
 }, { deep: true });
+
+async function initGooglePlaces() {
+  try {
+    await loadGoogleMaps();
+    if (!locationInput.value || !window.google?.maps?.places?.Autocomplete) {
+      console.warn('Google Maps Places API not available');
+      return;
+    }
+
+    const autocomplete = new window.google.maps.places.Autocomplete(locationInput.value, {
+      types: ['geocode']
+    });
+
+    autocomplete.addListener('place_changed', () => {
+      const place = autocomplete.getPlace();
+      if (!place || !place.address_components || !place.geometry) return;
+
+      const result = {
+        city: '',
+        area: ''
+      };
+
+      place.address_components.forEach((component) => {
+        const types = component.types || [];
+        if (types.includes('locality')) result.city = component.long_name;
+        if (types.includes('sublocality') || types.includes('sublocality_level_1')) result.area = component.long_name;
+      });
+
+      locationDetails.address = place.formatted_address || '';
+      locationDetails.city = result.city;
+      locationDetails.area = result.area;
+      locationDetails.lat = place.geometry.location.lat();
+      locationDetails.lng = place.geometry.location.lng();
+      locationDetails.placeId = place.place_id || '';
+
+      searchLocation.value = place.formatted_address || searchLocation.value;
+    });
+  } catch (error) {
+    console.error('Failed to load Google Maps Places', error);
+  }
+}
 </script>

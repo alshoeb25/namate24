@@ -7,12 +7,15 @@ import TutorProfile from '../pages/TutorProfile.vue';
 import Login from '../pages/Login.vue';
 import Register from '../pages/Register.vue';
 import VerifyEmail from '../pages/VerifyEmail.vue';
+import ForgotPassword from '../pages/ForgotPassword.vue';
+import ResetPassword from '../pages/ResetPassword.vue';
 import Conversations from '../pages/Conversations.vue';
 import ConversationMessages from '../pages/ConversationMessages.vue';
 import BookingForm from '../pages/BookingForm.vue';
 import BookingCalendar from '../pages/BookingCalendar.vue';
 import TutorDashboard from '../pages/TutorDashboard.vue';
 import TutorProfileLayout from '../pages/TutorProfileLayout.vue';
+import UploadDocuments from '../pages/tutor/UploadDocuments.vue';
 
 // Tutor Profile Components
 import PersonalDetails from '../components/tutor/profile/PersonalDetails.vue';
@@ -75,9 +78,14 @@ const routes = [
     ]
   },
   
+  // Tutor Documents
+  { path: '/tutor/documents', name: 'tutor.documents', component: UploadDocuments },
+  
   { path: '/login', name: 'login', component: Login },
   { path: '/register', name: 'register', component: Register },
   { path: '/verify-email', name: 'verify-email', component: VerifyEmail },
+  { path: '/forgot-password', name: 'forgot-password', component: ForgotPassword },
+  { path: '/reset-password', name: 'reset-password', component: ResetPassword },
 
   // Tutor Wallet Routes
   { path: '/tutor/wallet', name: 'tutor.wallet', component: () => import('../pages/TutorWallet.vue') },
@@ -107,6 +115,9 @@ const routes = [
   // messaging
   { path: '/conversations', name: 'conversations.index', component: Conversations },
   { path: '/conversations/:id', name: 'conversations.show', component: ConversationMessages },
+
+  // Admin - Tutor Documents Review
+  { path: '/admin/tutor-documents', name: 'admin.tutor-documents', component: () => import('../pages/admin/TutorDocumentsReview.vue') },
 
   // bookings
   // { path: '/bookings/new', name: 'bookings.create', component: BookingForm },
@@ -139,14 +150,14 @@ router.beforeEach(async (to, from, next) => {
 
   // After login, redirect based on available roles
   if (user && to.path === '/') {
-    // If user has tutor role, go to tutor dashboard
-    if (user.tutor) {
-      return next('/tutor/profile');
-    }
-    // If user has student role, go to student dashboard
-    if (user.student) {
-      return next('/student/dashboard');
-    }
+    // // If user has tutor role, go to tutor dashboard
+    // if (user.tutor) {
+    //   return next('/tutor/profile');
+    // }
+    // // If user has student role, go to student dashboard
+    // if (user.student) {
+    //   return next('/student/dashboard');
+    // }
   }
 
   // Protect tutor routes - require tutor record

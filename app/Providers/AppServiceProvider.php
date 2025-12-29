@@ -19,6 +19,35 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Register authorization policies
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Models\Tutor::class,
+            \App\Policies\TutorPolicy::class
+        );
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Models\Student::class,
+            \App\Policies\StudentPolicy::class
+        );
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Models\StudentRequirement::class,
+            \App\Policies\StudentRequirementPolicy::class
+        );
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Models\CoinTransaction::class,
+            \App\Policies\CoinTransactionPolicy::class
+        );
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Models\Review::class,
+            \App\Policies\ReviewPolicy::class
+        );
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Models\Subject::class,
+            \App\Policies\SubjectPolicy::class
+        );
+
+        // Define authorization gates
+        \Illuminate\Support\Facades\Gate::define('access-admin-panel', function (\App\Models\User $user) {
+            return $user->hasRole('admin');
+        });
     }
 }

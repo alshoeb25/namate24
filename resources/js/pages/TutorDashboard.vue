@@ -44,6 +44,15 @@
 
         <!-- DESKTOP GRID -->
         <div class="hidden md:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Upload Documents -->
+            <router-link to="/tutor/documents"
+                class="dashboard-card flex flex-col items-center justify-center gap-4 bg-white rounded-2xl p-6 shadow-md hover:shadow-xl">
+                <div class="icon-container">
+                    <i class="fas fa-file-upload text-white text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-800 text-center">Upload Documents</h3>
+                <p class="text-sm text-gray-500 text-center mt-1">Upload certificates and ID for verification</p>
+            </router-link>
             <!-- Upload Photo -->
             <router-link to="/tutor/profile/photo"
                 class="dashboard-card flex flex-col items-center justify-center gap-4 bg-white rounded-2xl p-6 shadow-md hover:shadow-xl">
@@ -177,6 +186,17 @@
 
         <!-- MOBILE VIEW -->
         <div class="md:hidden space-y-4">
+            <!-- Upload Documents -->
+            <router-link to="/tutor/documents" class="dashboard-card flex items-center gap-4 bg-white rounded-2xl p-4 shadow-md">
+                <div class="icon-container">
+                    <i class="fas fa-file-upload text-white"></i>
+                </div>
+                <div>
+                    <p class="text-lg font-semibold text-gray-800">Upload Documents</p>
+                    <p class="text-sm text-gray-500">Upload certificates and ID for verification</p>
+                </div>
+                <i class="fas fa-chevron-right text-gray-400 ml-auto"></i>
+            </router-link>
             <!-- Upload Photo -->
             <router-link to="/tutor/profile/photo" class="dashboard-card flex items-center gap-4 bg-white rounded-2xl p-4 shadow-md">
                 <div class="icon-container">

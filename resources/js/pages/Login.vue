@@ -63,9 +63,9 @@
 
           <!-- Forgot Password Button -->
           <div class="mt-2 text-right">
-              <a href="#" class="text-pink-600 text-sm font-semibold">
-                  Forgot your password?
-              </a>
+              <router-link to="/forgot-password" class="text-pink-600 text-sm font-semibold">
+                Forgot your password?
+              </router-link>
           </div>
 
           <!-- Login Button -->

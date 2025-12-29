@@ -8,10 +8,16 @@ use App\Models\CoinTransaction;
 use App\Models\Referral;
 use App\Models\User;
 use App\Models\Order;
+use App\Models\Invoice;
+use App\Jobs\CheckPendingPaymentStatus;
+use App\Notifications\PaymentSuccessNotification;
+use App\Notifications\PaymentFailedNotification;
+use App\Notifications\PaymentPendingNotification;
 use Illuminate\Http\Request;
 use Razorpay\Api\Api as RazorpayApi;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class WalletController extends Controller
 {
@@ -198,6 +204,9 @@ class WalletController extends Controller
             ]);
 
             DB::commit();
+            // Schedule a status check job as a fallback in case payment remains pending
+            CheckPendingPaymentStatus::dispatch($order->id, $transaction->id)
+                ->delay(now()->addMinutes(15));
 
             return response()->json([
                 'success' => true,
@@ -293,8 +302,13 @@ class WalletController extends Controller
             ]);
 
             // Update order as failed
-            Order::where('razorpay_order_id', $data['razorpay_order_id'])
-                ->update(['status' => 'failed']);
+            $failedOrder = Order::where('razorpay_order_id', $data['razorpay_order_id'])->first();
+            if ($failedOrder) {
+                $failedOrder->update(['status' => 'failed']);
+            }
+
+            // Send failure notification + push
+            $user->notify(new PaymentFailedNotification($failedOrder ?? new Order(), $transaction, 'Invalid signature'));
 
             \Log::warning('Payment signature verification failed', [
                 'user_id' => $user->id,
@@ -354,6 +368,12 @@ class WalletController extends Controller
             $user->increment('coins', $totalCoins);
             $user->refresh();
 
+                // Step 5: Create invoice and generate PDF
+                $invoice = $this->createInvoice($order, $transaction, $user);
+
+                // Step 6: Send success notification + push
+                $user->notify(new PaymentSuccessNotification($order, $transaction, $invoice));
+
             DB::commit();
 
             \Log::info('Payment completed successfully', [
@@ -363,9 +383,10 @@ class WalletController extends Controller
                 'razorpay_order_id' => $data['razorpay_order_id'],
                 'payment_id' => $data['razorpay_payment_id'],
                 'coins_added' => $totalCoins,
+                    'invoice_id' => $invoice->id,
             ]);
 
-            // Step 5: Return response
+                // Step 7: Return response
             return response()->json([
                 'success' => true,
                 'message' => 'Payment successful! Coins credited to your wallet.',
@@ -389,6 +410,11 @@ class WalletController extends Controller
                     'status' => $order->status,
                     'paid_at' => $order->paid_at,
                 ],
+                    'invoice' => [
+                        'id' => $invoice->id,
+                        'invoice_number' => $invoice->invoice_number,
+                        'pdf_url' => $invoice->pdf_url,
+                    ],
             ], 200);
 
         } catch (\Throwable $e) {
@@ -408,6 +434,12 @@ class WalletController extends Controller
                     'failure_reason' => 'Server error: ' . $e->getMessage(),
                 ]),
             ]);
+
+                // Send failure notification
+                $order = Order::where('razorpay_order_id', $data['razorpay_order_id'])->first();
+                if ($order) {
+                    $user->notify(new PaymentFailedNotification($order, $transaction, 'Server error'));
+                }
 
             return response()->json([
                 'success' => false,
@@ -712,6 +744,22 @@ class WalletController extends Controller
                 ]),
             ]);
 
+                // Update order status
+                $order = Order::where('razorpay_order_id', $orderId)->first();
+                if ($order) {
+                    $order->update([
+                        'status' => 'completed',
+                        'razorpay_payment_id' => $paymentId,
+                        'paid_at' => now(),
+                    ]);
+
+                    // Create invoice
+                    $invoice = $this->createInvoice($order, $transaction, $user);
+
+                    // Send notification
+                    $user->notify(new PaymentSuccessNotification($order, $transaction, $invoice));
+                }
+
             DB::commit();
             \Log::info('Payment captured successfully', ['transaction_id' => $transaction->id]);
         } catch (\Throwable $e) {
@@ -751,6 +799,18 @@ class WalletController extends Controller
                 'failure_reason' => $payment['error_reason'] ?? 'Unknown',
             ]),
         ]);
+
+            // Update order and send notification
+            $order = Order::where('razorpay_order_id', $orderId)->first();
+            if ($order) {
+                $order->update(['status' => 'failed']);
+            
+                $user = User::find($transaction->user_id);
+                if ($user) {
+                    $reason = $payment['error_description'] ?? $payment['error_reason'] ?? 'Payment failed';
+                    $user->notify(new PaymentFailedNotification($order, $transaction, $reason));
+                }
+            }
 
         \Log::info('Payment failed', [
             'transaction_id' => $transaction->id,
@@ -865,5 +925,417 @@ class WalletController extends Controller
         } while (User::where('referral_code', $code)->exists());
 
         return $code;
+    }
+
+    /**
+     * Create invoice and generate PDF
+     */
+    private function createInvoice($order, $transaction, $user)
+    {
+        // Check if invoice already exists
+        $existingInvoice = Invoice::where('order_id', $order->id)->first();
+        if ($existingInvoice) {
+            return $existingInvoice;
+        }
+
+        // Create invoice record
+        $invoice = Invoice::create([
+            'user_id' => $user->id,
+            'order_id' => $order->id,
+            'invoice_number' => Invoice::generateInvoiceNumber(),
+            'amount' => $order->amount,
+            'currency' => $order->currency ?? 'INR',
+            'coins' => $order->coins ?? 0,
+            'bonus_coins' => $order->bonus_coins ?? 0,
+            'razorpay_order_id' => $order->razorpay_order_id,
+            'razorpay_payment_id' => $order->razorpay_payment_id,
+            'status' => 'paid',
+            'issued_at' => now(),
+            'meta' => [
+                'package_name' => $transaction->meta['package_name'] ?? 'Coin Purchase',
+                'transaction_id' => $transaction->id,
+            ],
+        ]);
+
+        // Generate PDF
+        try {
+            $pdf = Pdf::loadView('invoices.coin-purchase', [
+                'invoice' => $invoice,
+                'order' => $order,
+                'user' => $user,
+                'transaction' => $transaction,
+            ]);
+
+            $filename = 'invoices/' . $invoice->invoice_number . '.pdf';
+            $path = storage_path('app/public/' . $filename);
+            
+            // Ensure directory exists
+            if (!file_exists(dirname($path))) {
+                mkdir(dirname($path), 0755, true);
+            }
+
+            $pdf->save($path);
+
+            $invoice->update(['pdf_path' => $filename]);
+
+            \Log::info('Invoice PDF generated', [
+                'invoice_id' => $invoice->id,
+                'pdf_path' => $filename,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to generate invoice PDF', [
+                'invoice_id' => $invoice->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return $invoice;
+    }
+
+    /**
+     * Retry failed payment - creates new order and transaction
+     */
+    public function retryPayment(Request $request, $orderId)
+    {
+        $user = $request->user();
+
+        // Find the failed order
+        $failedOrder = Order::where('id', $orderId)
+            ->where('user_id', $user->id)
+            ->where('status', 'failed')
+            ->first();
+
+        if (!$failedOrder) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Order not found or cannot be retried',
+            ], 404);
+        }
+
+        // Get the package
+        $package = CoinPackage::find($failedOrder->package_id);
+        if (!$package || !$package->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Package no longer available',
+            ], 404);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            // Create new order
+            $receipt = 'coin_retry_' . $user->id . '_' . time();
+
+            $newOrder = Order::create([
+                'user_id' => $user->id,
+                'amount' => $package->price,
+                'currency' => 'INR',
+                'package_id' => $package->id,
+                'coins' => $package->coins,
+                'bonus_coins' => $package->bonus_coins,
+                'status' => 'PENDING',
+                'receipt' => $receipt,
+                'meta' => [
+                    'retry_of_order' => $failedOrder->id,
+                ],
+            ]);
+
+            // Create Razorpay order
+            $rzp = new RazorpayApi(
+                config('services.razorpay.key'),
+                config('services.razorpay.secret')
+            );
+
+            $razorpayOrder = $rzp->order->create([
+                'amount' => (int) ($package->price * 100),
+                'currency' => 'INR',
+                'receipt' => $receipt,
+                'payment_capture' => 1,
+                'notes' => [
+                    'db_order_id' => $newOrder->id,
+                    'user_id' => $user->id,
+                    'package_id' => $package->id,
+                    'type' => 'coin_purchase_retry',
+                    'original_order_id' => $failedOrder->id,
+                ],
+            ]);
+
+            // Update order with Razorpay ID
+            $newOrder->update([
+                'razorpay_order_id' => $razorpayOrder['id'],
+            ]);
+
+            // Create new transaction
+            $transaction = CoinTransaction::create([
+                'user_id' => $user->id,
+                'order_id' => $newOrder->id,
+                'razorpay_order_id' => $razorpayOrder['id'],
+                'type' => 'CREDIT',
+                'amount' => $package->price,
+                'coins' => $package->coins + $package->bonus_coins,
+                'balance_after' => $user->coins,
+                'description' => "Coin purchase (Retry): {$package->name}",
+                'meta' => [
+                    'package_id' => $package->id,
+                    'package_name' => $package->name,
+                    'coins' => $package->coins,
+                    'bonus_coins' => $package->bonus_coins,
+                    'status' => 'INITIATED',
+                    'retry_of_order' => $failedOrder->id,
+                ],
+            ]);
+
+            DB::commit();
+
+            \Log::info('Payment retry order created', [
+                'user_id' => $user->id,
+                'original_order_id' => $failedOrder->id,
+                'new_order_id' => $newOrder->id,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'New order created for retry',
+                'order' => [
+                    'id' => $razorpayOrder['id'],
+                    'db_order_id' => $newOrder->id,
+                    'razorpay_order_id' => $razorpayOrder['id'],
+                    'amount' => intval($package->price * 100),
+                    'currency' => 'INR',
+                ],
+                'transaction_id' => $transaction->id,
+                'package' => [
+                    'id' => $package->id,
+                    'name' => $package->name,
+                    'coins' => $package->coins,
+                    'bonus_coins' => $package->bonus_coins,
+                    'price' => $package->price,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            \Log::error('Payment retry failed', [
+                'user_id' => $user->id,
+                'original_order_id' => $failedOrder->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to create retry order',
+            ], 500);
+        }
+    }
+
+    /**
+     * Check pending payment status and schedule job if needed
+     */
+    public function checkPendingPayment(Request $request, $orderId)
+    {
+        $user = $request->user();
+
+        $order = Order::where('id', $orderId)
+            ->orWhere('razorpay_order_id', $orderId)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$order) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Order not found',
+            ], 404);
+        }
+
+        $transaction = CoinTransaction::where('order_id', $order->id)->first();
+
+        if (!$transaction) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaction not found',
+            ], 404);
+        }
+
+        // Check current status
+        if ($order->status === 'completed') {
+            return response()->json([
+                'success' => true,
+                'status' => 'completed',
+                'message' => 'Payment already completed',
+                'order' => $order,
+                'transaction' => $transaction,
+            ]);
+        }
+
+        if ($order->status === 'failed') {
+            return response()->json([
+                'success' => false,
+                'status' => 'failed',
+                'message' => 'Payment failed',
+                'order' => $order,
+                'transaction' => $transaction,
+                'can_retry' => true,
+            ]);
+        }
+
+        // If pending, check if we should dispatch the status check job
+        $createdAt = $order->created_at;
+        $minutesSinceCreation = now()->diffInMinutes($createdAt);
+
+        if ($minutesSinceCreation >= 15) {
+            // Dispatch job immediately to check status
+            CheckPendingPaymentStatus::dispatch($order->id, $transaction->id);
+
+            return response()->json([
+                'success' => true,
+                'status' => 'checking',
+                'message' => 'Payment status check initiated. Please wait a moment.',
+            ]);
+        } else {
+            // Schedule job for later
+            $delayMinutes = 15 - $minutesSinceCreation;
+            CheckPendingPaymentStatus::dispatch($order->id, $transaction->id)
+                ->delay(now()->addMinutes($delayMinutes));
+
+            // Send pending notification
+            $user->notify(new PaymentPendingNotification($order, $transaction));
+
+            return response()->json([
+                'success' => true,
+                'status' => 'pending',
+                'message' => "Payment pending. Status will be checked in {$delayMinutes} minutes.",
+                'order' => $order,
+                'transaction' => $transaction,
+                'check_after_minutes' => $delayMinutes,
+            ]);
+        }
+    }
+
+    /**
+     * Download invoice PDF
+     */
+    public function downloadInvoice(Request $request, $invoiceId)
+    {
+        $user = $request->user();
+
+        $invoice = Invoice::where('id', $invoiceId)
+            ->orWhere('invoice_number', $invoiceId)
+            ->where('user_id', $user->id)
+            ->with(['order', 'user'])
+            ->first();
+
+        if (!$invoice) {
+            return response()->json([
+                'message' => 'Invoice not found',
+            ], 404);
+        }
+
+        // If PDF already exists, return it
+        if ($invoice->pdf_path && file_exists(storage_path('app/public/' . $invoice->pdf_path))) {
+            return response()->download(storage_path('app/public/' . $invoice->pdf_path));
+        }
+
+        // Otherwise, generate PDF on the fly
+        try {
+            $order = $invoice->order;
+            $transaction = CoinTransaction::where('order_id', $order->id)->first();
+
+            $pdf = Pdf::loadView('invoices.coin-purchase', [
+                'invoice' => $invoice,
+                'order' => $order,
+                'user' => $user,
+                'transaction' => $transaction,
+            ]);
+
+            return $pdf->download('invoice-' . $invoice->invoice_number . '.pdf');
+        } catch (\Exception $e) {
+            \Log::error('Failed to generate invoice PDF on download', [
+                'invoice_id' => $invoice->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to generate invoice PDF',
+            ], 500);
+        }
+    }
+
+    /**
+     * Get invoice details
+     */
+    public function getInvoice(Request $request, $invoiceId)
+    {
+        $user = $request->user();
+
+        $invoice = Invoice::where('id', $invoiceId)
+            ->orWhere('invoice_number', $invoiceId)
+            ->where('user_id', $user->id)
+            ->with(['order'])
+            ->first();
+
+        if (!$invoice) {
+            return response()->json([
+                'message' => 'Invoice not found',
+            ], 404);
+        }
+
+        return response()->json([
+            'invoice' => $invoice,
+            'download_url' => url('api/wallet/invoice/' . $invoice->id . '/download'),
+        ]);
+    }
+
+    /**
+     * Get all user invoices
+     */
+    public function getInvoices(Request $request)
+    {
+        $user = $request->user();
+
+        $invoices = Invoice::where('user_id', $user->id)
+            ->with(['order'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        return response()->json($invoices);
+    }
+
+    /**
+     * Register device token for FCM notifications
+     */
+    public function registerDevice(Request $request)
+    {
+        $data = $request->validate([
+            'fcm_token' => 'required|string',
+            'device' => 'nullable|string',
+            'platform' => 'nullable|string',
+        ]);
+
+        $user = $request->user();
+        
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+        
+        $user->update(['fcm_token' => $data['fcm_token']]);
+
+        \Log::info('FCM token registered', [
+            'user_id' => $user->id,
+            'platform' => $data['platform'] ?? null,
+            'device' => $data['device'] ?? null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Device registered for notifications',
+            'device' => [
+                'platform' => $data['platform'] ?? null,
+                'name' => $data['device'] ?? null,
+            ],
+        ]);
     }
 }

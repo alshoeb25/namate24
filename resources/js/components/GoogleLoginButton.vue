@@ -36,8 +36,24 @@ const loading = ref(false);
 // Load Google Sign-In library
 const loadGoogleScript = () => {
   return new Promise((resolve, reject) => {
-    if (window.google) {
+    // Check if Google Sign-In API is already loaded
+    if (window.google?.accounts?.id) {
       resolve();
+      return;
+    }
+
+    // Check if script is already in the DOM
+    const existingScript = document.querySelector('script[src*="accounts.google.com/gsi/client"]');
+    if (existingScript) {
+      // Poll until the API is ready
+      const checkReady = () => {
+        if (window.google?.accounts?.id) {
+          resolve();
+        } else {
+          setTimeout(checkReady, 100);
+        }
+      };
+      checkReady();
       return;
     }
 
@@ -45,8 +61,20 @@ const loadGoogleScript = () => {
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
     script.defer = true;
-    script.onload = resolve;
-    script.onerror = reject;
+    
+    script.onload = () => {
+      // Poll until the API is ready
+      const checkReady = () => {
+        if (window.google?.accounts?.id) {
+          resolve();
+        } else {
+          setTimeout(checkReady, 100);
+        }
+      };
+      checkReady();
+    };
+    
+    script.onerror = () => reject(new Error('Failed to load Google Sign-In script'));
     document.head.appendChild(script);
   });
 };
@@ -58,6 +86,11 @@ const handleGoogleLogin = async () => {
 
   try {
     await loadGoogleScript();
+
+    // Check if Google Sign-In API is available
+    if (!window.google?.accounts?.id) {
+      throw new Error('Google Sign-In API is not available');
+    }
 
     // Initialize Google Sign-In
     window.google.accounts.id.initialize({
@@ -101,7 +134,8 @@ const handleCredentialResponse = async (response) => {
     localStorage.setItem('token', res.data.token);
     axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
     
-    userStore.user = res.data.user;
+    await userStore.setToken(res.data.token);
+    userStore.setUser(res.data.user);
 
     // Redirect
     if (res.data.redirect_url) {

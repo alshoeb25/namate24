@@ -2,12 +2,10 @@
     "name": "alshoeb25/namate24",
     "description": "Tutor marketplace API (Laravel 11 with JWT + Elasticsearch)",
     "type": "project",
-
     "require": {
         "php": "^8.1 || ^8.2",
         "laravel/framework": "^11.0",
         "spatie/laravel-permission": "^6.0",
-
         "elasticsearch/elasticsearch": "^8.0",
         "filament/filament": "^3.2",
         "meilisearch/meilisearch-php": "^1.0",
@@ -15,14 +13,15 @@
         "razorpay/razorpay": "^2.9",
         "php-open-source-saver/jwt-auth": "^2.8",
         "laravel/tinker": "^2.10",
-        "barryvdh/laravel-dompdf": "^3.1"
+        "barryvdh/laravel-dompdf": "^3.1",
+        "kreait/laravel-firebase": "^6.2",
+        "predis/predis": "^3.3",
+        "pusher/pusher-php-server": "^7.2"
     },
-
     "require-dev": {
         "phpunit/phpunit": "^10.0",
         "pestphp/pest": "^2.8"
     },
-
     "autoload": {
         "psr-4": {
             "App\\": "app/"
@@ -33,16 +32,15 @@
             "Database\\Seeders\\": "database/seeders/"
         }
     },
-
     "scripts": {
         "post-root-package-install": [
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
         ],
         "post-autoload-dump": [
-            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump"
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan filament:upgrade"
         ]
     },
-
     "minimum-stability": "stable",
     "prefer-stable": true,
     "config": {

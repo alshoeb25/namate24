@@ -12,6 +12,8 @@ use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
+use App\Notifications\LoginSuccessNotification;
 
 class AuthController extends Controller
 {
@@ -122,6 +124,9 @@ class AuthController extends Controller
         }
 
         $redirectUrl = $this->getRedirectUrl($user);
+
+        // Save notification in DB/mail
+        $user->notify(new LoginSuccessNotification());
 
         return response()->json([
             'user'        => $user,

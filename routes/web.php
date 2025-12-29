@@ -81,9 +81,22 @@ Route::get('/profile', function () {
     return view('welcome');
 });
 
+// Auth-related SPA routes (password reset flow)
+Route::get('/forgot-password', function () {
+    return view('welcome');
+});
+Route::get('/reset-password', function () {
+    return view('welcome');
+});
+
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('admin/tutors/{tutor}/pdf', [TutorPdfController::class, 'show'])->name('admin.tutors.pdf');
 });
 
 // Tutor Profile Routes
 require __DIR__.'/tutor.php';
+
+// Catch-all for SPA routes excluding API and some reserved prefixes
+Route::get('/{any}', function () {
+    return view('welcome');
+})->where('any', '^(?!api|admin|storage|telescope|horizon).*$');

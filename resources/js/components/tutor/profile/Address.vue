@@ -5,6 +5,17 @@
     <form @submit.prevent="updateAddress">
       <div class="space-y-4">
         <div>
+          <label class="block text-sm font-medium text-gray-700">Search Address</label>
+          <input
+            ref="autocompleteInput"
+            type="text"
+            class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            placeholder="Start typing your address"
+          />
+          <p class="text-sm text-gray-500 mt-1">Powered by Google Places</p>
+        </div>
+
+        <div>
           <label class="block text-sm font-medium text-gray-700">Street Address</label>
           <input 
             v-model="form.address" 
@@ -89,6 +100,7 @@
 
 <script>
 import axios from 'axios';
+import { loadGoogleMaps } from '../../../utils/googleMaps';
 
 export default {
   name: 'Address',
@@ -104,12 +116,63 @@ export default {
       loading: false,
       message: '',
       error: '',
+      autocomplete: null,
     };
   },
   mounted() {
+    this.initGoogleAutocomplete();
     this.fetchAddress();
   },
   methods: {
+    async initGoogleAutocomplete() {
+      try {
+        await loadGoogleMaps();
+
+        if (!this.$refs.autocompleteInput || !window.google?.maps?.places?.Autocomplete) {
+          console.warn('Google Maps Places API not available');
+          return;
+        }
+
+        this.autocomplete = new window.google.maps.places.Autocomplete(
+          this.$refs.autocompleteInput,
+          { types: ['geocode'] }
+        );
+
+        this.autocomplete.addListener('place_changed', () => {
+          const place = this.autocomplete.getPlace();
+          if (!place || !place.address_components) return;
+          this.applyPlaceResult(place);
+        });
+
+        this.setAutocompleteValue();
+      } catch (err) {
+        console.error('Failed to load Google Maps', err);
+      }
+    },
+    setAutocompleteValue() {
+      if (this.$refs.autocompleteInput && this.form.address) {
+        this.$refs.autocompleteInput.value = this.form.address;
+      }
+    },
+    applyPlaceResult(place) {
+      const updated = {
+        address: place.formatted_address || this.form.address,
+        city: this.form.city,
+        state: this.form.state,
+        zip_code: this.form.zip_code,
+        country: this.form.country,
+      };
+
+      place.address_components.forEach((component) => {
+        const types = component.types || [];
+        if (types.includes('locality')) updated.city = component.long_name;
+        if (types.includes('administrative_area_level_1')) updated.state = component.long_name;
+        if (types.includes('postal_code')) updated.zip_code = component.long_name;
+        if (types.includes('country')) updated.country = component.long_name;
+      });
+
+      this.form = { ...this.form, ...updated };
+    },
     async fetchAddress() {
       try {
         this.loading = true;
@@ -121,6 +184,7 @@ export default {
           zip_code: response.data.zip_code || '',
           country: response.data.country || '',
         };
+        this.setAutocompleteValue();
       } catch (err) {
         this.error = 'Failed to load address';
       } finally {

@@ -180,7 +180,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import axios from '../bootstrap';
 import HeroSearch from '../components/HeroSearch.vue';
 import TutorCard from '../components/TutorCard.vue';
@@ -188,6 +188,7 @@ import JobCard from '../components/JobCard.vue';
 import { decryptQueryParams } from '../utils/encryption';
 
 const route = useRoute();
+const router = useRouter();
 const tutors = ref([]);
 const loading = ref(false);
 const newsletterEmail = ref('');
@@ -315,6 +316,13 @@ function resetFilters() {
     priceRange: ''
   };
   // loadTutors() will be called by filters watch
+
+  // Also reset search fields via route flag so HeroSearch can clear inputs
+  try {
+    router.replace({ path: '/tutors', query: { reset: '1' } });
+  } catch (e) {
+    // no-op: route may not change context
+  }
 }
 
 async function loadTutors() {

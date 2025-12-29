@@ -54,7 +54,12 @@ export default {
       const isTutorUser = user.value?.role === 'tutor' || user.value?.tutor;
       
       // Show tutor menu on search and profile routes if user is tutor (single role)
-      const isSearchOrProfile = currentPath === '/search' || currentPath === '/profile' || currentPath.includes('/tutors');
+      const isSearchOrProfile = 
+      currentPath === '/' || 
+      currentPath === '/search' || 
+      currentPath === '/profile' || 
+      currentPath.includes('/tutors');
+      console.log('isSearchOrProfile:', isSearchOrProfile, 'isTutorUser:', isTutorUser, 'user:', user.value);
       if (isSearchOrProfile && isTutorUser && !user.value?.student) {
         return true;
       }

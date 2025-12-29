@@ -199,6 +199,7 @@ export default {
     const packages = ref([]);
     const loading = ref(true);
     const activeTab = ref('buy');
+    const buyCoinsComponent = ref(null);
     const transactionModal = ref({ visible: false, status: 'success', details: {} });
 
     const fetchWallet = async () => {
@@ -247,6 +248,8 @@ export default {
       console.log('Payment success:', { pkg, response, result });
       // Reload wallet to get updated balance
       await fetchWallet();
+      // Refresh notifications (bell) so count increases
+      window.dispatchEvent(new CustomEvent('notifications:refresh'));
       
       // Show success message
       const totalCoins = pkg.coins + (pkg.bonus_coins || 0);
@@ -289,6 +292,9 @@ export default {
       
       showToast(errorMsg, 'error');
 
+      // Refresh notifications (bell) so failure notification appears
+      window.dispatchEvent(new CustomEvent('notifications:refresh'));
+
       transactionModal.value = {
         visible: true,
         status: 'failed',
@@ -309,8 +315,8 @@ export default {
     const retryPayment = () => {
       transactionModal.value.visible = false;
       // Call BuyCoins retry method to create new order and open Razorpay
-      if (this.$refs.buyCoinsComponent?.retryPayment) {
-        this.$refs.buyCoinsComponent.retryPayment();
+      if (buyCoinsComponent.value?.retryPayment) {
+        buyCoinsComponent.value.retryPayment();
       }
     };
 
@@ -382,6 +388,7 @@ export default {
       handleOrderCreated,
       handlePaymentSuccess,
       handlePaymentFailed,
+      buyCoinsComponent,
       copyReferralCode,
       getTransactionIconClass,
       getTransactionIcon,

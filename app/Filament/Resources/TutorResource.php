@@ -4,11 +4,11 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\TutorResource\Pages;
 use App\Models\Tutor;
-use Filament\Resources\Resource;
-use Filament\Resources\Table;
-use Filament\Resources\Form;
-use Filament\Tables;
 use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
 use Filament\Tables\Actions\Action;
 
 class TutorResource extends Resource
@@ -26,7 +26,6 @@ class TutorResource extends Resource
             Forms\Components\TextInput::make('headline')->required(),
             Forms\Components\Textarea::make('about'),
             Forms\Components\TextInput::make('price_per_hour')->numeric(),
-            Forms\Components\Toggle::make('verified'),
             Forms\Components\Select::make('moderation_status')
                 ->options([
                     'pending' => 'pending',
@@ -42,6 +41,8 @@ class TutorResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('id')->label('ID')->sortable(),
                 Tables\Columns\TextColumn::make('user.name')->label('Name')->searchable(),
+                Tables\Columns\TextColumn::make('user.email')->label('Email')->searchable()->toggleable(),
+                Tables\Columns\TextColumn::make('user.phone')->label('Phone')->searchable()->toggleable(),
                 Tables\Columns\TextColumn::make('headline')->limit(50)->wrap(),
                 Tables\Columns\TextColumn::make('price_per_hour')->label('Price/hr')->money('INR', true),
                 Tables\Columns\BadgeColumn::make('moderation_status')->colors([
@@ -49,7 +50,6 @@ class TutorResource extends Resource
                     'success' => 'approved',
                     'danger'  => 'rejected',
                 ]),
-                Tables\Columns\IconColumn::make('verified')->boolean()->label('Verified'),
                 Tables\Columns\TextColumn::make('rating_avg')->label('Rating')->sortable(),
             ])
             ->filters([
@@ -65,7 +65,7 @@ class TutorResource extends Resource
                     ->requiresConfirmation()
                     ->visible(fn ($record) => $record->moderation_status !== 'approved')
                     ->action(function (Tutor $record, array $data = []) {
-                        $record->update(['moderation_status' => 'approved', 'verified' => true]);
+                        $record->update(['moderation_status' => 'approved']);
                         // TODO: Notify tutor of approval (Notification)
                     }),
 
@@ -76,25 +76,33 @@ class TutorResource extends Resource
                     ->requiresConfirmation()
                     ->visible(fn ($record) => $record->moderation_status !== 'rejected')
                     ->action(function (Tutor $record, array $data = []) {
-                        $record->update(['moderation_status' => 'rejected', 'verified' => false]);
+                        $record->update(['moderation_status' => 'rejected']);
                         // TODO: capture rejection reason & notify tutor
                     }),
 
                 Action::make('export_pdf')
                     ->label('Export PDF')
                     ->icon('heroicon-o-document-text')
-                    ->openUrl(fn (Tutor $record) => route('admin.tutors.pdf', ['tutor' => $record->id]), shouldOpenInNewTab: true),
+                    ->url(fn (Tutor $record) => route('admin.tutors.pdf', ['tutor' => $record->id]))
+                    ->openUrlInNewTab(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkAction::make('approveSelected')
                     ->label('Approve selected')
                     ->action(function (array $records) {
                         foreach ($records as $r) {
-                            $r->update(['moderation_status' => 'approved', 'verified' => true]);
+                            $r->update(['moderation_status' => 'approved']);
                         }
                     })
                     ->requiresConfirmation(),
             ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            TutorResource\RelationManagers\DocumentsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
@@ -102,6 +110,7 @@ class TutorResource extends Resource
         return [
             'index' => Pages\ListTutors::route('/'),
             'create' => Pages\CreateTutor::route('/create'),
+            'view' => Pages\ViewTutor::route('/{record}'),
             'edit' => Pages\EditTutor::route('/{record}/edit'),
         ];
     }

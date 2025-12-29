@@ -33,6 +33,7 @@
               <router-link to="/tutor/profile/phone" class="dropdown-item">Phone</router-link>
               <router-link to="/tutor/profile/courses" class="dropdown-item">Courses</router-link>
               <router-link to="/tutor/profile/settings" class="dropdown-item">Settings</router-link>
+              <router-link to="/tutor/documents" class="dropdown-item">Documents</router-link>
             </div>
           </div>
 
