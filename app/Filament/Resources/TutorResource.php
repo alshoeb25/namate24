@@ -40,20 +40,28 @@ class TutorResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('id')->label('ID')->sortable(),
-                Tables\Columns\TextColumn::make('user.name')->label('Name')->searchable(),
+                Tables\Columns\TextColumn::make('user.name')->label('Name')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('user.email')->label('Email')->searchable()->toggleable(),
                 Tables\Columns\TextColumn::make('user.phone')->label('Phone')->searchable()->toggleable(),
-                Tables\Columns\TextColumn::make('headline')->limit(50)->wrap(),
-                Tables\Columns\TextColumn::make('price_per_hour')->label('Price/hr')->money('INR', true),
+                Tables\Columns\TextColumn::make('headline')->limit(50)->wrap()->searchable(),
+                Tables\Columns\TextColumn::make('price_per_hour')->label('Price/hr')->money('INR', true)->sortable(),
                 Tables\Columns\BadgeColumn::make('moderation_status')->colors([
                     'secondary' => 'pending',
                     'success' => 'approved',
                     'danger'  => 'rejected',
-                ]),
+                ])->sortable(),
                 Tables\Columns\TextColumn::make('rating_avg')->label('Rating')->sortable(),
             ])
+            ->defaultSort('id', 'desc')
+            ->defaultPaginationPageOption(25)
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('moderation_status')
+                    ->options([
+                        'pending' => 'Pending',
+                        'approved' => 'Approved',
+                        'rejected' => 'Rejected',
+                    ])
+                    ->label('Status'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -96,6 +104,11 @@ class TutorResource extends Resource
                     })
                     ->requiresConfirmation(),
             ]);
+    }
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->with('user:id,name,email,phone');
     }
 
     public static function getRelations(): array

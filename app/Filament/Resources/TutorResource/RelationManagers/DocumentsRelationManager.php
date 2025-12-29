@@ -16,30 +16,44 @@ class DocumentsRelationManager extends RelationManager
 {
     protected static string $relationship = 'documents';
 
+    protected static ?string $recordTitleAttribute = 'document_type';
+
     public function table(Table $table): Table
     {
         return $table
             ->recordTitleAttribute('document_type')
+            ->modifyQueryUsing(fn ($query) => $query->with('verifiedBy:id,name'))
             ->columns([
-                Tables\Columns\TextColumn::make('document_type')->label('Type')->searchable(),
-                Tables\Columns\TextColumn::make('file_name')->label('File Name')->toggleable(),
+                Tables\Columns\TextColumn::make('document_type')->label('Type')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('file_name')->label('File Name'),
                 Tables\Columns\TextColumn::make('file_path')
-                    ->label('File URL')
+                    ->label('File')
+                    ->formatStateUsing(fn ($state) => 'View File')
                     ->url(fn (TutorDocument $record) => url('/storage/' . ltrim($record->file_path, '/')))
-                    ->openUrlInNewTab(),
+                    ->openUrlInNewTab()
+                    ->color('primary'),
                 Tables\Columns\BadgeColumn::make('verification_status')
                     ->colors([
                         'secondary' => 'pending',
                         'success' => 'approved',
                         'danger' => 'rejected',
-                    ]),
-                Tables\Columns\TextColumn::make('rejection_reason')->limit(80)->wrap()->toggleable(),
-                Tables\Columns\TextColumn::make('verifiedBy.name')->label('Verified By')->toggleable(),
-                Tables\Columns\TextColumn::make('verified_at')->dateTime()->toggleable(),
-                Tables\Columns\TextColumn::make('created_at')->dateTime()->toggleable(),
+                    ])
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('rejection_reason')->limit(50)->wrap()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('verifiedBy.name')->label('Verified By'),
+                Tables\Columns\TextColumn::make('verified_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('created_at')->date()->sortable(),
             ])
+            ->defaultSort('created_at', 'desc')
+            ->defaultPaginationPageOption(10)
             ->filters([
-                // Add status filters if needed
+                Tables\Filters\SelectFilter::make('verification_status')
+                    ->options([
+                        'pending' => 'Pending',
+                        'approved' => 'Approved',
+                        'rejected' => 'Rejected',
+                    ])
+                    ->label('Status'),
             ])
             ->headerActions([
                 // no create from admin
