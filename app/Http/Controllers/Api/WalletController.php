@@ -28,9 +28,10 @@ class WalletController extends Controller
     {
         $user = $request->user();
         
+        $perPage = $request->per_page ?? 20;
         $transactions = CoinTransaction::where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->paginate($perPage);
 
         $referralStats = [
             'total_referrals' => Referral::where('referrer_id', $user->id)->count(),
@@ -38,11 +39,29 @@ class WalletController extends Controller
                 ->sum('referrer_coins'),
         ];
 
+        // Calculate coin statistics and sync user balance to net balance
+        $stats = $this->calculateAndSyncBalance($user);
+
         return response()->json([
-            'balance' => $user->coins,
+            // Expose net balance as primary balance
+            'balance' => $stats['net_balance'],
             'referral_code' => $user->referral_code,
             'referral_stats' => $referralStats,
-            'transactions' => $transactions,
+            'stats' => $stats,
+            'transactions' => [
+                'data' => $transactions->items(),
+                'pagination' => [
+                    'current_page' => $transactions->currentPage(),
+                    'per_page' => $transactions->perPage(),
+                    'total' => $transactions->total(),
+                    'last_page' => $transactions->lastPage(),
+                    'from' => $transactions->firstItem(),
+                    'to' => $transactions->lastItem(),
+                    'has_more_pages' => $transactions->hasMorePages(),
+                    'next_page_url' => $transactions->nextPageUrl(),
+                    'prev_page_url' => $transactions->previousPageUrl(),
+                ],
+            ],
         ]);
     }
 
@@ -83,18 +102,59 @@ class WalletController extends Controller
             $query->whereDate('created_at', '<=', $request->to_date);
         }
 
+        $perPage = $request->per_page ?? 20;
         $transactions = $query->orderBy('created_at', 'desc')
-            ->paginate($request->per_page ?? 20);
+            ->paginate($perPage);
 
-        // Calculate statistics
-        $stats = [
-            'total_spent' => CoinTransaction::where('user_id', $user->id)
-                ->where('type', 'purchase')
-                ->whereJsonContains('meta->status', 'completed')
-                ->sum('amount'),
-            'total_earned' => CoinTransaction::where('user_id', $user->id)
-                ->whereIn('type', ['referral_bonus', 'referral_reward', 'admin_credit'])
-                ->sum('amount'),
+        // Calculate statistics and sync user balance to net balance
+        $stats = $this->calculateAndSyncBalance($user);
+
+        return response()->json([
+            'balance' => $stats['net_balance'],
+            'stats' => $stats,
+            'transactions' => [
+                'data' => $transactions->items(),
+                'pagination' => [
+                    'current_page' => $transactions->currentPage(),
+                    'per_page' => $transactions->perPage(),
+                    'total' => $transactions->total(),
+                    'last_page' => $transactions->lastPage(),
+                    'from' => $transactions->firstItem(),
+                    'to' => $transactions->lastItem(),
+                    'has_more_pages' => $transactions->hasMorePages(),
+                    'next_page_url' => $transactions->nextPageUrl(),
+                    'prev_page_url' => $transactions->previousPageUrl(),
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * Calculate wallet stats and ensure user->coins matches net balance
+     */
+    private function calculateAndSyncBalance(User $user): array
+    {
+        $totalEarned = CoinTransaction::where('user_id', $user->id)
+            ->where('amount', '>', 0)
+            ->sum('amount');
+
+        $totalSpent = abs(CoinTransaction::where('user_id', $user->id)
+            ->where('amount', '<', 0)
+            ->sum('amount'));
+
+        $netBalance = $totalEarned - $totalSpent;
+
+        // Keep user->coins in sync with calculated net balance
+        if ($user->coins !== $netBalance) {
+            $user->coins = $netBalance;
+            $user->save();
+        }
+
+        return [
+            'current_balance' => $user->coins,
+            'total_earned' => $totalEarned,
+            'total_spent' => $totalSpent,
+            'net_balance' => $netBalance,
             'total_purchases' => CoinTransaction::where('user_id', $user->id)
                 ->where('type', 'purchase')
                 ->whereJsonContains('meta->status', 'completed')
@@ -103,12 +163,13 @@ class WalletController extends Controller
                 ->where('type', 'purchase')
                 ->whereJsonContains('meta->status', 'failed')
                 ->count(),
+            'enquiries_posted' => CoinTransaction::where('user_id', $user->id)
+                ->where('type', 'enquiry_post')
+                ->count(),
+            'contacts_unlocked' => CoinTransaction::where('user_id', $user->id)
+                ->where('type', 'enquiry_unlock')
+                ->count(),
         ];
-
-        return response()->json([
-            'transactions' => $transactions,
-            'stats' => $stats,
-        ]);
     }
 
     /**

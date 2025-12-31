@@ -4,12 +4,14 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-8">
-    <!-- Back Button -->
-    <div class="mb-6">
-        <a href="{{ route('tutor.profile.dashboard') }}" class="text-blue-600 hover:text-blue-800">
-            <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
-        </a>
-    </div>
+    @if (Auth::check() && Auth::id() === $tutor->user_id)
+        <!-- Back Button -->
+        <div class="mb-6">
+            <a href="{{ route('tutor.profile.dashboard') }}" class="text-blue-600 hover:text-blue-800">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+            </a>
+        </div>
+    @endif
 
     <!-- Profile Header -->
     <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-lg p-8 text-white mb-8">
@@ -228,20 +230,6 @@
                     </div>
                 </div>
             @endif
-                                    @if ($experience['currently_working'])
-                                        {{ date('M Y', strtotime($experience['start_date'])) }} - Present
-                                    @else
-                                        {{ date('M Y', strtotime($experience['start_date'])) }} - {{ date('M Y', strtotime($experience['end_date'])) }}
-                                    @endif
-                                </p>
-                                @if ($experience['description'] ?? false)
-                                    <p class="text-gray-600 mt-2 text-sm">{{ $experience['description'] }}</p>
-                                @endif
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            @endif
 
             <!-- Courses -->
             @if (count($tutor->courses ?? []) > 0)
@@ -359,9 +347,16 @@
                 </div>
             @endif
 
-            <!-- Contact Card -->
-            @php $noContact = $tutor->settings['no_contact'] ?? false; @endphp
-            @if (!$noContact)
+            <!-- Contact & Action Card -->
+            @php 
+                $noContact = $tutor->settings['no_contact'] ?? false;
+                $isOwnProfile = Auth::check() && Auth::id() === $tutor->user_id;
+                $isStudent = Auth::check() && Auth::user()->hasRole('student');
+                $studentCoins = Auth::check() ? Auth::user()->coins ?? 0 : 0;
+            @endphp
+            
+            @if ($isOwnProfile)
+                <!-- Show contact info for own profile -->
                 <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
                     <h3 class="text-lg font-bold text-blue-900 mb-4"><i class="fas fa-envelope mr-2"></i>Get in Touch</h3>
                     <div class="space-y-3">
@@ -380,10 +375,71 @@
                         </div>
                     </div>
                 </div>
+            @elseif ($isStudent)
+                <!-- Student viewing - Show action buttons -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                    <h3 class="text-lg font-bold text-blue-900 mb-4"><i class="fas fa-star mr-2"></i>Connect with Tutor</h3>
+                    
+                    <!-- Coins Balance -->
+                    <div class="mb-4 p-3 bg-white rounded border border-blue-200">
+                        <p class="text-xs text-gray-600 uppercase tracking-wide">Your Balance</p>
+                        <p class="text-2xl font-bold text-blue-600">{{ $studentCoins }} <span class="text-sm">coins</span></p>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <!-- Message Button -->
+                        <button onclick="alert('Message feature coming soon')" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center justify-center gap-2 transition">
+                            <i class="fas fa-envelope"></i> Message
+                        </button>
+
+                        <!-- Phone Button (costs coins) -->
+                        <button onclick="if({{ $studentCoins }} > 0) { alert('Reveal phone feature'); } else { alert('Insufficient coins'); }" 
+                                class="w-full px-4 py-2 {{ $studentCoins > 0 ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400 cursor-not-allowed' }} text-white rounded-lg font-medium flex items-center justify-center gap-2 transition">
+                            <i class="fas fa-phone"></i> Reveal Phone
+                            <span class="text-xs bg-black bg-opacity-20 px-2 py-1 rounded">5 coins</span>
+                        </button>
+
+                        <!-- Pay Button (for booking/session) -->
+                        <button onclick="alert('Payment feature coming soon')" class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium flex items-center justify-center gap-2 transition">
+                            <i class="fas fa-credit-card"></i> Book Session
+                        </button>
+
+                        <!-- Review Button -->
+                        <button onclick="alert('Review feature coming soon')" class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium flex items-center justify-center gap-2 transition">
+                            <i class="fas fa-star"></i> Write Review
+                        </button>
+                    </div>
+                </div>
             @else
-                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-                    <h3 class="text-lg font-bold text-yellow-900 mb-4"><i class="fas fa-lock mr-2"></i>Contact Private</h3>
-                    <p class="text-yellow-800 text-sm">This tutor has chosen not to share contact details on their public profile.</p>
+                <!-- Guest viewing - show the same action buttons (read-only/demo) -->
+                @php $studentCoins = 0; @endphp
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                    <h3 class="text-lg font-bold text-blue-900 mb-4"><i class="fas fa-star mr-2"></i>Connect with Tutor</h3>
+
+                    <div class="mb-4 p-3 bg-white rounded border border-blue-200">
+                        <p class="text-xs text-gray-600 uppercase tracking-wide">Your Balance</p>
+                        <p class="text-2xl font-bold text-blue-600">0 <span class="text-sm">coins</span></p>
+                    </div>
+
+                    <div class="space-y-2">
+                        <button onclick="alert('Message feature coming soon')" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center justify-center gap-2 transition">
+                            <i class="fas fa-envelope"></i> Message
+                        </button>
+
+                        <button onclick="alert('Reveal phone feature — create an account to get coins')" 
+                                class="w-full px-4 py-2 bg-gray-400 cursor-not-allowed text-white rounded-lg font-medium flex items-center justify-center gap-2 transition">
+                            <i class="fas fa-phone"></i> Reveal Phone
+                            <span class="text-xs bg-black bg-opacity-20 px-2 py-1 rounded">5 coins</span>
+                        </button>
+
+                        <button onclick="alert('Payment feature coming soon')" class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium flex items-center justify-center gap-2 transition">
+                            <i class="fas fa-credit-card"></i> Book Session
+                        </button>
+
+                        <button onclick="alert('Review feature coming soon')" class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium flex items-center justify-center gap-2 transition">
+                            <i class="fas fa-star"></i> Write Review
+                        </button>
+                    </div>
                 </div>
             @endif
         </div>

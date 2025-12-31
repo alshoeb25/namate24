@@ -101,7 +101,7 @@
 <script>
 import { reactive, ref } from 'vue';
 import { useUserStore } from '../store';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
 import GoogleLoginButton from '../components/GoogleLoginButton.vue';
 
@@ -116,6 +116,7 @@ export default {
     const errorMessage = ref('');
     const userStore = useUserStore();
     const router = useRouter();
+    const route = useRoute();
 
     async function submit() {
       errorMessage.value = '';
@@ -149,13 +150,13 @@ export default {
         await userStore.setToken(response.data.token);
         await userStore.setUser(response.data.user);
 
-        // If logged in user is a tutor, send them to the tutor dashboard in the SPA
-        if (userStore.user && userStore.user.role === 'tutor') {
-          router.push('/tutor/profile');
-        } else if (userStore.user && userStore.user.role === 'student') {
-          router.push('/student/dashboard');
+        // Check for redirect query parameter first
+        const redirectTo = route.query.redirect;
+        if (redirectTo) {
+          router.push(redirectTo);
         } else {
-          router.push(response.data.redirect_url || '/');
+          // Always redirect to home page after login
+          router.push('/');
         }
       } catch (e) {
         const err = e.response?.data?.message || 'Login failed';

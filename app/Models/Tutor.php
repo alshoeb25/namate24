@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -82,7 +83,10 @@ class Tutor extends Model
     {
         $this->loadMissing('user','subjects');
 
-        return [
+        $lat = is_numeric($this->lat) ? (float) $this->lat : null;
+        $lng = is_numeric($this->lng) ? (float) $this->lng : null;
+
+        $payload = [
             'id' => $this->id,
             'name' => $this->user->name ?? null,
             'headline' => $this->headline,
@@ -91,13 +95,30 @@ class Tutor extends Model
             'price_per_hour' => (float) $this->price_per_hour,
             'teaching_mode' => $this->teaching_mode,
             'city' => $this->city,
-            'lat' => $this->lat,
-            'lng' => $this->lng,
+            'state' => $this->state,
+            'area' => $this->area,
+            'address' => $this->address,
+            'country' => $this->country,
+            'postal_code' => $this->postal_code,
             'experience_years' => $this->experience_years,
+            'experience_total_years' => $this->experience_total_years,
             'rating_avg' => $this->rating_avg,
             'verified' => $this->verified,
             'gender' => $this->gender,
             'badges' => $this->badges ?? [],
+            'online_available' => $this->online_available,
+            'travel_willing' => $this->travel_willing,
+            'travel_distance_km' => $this->travel_distance_km,
+            'moderation_status' => $this->moderation_status,
         ];
+
+        // Only set geo fields when both coordinates are valid numbers
+        if (!is_null($lat) && !is_null($lng)) {
+            $payload['location'] = ['lat' => $lat, 'lon' => $lng];
+            $payload['lat'] = $lat;
+            $payload['lng'] = $lng;
+        }
+
+        return $payload;
     }
 }

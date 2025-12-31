@@ -346,7 +346,9 @@ export default {
         booking: 'bg-red-100',
         refund: 'bg-yellow-100',
         admin_credit: 'bg-green-100',
-        admin_debit: 'bg-red-100'
+        admin_debit: 'bg-red-100',
+        enquiry_post: 'bg-orange-100',
+        enquiry_unlock: 'bg-red-100'
       };
       return classes[type] || 'bg-gray-100';
     };
@@ -359,7 +361,9 @@ export default {
         booking: 'fas fa-calendar-check text-red-600',
         refund: 'fas fa-undo text-yellow-600',
         admin_credit: 'fas fa-plus text-green-600',
-        admin_debit: 'fas fa-minus text-red-600'
+        admin_debit: 'fas fa-minus text-red-600',
+        enquiry_post: 'fas fa-paper-plane text-orange-600',
+        enquiry_unlock: 'fas fa-lock-open text-red-600'
       };
       return icons[type] || 'fas fa-circle text-gray-600';
     };

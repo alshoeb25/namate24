@@ -4,84 +4,186 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Tutor;
+use App\Services\TutorSearchService;
 use Illuminate\Http\Request;
 
 class TutorController extends Controller
 {
+    protected $searchService;
+
+    public function __construct(TutorSearchService $searchService)
+    {
+        $this->searchService = $searchService;
+    }
+
     public function index(Request $request)
     {
-        $query = Tutor::with('user','subjects')->where('moderation_status','approved');
+        // Build filter array from request
+        $filters = [
+            'q' => $request->input('q'),
+            'subject' => $request->input('subject'),
+            'subject_id' => $request->input('subject_id'),
+            'subject_search_name' => $request->input('subject_search_name'),
+            'location' => $request->input('location'),
+            'city' => $request->input('city'),
+            'state' => $request->input('state'),
+            'lat' => $request->input('lat'),
+            'lng' => $request->input('lng'),
+            'nearby' => $request->input('nearby'),
+            'radius' => $request->input('radius'),
+            'teaching_mode' => $request->input('teaching_mode'),
+            'online' => $request->input('online'),
+            'verified' => $request->input('verified'),
+            'gender' => $request->input('gender'),
+            'min_price' => $request->input('min_price'),
+            'max_price' => $request->input('max_price'),
+            'price_range' => $request->input('price_range'),
+            'experience' => $request->input('experience'),
+            'rating_min' => $request->input('rating_min'),
+            'sort_by' => $request->input('sort_by'),
+        ];
 
-        // Subject search: prioritize subject_id, fallback to subject_search_name or subject
-        if ($subjectId = $request->input('subject_id')) {
-            $query->whereHas('subjects', fn($q) => $q->where('subjects.id', $subjectId));
-        } elseif ($subjectSearchName = $request->input('subject_search_name')) {
-            $query->whereHas('subjects', fn($q) => $q->where('subjects.name', 'LIKE', '%' . $subjectSearchName . '%'));
-        } elseif ($subject = $request->input('subject')) {
-            $query->whereHas('subjects', fn($q) => $q->where('subjects.name', 'LIKE', '%' . $subject . '%'));
-        }
-
-        // Location search
-        if ($location = $request->input('location')) {
-            $query->where(function($q) use ($location) {
-                $q->where('city', 'LIKE', '%' . $location . '%')
-                  ->orWhere('state', 'LIKE', '%' . $location . '%')
-                  ->orWhere('zip_code', 'LIKE', '%' . $location . '%');
-            });
-        }
-
-        // Filters
-        if ($request->input('online') === 'true') {
-            $query->where('online_available', true);
-        }
-
-        if ($request->input('home') === 'true') {
-            $query->where(function($q) {
-                $q->where('teaching_mode', 'LIKE', '%home%')
-                  ->orWhere('teaching_mode', 'LIKE', '%offline%');
-            });
-        }
-
-        if ($request->input('verified') === 'true') {
-            $query->where('verified', true);
-        }
-
-        // Experience filter
-        if ($experience = $request->input('experience')) {
-            if (strpos($experience, '+') !== false) {
-                // "5+" means 5 or more
-                $min = (int)str_replace('+', '', $experience);
-                $query->where('experience_total_years', '>=', $min);
-            } elseif (strpos($experience, '-') !== false) {
-                // "3-5" means between 3 and 5
-                [$min, $max] = explode('-', $experience);
-                $query->whereBetween('experience_total_years', [(int)$min, (int)$max]);
+        // Handle price_range filter (convert to min/max)
+        if (!empty($filters['price_range'])) {
+            if (strpos($filters['price_range'], '+') !== false) {
+                $filters['min_price'] = (int)str_replace('+', '', $filters['price_range']);
+                $filters['max_price'] = 999999;
+            } elseif (strpos($filters['price_range'], '-') !== false) {
+                [$min, $max] = explode('-', $filters['price_range']);
+                $filters['min_price'] = (int)$min;
+                $filters['max_price'] = (int)$max;
             }
         }
 
-        // Price range filter
-        if ($priceRange = $request->input('price_range')) {
-            if (strpos($priceRange, '+') !== false) {
-                // "1000+" means 1000 or more
-                $min = (int)str_replace('+', '', $priceRange);
-                $query->where('price_per_hour', '>=', $min);
-            } elseif (strpos($priceRange, '-') !== false) {
-                // "500-1000" means between 500 and 1000
-                [$min, $max] = explode('-', $priceRange);
-                $query->whereBetween('price_per_hour', [(int)$min, (int)$max]);
-            }
+        // Handle experience filter (would need to be indexed in ES)
+        if (!empty($filters['experience'])) {
+            // This would require additional processing
+            // For now, pass it through
         }
 
-        // Legacy filters for backward compatibility
-        if ($mode = $request->query('mode')) $query->where('teaching_mode', $mode);
-        if ($city = $request->query('city')) $query->where('city', $city);
-        if ($min_price = $request->query('min_price')) $query->where('price_per_hour', '>=', $min_price);
-        if ($max_price = $request->query('max_price')) $query->where('price_per_hour', '<=', $max_price);
+        // Clean up empty filters
+        $filters = array_filter($filters, fn($v) => !is_null($v) && $v !== '');
 
         $perPage = (int)$request->query('per_page', 20);
-        $results = $query->paginate($perPage);
+        $page = (int)$request->query('page', 1);
 
-        return response()->json($results);
+        try {
+            // Use Elasticsearch via TutorSearchService
+            $results = $this->searchService->search($filters, $perPage, $page);
+            
+            return response()->json([
+                'data' => $results->items(),
+                'total' => $results->total(),
+                'per_page' => $results->perPage(),
+                'current_page' => $results->currentPage(),
+                'last_page' => $results->lastPage(),
+            ]);
+        } catch (\Exception $e) {
+            // Fallback to database query if Elasticsearch fails
+            return $this->fallbackSearch($request);
+        }
+    }
+
+    /**
+     * Search for nearby tutors within a specified radius
+     * GET /api/tutors/nearby?lat=28.5355&lng=77.3910&radius=5&subject=mathematics
+     */
+    public function nearby(Request $request)
+    {
+        $request->validate([
+            'lat' => 'required|numeric',
+            'lng' => 'required|numeric',
+            'radius' => 'nullable|integer|min=1|max=100',
+            'subject' => 'nullable|string',
+            'subject_id' => 'nullable|integer',
+        ]);
+
+        $latitude = $request->input('lat');
+        $longitude = $request->input('lng');
+        $radius = (int)$request->input('radius', 5);
+
+        $filters = [
+            'subject' => $request->input('subject'),
+            'subject_id' => $request->input('subject_id'),
+            'verified' => $request->input('verified'),
+            'online' => $request->input('online'),
+            'min_price' => $request->input('min_price'),
+            'max_price' => $request->input('max_price'),
+            'sort_by' => $request->input('sort_by', 'distance'),
+        ];
+
+        $filters = array_filter($filters, fn($v) => !is_null($v) && $v !== '');
+
+        $perPage = (int)$request->query('per_page', 20);
+        $page = (int)$request->query('page', 1);
+
+        try {
+            $results = $this->searchService->searchNearby($latitude, $longitude, $filters, $radius, $perPage, $page);
+
+            return response()->json([
+                'data' => $results->items(),
+                'total' => $results->total(),
+                'per_page' => $results->perPage(),
+                'current_page' => $results->currentPage(),
+                'last_page' => $results->lastPage(),
+                'search' => [
+                    'latitude' => $latitude,
+                    'longitude' => $longitude,
+                    'radius' => $radius . 'km',
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Search failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Search tutors by location name
+     * GET /api/tutors/by-location?location=delhi&subject=mathematics
+     */
+    public function byLocation(Request $request)
+    {
+        $request->validate([
+            'location' => 'required|string|min:2',
+        ]);
+
+        $location = $request->input('location');
+
+        $filters = [
+            'subject' => $request->input('subject'),
+            'subject_id' => $request->input('subject_id'),
+            'verified' => $request->input('verified'),
+            'online' => $request->input('online'),
+            'min_price' => $request->input('min_price'),
+            'max_price' => $request->input('max_price'),
+            'sort_by' => $request->input('sort_by'),
+        ];
+
+        $filters = array_filter($filters, fn($v) => !is_null($v) && $v !== '');
+
+        $perPage = (int)$request->query('per_page', 20);
+        $page = (int)$request->query('page', 1);
+
+        try {
+            $results = $this->searchService->searchByLocation($location, $filters, $perPage, $page);
+
+            return response()->json([
+                'data' => $results->items(),
+                'total' => $results->total(),
+                'per_page' => $results->perPage(),
+                'current_page' => $results->currentPage(),
+                'last_page' => $results->lastPage(),
+                'search' => [
+                    'location' => $location,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Search failed: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function show($id)
@@ -90,6 +192,22 @@ class TutorController extends Controller
         if ($tutor->moderation_status !== 'approved') {
             return response()->json(['message'=>'Tutor not available'], 404);
         }
+        return response()->json($tutor);
+    }
+
+    /**
+     * Public tutor profile payload with extended relations
+     */
+    public function publicShow($id)
+    {
+        $tutor = Tutor::with(['user','subjects','documents'])
+            ->findOrFail($id);
+
+        if ($tutor->moderation_status !== 'approved') {
+            return response()->json(['message' => 'Tutor not available'], 404);
+        }
+
+        // Eager-loaded JSON columns are already cast on the model
         return response()->json($tutor);
     }
 
@@ -113,5 +231,52 @@ class TutorController extends Controller
         $tutor->update(['moderation_status'=>'pending']);
 
         return response()->json($tutor, 201);
+    }
+
+    /**
+     * Fallback to database search if Elasticsearch is unavailable
+     */
+    protected function fallbackSearch(Request $request)
+    {
+        $query = Tutor::with('user','subjects')->where('moderation_status','approved');
+
+        // Subject search
+        if ($subjectId = $request->input('subject_id')) {
+            $query->whereHas('subjects', fn($q) => $q->where('subjects.id', $subjectId));
+        } elseif ($subjectSearchName = $request->input('subject_search_name')) {
+            $query->whereHas('subjects', fn($q) => $q->where('subjects.name', 'LIKE', '%' . $subjectSearchName . '%'));
+        } elseif ($subject = $request->input('subject')) {
+            $query->whereHas('subjects', fn($q) => $q->where('subjects.name', 'LIKE', '%' . $subject . '%'));
+        }
+
+        // Location search
+        if ($location = $request->input('location')) {
+            $query->where(function($q) use ($location) {
+                $q->where('city', 'LIKE', '%' . $location . '%')
+                  ->orWhere('state', 'LIKE', '%' . $location . '%')
+                  ->orWhere('area', 'LIKE', '%' . $location . '%');
+            });
+        }
+
+        // Basic filters
+        if ($request->input('online') === 'true') {
+            $query->where('online_available', true);
+        }
+
+        if ($request->input('verified') === 'true') {
+            $query->where('verified', true);
+        }
+
+        if ($min_price = $request->query('min_price')) {
+            $query->where('price_per_hour', '>=', $min_price);
+        }
+        if ($max_price = $request->query('max_price')) {
+            $query->where('price_per_hour', '<=', $max_price);
+        }
+
+        $perPage = (int)$request->query('per_page', 20);
+        $results = $query->paginate($perPage);
+
+        return response()->json($results);
     }
 }

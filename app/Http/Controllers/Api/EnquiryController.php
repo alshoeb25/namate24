@@ -7,13 +7,16 @@ use App\Http\Controllers\Controller;
 use App\Models\EnquiryUnlock;
 use App\Models\StudentRequirement;
 use App\Services\EnquiryService;
+use App\Services\LabelService;
 use Illuminate\Http\Request;
 use RuntimeException;
 
 class EnquiryController extends Controller
 {
-    public function __construct(private EnquiryService $enquiryService)
-    {
+    public function __construct(
+        private EnquiryService $enquiryService,
+        private LabelService $labelService
+    ) {
     }
 
     public function config()
@@ -41,11 +44,13 @@ class EnquiryController extends Controller
                 $q->where('lead_status', 'open')->orWhereNull('lead_status');
             })
             ->whereColumn('current_leads', '<', 'max_leads')
-            ->where('student_id', '!=', $user->students->id)
             ->with('subjects')
             ->withExists([
                 'unlocks as has_unlocked' => function ($q) use ($user) {
-                    $q->where('teacher_id', $user->tutors->id);
+                    $tutorId = $user->tutor ? $user->tutor->id : null;
+                    if ($tutorId) {
+                        $q->where('teacher_id', $tutorId);
+                    }
                 }
             ]);
 
@@ -64,6 +69,9 @@ class EnquiryController extends Controller
             ->paginate($request->integer('per_page', 20));
 
         $enquiries->getCollection()->transform(function (StudentRequirement $enquiry) {
+            // Add labels for display and Elasticsearch
+            $enquiry = $this->addLabelsToEnquiry($enquiry);
+            
             if (!$enquiry->has_unlocked) {
                 $enquiry->makeHidden(['phone', 'alternate_phone']);
             }
@@ -85,16 +93,21 @@ class EnquiryController extends Controller
         $user = $request->user();
         $enquiry->load('subjects');
 
-        $hasUnlocked = EnquiryUnlock::where('enquiry_id', $enquiry->id)
-            ->where('teacher_id', $user->tutors->id)
-            ->exists();
+        $tutorId = $user->tutor ? $user->tutor->id : null;
+        $hasUnlocked = $tutorId ? EnquiryUnlock::where('enquiry_id', $enquiry->id)
+            ->where('teacher_id', $tutorId)
+            ->exists() : false;
 
-        $isOwner = $enquiry->student_id === $user->students->id;
+        $studentId = $user->student ? $user->student->id : null;
+        $isOwner = $studentId && $enquiry->student_id === $studentId;
 
         if (!$isOwner && !$hasUnlocked && !$user->hasRole('tutor')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
+        // Add labels for display
+        $enquiry = $this->addLabelsToEnquiry($enquiry);
+        
         $payload = $enquiry->toArray();
         $payload['has_unlocked'] = $hasUnlocked;
 
@@ -126,6 +139,9 @@ class EnquiryController extends Controller
         }
 
         $freshEnquiry->load('subjects');
+        
+        // Add labels for display
+        $freshEnquiry = $this->addLabelsToEnquiry($freshEnquiry);
 
         // Add lead transparency info
         $leadInfo = [
@@ -144,5 +160,15 @@ class EnquiryController extends Controller
             'unlock' => $unlock,
             'charged' => $charged,
         ]);
+    }
+
+    /**
+     * Add human-readable labels to enquiry data
+     * Makes data useful for both display and Elasticsearch indexing
+     */
+    private function addLabelsToEnquiry($enquiry)
+    {
+        // Use LabelService to add all labels from database
+        return $this->labelService->addLabels($enquiry);
     }
 }

@@ -23,6 +23,16 @@ class CoinTransaction extends Model
         'created_at' => 'datetime',
     ];
 
+    protected $appends = ['encrypted_id'];
+
+    /**
+     * Get encrypted ID for display
+     */
+    public function getEncryptedIdAttribute(): string
+    {
+        return 'TXN' . strtoupper(substr(md5($this->id . config('app.key')), 0, 8));
+    }
+
     /**
      * Get the user that owns the transaction
      */

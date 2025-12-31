@@ -43,24 +43,30 @@ export default {
     
     // Check if current route/URL matches tutor/teacher paths and user is tutor
     const shouldShowTutorMenu = computed(() => {
-      // If user has both roles, use activeRole variable instead of route path
+      const currentPath = route.path.toLowerCase();
+      
+      // Routes that should show menu based on user role
+      const isSharedRoute = 
+        currentPath === '/' || 
+        currentPath === '/search' || 
+        currentPath === '/tutors' ||
+        currentPath === '/tutor-jobs';
+      
+      // If user has both roles
       if (hasBothRoles.value) {
+        // On shared routes, default to tutor menu
+        if (isSharedRoute) {
+          return userStore.activeRole ? userStore.activeRole === 'tutor' : true;
+        }
         return userStore.activeRole === 'tutor';
       }
       
-      // Otherwise, use route path logic
-      const currentPath = route.path.toLowerCase();
+      // Single role user
       const isTutorPath = currentPath.includes('tutor') || currentPath.includes('teacher');
       const isTutorUser = user.value?.role === 'tutor' || user.value?.tutor;
       
-      // Show tutor menu on search and profile routes if user is tutor (single role)
-      const isSearchOrProfile = 
-      currentPath === '/' || 
-      currentPath === '/search' || 
-      currentPath === '/profile' || 
-      currentPath.includes('/tutors');
-      console.log('isSearchOrProfile:', isSearchOrProfile, 'isTutorUser:', isTutorUser, 'user:', user.value);
-      if (isSearchOrProfile && isTutorUser && !user.value?.student) {
+      // Show tutor menu on shared routes if user is tutor
+      if (isSharedRoute && isTutorUser && !user.value?.student) {
         return true;
       }
       
@@ -69,19 +75,30 @@ export default {
     
     // Check if current route/URL matches student paths and user is student
     const shouldShowStudentMenu = computed(() => {
-      // If user has both roles, use activeRole variable instead of route path
+      const currentPath = route.path.toLowerCase();
+      
+      // Routes that should show menu based on user role
+      const isSharedRoute = 
+        currentPath === '/' || 
+        currentPath === '/search' || 
+        currentPath === '/tutors' ||
+        currentPath === '/tutor-jobs';
+      
+      // If user has both roles
       if (hasBothRoles.value) {
+        // On shared routes, default to tutor (so return false here)
+        if (isSharedRoute) {
+          return userStore.activeRole === 'student';
+        }
         return userStore.activeRole === 'student';
       }
       
-      // Otherwise, use route path logic
-      const currentPath = route.path.toLowerCase();
+      // Single role user
       const isStudentPath = currentPath.includes('student');
       const isStudentUser = user.value?.role === 'student' || user.value?.student;
       
-      // Show student menu on search and profile routes if user is student (single role)
-      const isSearchOrProfile = currentPath === '/search' || currentPath === '/profile' || currentPath.includes('/tutors');
-      if (isSearchOrProfile && isStudentUser && !user.value?.tutor) {
+      // Show student menu on shared routes if user is student only
+      if (isSharedRoute && isStudentUser && !user.value?.tutor) {
         return true;
       }
       

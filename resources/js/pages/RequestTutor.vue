@@ -1,5 +1,17 @@
 <template>
   <div class="min-h-screen bg-gray-50 py-4 md:py-8">
+    <!-- Toast Notification -->
+    <div v-if="toast.show"
+         :class="[
+           'fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-xl transition-all duration-300 transform',
+           toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+         ]">
+      <div class="flex items-center gap-3">
+        <i :class="toast.type === 'success' ? 'fas fa-check-circle text-xl' : 'fas fa-exclamation-circle text-xl'"></i>
+        <span class="font-medium">{{ toast.message }}</span>
+      </div>
+    </div>
+
     <div class="max-w-5xl mx-auto px-4">
       <!-- Back Navigation -->
       <div class="mb-6 md:mb-8">
@@ -132,44 +144,80 @@
               <i class="fas fa-map-marker-alt text-blue-600"></i>Location
             </h3>
             
+            <!-- Google Maps Search -->
             <div class="grid md:grid-cols-4 gap-4 md:gap-6">
               <div class="md:col-span-1">
-                <label class="block text-gray-700 font-medium mb-2">City<span class="text-red-500">*</span></label>
-                <p class="text-gray-500 text-sm">Where do you need tutoring?</p>
+                <label class="block text-gray-700 font-medium mb-2">Find Your Location<span class="text-red-500">*</span></label>
+                <p class="text-gray-500 text-sm">Using Google Maps</p>
               </div>
               <div class="md:col-span-3">
-                <input v-model="form.city" 
-                       type="text" 
-                       placeholder="Enter your city"
-                       class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <div class="space-y-2">
+                  <input ref="locationInput"
+                         type="text" 
+                         placeholder="Search your city, area, or full address..."
+                         class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                  <p class="text-xs text-gray-500">
+                    <i class="fas fa-info-circle mr-1"></i>Start typing to search for your location. Latitude and longitude will auto-fill.
+                  </p>
+                  <div v-if="locationError" class="text-red-600 text-sm">{{ locationError }}</div>
+                  <div v-if="selectedLocation" class="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p class="text-sm font-medium text-green-800 mb-1">
+                      <i class="fas fa-check-circle mr-1"></i>Location Selected:
+                    </p>
+                    <p class="text-sm text-gray-700">{{ selectedLocation.address }}</p>
+                    <p class="text-xs text-gray-600 mt-1">Lat: {{ selectedLocation.lat.toFixed(4) }}, Lng: {{ selectedLocation.lng.toFixed(4) }}</p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div class="grid md:grid-cols-4 gap-4 md:gap-6">
-              <div class="md:col-span-1">
-                <label class="block text-gray-700 font-medium mb-2">Area/Locality<span class="text-red-500">*</span></label>
-                <p class="text-gray-500 text-sm">Your neighborhood</p>
+            <!-- Or Manual Entry -->
+            <div class="border-t pt-4">
+              <p class="text-sm text-gray-600 mb-4 font-medium">Or enter manually:</p>
+              
+              <div class="grid md:grid-cols-4 gap-4 md:gap-6">
+                <div class="md:col-span-1">
+                  <label class="block text-gray-700 font-medium mb-2">City<span class="text-red-500">*</span></label>
+                  <p class="text-gray-500 text-sm">Where do you need tutoring?</p>
+                </div>
+                <div class="md:col-span-3">
+                  <input v-model="form.city" 
+                         type="text" 
+                         placeholder="Enter your city"
+                         class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
               </div>
-              <div class="md:col-span-3">
-                <input v-model="form.area" 
-                       type="text" 
-                       placeholder="Enter your area"
-                       class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-              </div>
-            </div>
 
-            <div class="grid md:grid-cols-4 gap-4 md:gap-6">
-              <div class="md:col-span-1">
-                <label class="block text-gray-700 font-medium mb-2">PIN Code</label>
-                <p class="text-gray-500 text-sm">Optional</p>
+              <div class="grid md:grid-cols-4 gap-4 md:gap-6 mt-4">
+                <div class="md:col-span-1">
+                  <label class="block text-gray-700 font-medium mb-2">Area/Locality<span class="text-red-500">*</span></label>
+                  <p class="text-gray-500 text-sm">Your neighborhood</p>
+                </div>
+                <div class="md:col-span-3">
+                  <input v-model="form.area" 
+                         type="text" 
+                         placeholder="Enter your area"
+                         class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
               </div>
-              <div class="md:col-span-3">
-                <input v-model="form.pincode" 
-                       type="text" 
-                       placeholder="Enter PIN code"
-                       maxlength="6"
-                       class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+
+              <div class="grid md:grid-cols-4 gap-4 md:gap-6 mt-4">
+                <div class="md:col-span-1">
+                  <label class="block text-gray-700 font-medium mb-2">PIN Code</label>
+                  <p class="text-gray-500 text-sm">Optional</p>
+                </div>
+                <div class="md:col-span-3">
+                  <input v-model="form.pincode" 
+                         type="text" 
+                         placeholder="Enter PIN code"
+                         maxlength="6"
+                         class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
               </div>
+
+              <!-- Hidden fields for lat/lng from Google Maps -->
+              <input v-model="form.lat" type="hidden">
+              <input v-model="form.lng" type="hidden">
             </div>
           </div>
 
@@ -276,6 +324,15 @@
                 <p class="text-gray-500 text-sm">What do you want to learn?</p>
               </div>
               <div class="md:col-span-3">
+                 <div class="flex flex-wrap gap-2 mb-3">
+                  <span v-for="subject in form.subjects" :key="subject"
+                        class="bg-blue-100 text-blue-800 px-3 py-1.5 rounded-full text-sm flex items-center gap-2">
+                    {{ subject }}
+                    <button @click="removeSubject(subject)" type="button" class="text-blue-600 hover:text-blue-800">
+                      <i class="fas fa-times text-xs"></i>
+                    </button>
+                  </span>
+                </div>
                 <div class="relative mb-3">
                   <input v-model="subjectSearch" @focus="showSubjectDropdown = true"
                          type="text" placeholder="Search subjects..."
@@ -293,15 +350,6 @@
                   </div>
                 </div>
                 
-                <div class="flex flex-wrap gap-2 mb-3">
-                  <span v-for="subject in form.subjects" :key="subject"
-                        class="bg-blue-100 text-blue-800 px-3 py-1.5 rounded-full text-sm flex items-center gap-2">
-                    {{ subject }}
-                    <button @click="removeSubject(subject)" type="button" class="text-blue-600 hover:text-blue-800">
-                      <i class="fas fa-times text-xs"></i>
-                    </button>
-                  </span>
-                </div>
                 
                 <div class="flex gap-2">
                   <input v-model="customSubject" type="text" placeholder="Add custom subject"
@@ -329,10 +377,14 @@
               </div>
               <div class="md:col-span-3">
                 <select v-model="form.level" 
-                        class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
-                  <option value="">Select your level</option>
+                        :disabled="loadingLevels"
+                        class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white disabled:bg-gray-100 disabled:cursor-not-allowed">
+                  <option value="">{{ loadingLevels ? 'Loading levels...' : 'Select your level' }}</option>
                   <option v-for="level in levelOptions" :key="level.id" :value="level.name">{{ level.name }}</option>
                 </select>
+                <p v-if="loadingLevels" class="text-sm text-blue-600 mt-2">
+                  <i class="fas fa-spinner fa-spin mr-2"></i>Fetching levels...
+                </p>
               </div>
             </div>
           </div>
@@ -630,7 +682,8 @@
                       ? 'bg-green-600 hover:bg-green-700 text-white' 
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   ]">
-            <i class="fas fa-check mr-2"></i>{{ submitting ? 'Submitting...' : 'Submit Request' }}
+            <i class="fas fa-check mr-2"></i>
+            {{ submitting ? 'Submitting...' : (isEditMode ? 'Update Request' : `Submit Request (-${enquiryConfig.post_fee} coins)`) }}
           </button>
         </div>
 
@@ -682,6 +735,7 @@
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '../store';
+import { useGoogleMapsAutocomplete } from '../composables/useGoogleMaps';
 import axios from '../bootstrap';
 import { countryCodes } from '../utils/countryCodes';
 
@@ -699,6 +753,7 @@ export default {
     const isEditMode = ref(false);
     const requirementId = ref(null);
     const userBalance = ref(0);
+    const toast = ref({ show: false, message: '', type: 'success' });
 
     // Phone handling
     const phoneNumber = ref('');
@@ -712,6 +767,7 @@ export default {
     
     // Level handling
     const levelOptions = ref([]);
+    const loadingLevels = ref(false);
     
     // Language handling
     const languageOptions = ref([
@@ -722,6 +778,9 @@ export default {
     const languageSearch = ref('');
     const showLanguageDropdown = ref(false);
     const enquiryConfig = ref({ post_fee: 0, unlock_fee: 0, max_leads: 5 });
+    const locationInput = ref(null);
+    const selectedLocation = ref(null);
+    const locationError = ref('');
 
     const form = reactive({
       student_id: null,
@@ -745,7 +804,9 @@ export default {
       gender_preference: '',
       availability: '',
       languages: [],
-      tutor_location: ''
+      tutor_location: '',
+      lat: null,
+      lng: null
     });
 
     const sections = [
@@ -767,7 +828,9 @@ export default {
     const isSectionCompleted = (section) => {
       switch(section) {
         case 1: // Basic Information
-          return !!(form.city && form.area && form.phone);
+          // Phone can be from phoneNumber ref or form.phone - use either
+          const phoneValue = phoneNumber.value || form.phone;
+          return !!(form.city && form.area && phoneValue);
         case 2: // Requirement Details
           return !!(form.student_name && form.subjects.length > 0 && form.level && form.service_type);
         case 3: // Logistics & Preferences
@@ -828,8 +891,30 @@ export default {
         subjectOptions.value = subjectsRes.data;
         
         // Fetch levels
-        const levelsRes = await axios.get('/api/tutor/levels/all');
-        levelOptions.value = levelsRes.data;
+        loadingLevels.value = true;
+        try {
+          const levelsRes = await axios.get('/api/tutor/levels/all');
+          console.log('Levels API response:', levelsRes.data);
+          
+          // Handle different response formats
+          if (levelsRes.data?.levels && Array.isArray(levelsRes.data.levels)) {
+            levelOptions.value = levelsRes.data.levels;
+          } else if (Array.isArray(levelsRes.data)) {
+            levelOptions.value = levelsRes.data;
+          } else {
+            throw new Error('Invalid levels response format');
+          }
+        } catch (levelError) {
+          console.error('Failed to fetch levels, using fallback:', levelError);
+          // Use fallback data
+          levelOptions.value = [
+            { id: 1, name: 'Beginner' },
+            { id: 2, name: 'Intermediate' },
+            { id: 3, name: 'Advanced' }
+          ];
+        } finally {
+          loadingLevels.value = false;
+        }
 
         // Fetch enquiry coin config
         const configRes = await axios.get('/api/enquiries/config');
@@ -845,11 +930,13 @@ export default {
           { id: 5, name: 'Chemistry' },
           { id: 6, name: 'Biology' }
         ];
-        levelOptions.value = [
-          { id: 1, name: 'Beginner' },
-          { id: 2, name: 'Intermediate' },
-          { id: 3, name: 'Advanced' }
-        ];
+        if (levelOptions.value.length === 0) {
+          levelOptions.value = [
+            { id: 1, name: 'Beginner' },
+            { id: 2, name: 'Intermediate' },
+            { id: 3, name: 'Advanced' }
+          ];
+        }
         enquiryConfig.value = { post_fee: 0, unlock_fee: 0, max_leads: 5 };
       }
     };
@@ -886,6 +973,14 @@ export default {
           form.student_name = user.name;
         }
       }
+    };
+
+    // Toast notification helper
+    const showToast = (message, type = 'success') => {
+      toast.value = { show: true, message, type };
+      setTimeout(() => {
+        toast.value.show = false;
+      }, 4000);
     };
 
     // Fetch user wallet balance
@@ -957,7 +1052,7 @@ export default {
         value = value.slice(0, 15);
       }
       phoneNumber.value = value;
-      form.phone = value ? value : '';
+      form.phone = value; // Keep in sync
     };
 
     const formatAlternatePhone = (event) => {
@@ -966,7 +1061,7 @@ export default {
         value = value.slice(0, 15);
       }
       alternatePhoneNumber.value = value;
-      form.alternate_phone = value ? value : '';
+      form.alternate_phone = value; // Keep in sync
     };
 
     // Subject handlers
@@ -1052,6 +1147,57 @@ export default {
       fetchFormData();
       fetchWalletBalance();
       
+      // Initialize Google Maps Autocomplete
+      if (locationInput.value && window.google?.maps?.places) {
+        const autocomplete = new google.maps.places.Autocomplete(locationInput.value, {
+          types: ['geocode'],
+          componentRestrictions: { country: 'in' } // Optional: restrict to India
+        });
+
+        autocomplete.addListener('place_changed', () => {
+          try {
+            const place = autocomplete.getPlace();
+            if (!place.geometry) {
+              locationError.value = 'Please select a valid location from the dropdown';
+              return;
+            }
+
+            // Extract address components
+            const addressComponents = place.address_components || [];
+            selectedLocation.value = {
+              address: place.formatted_address,
+              lat: place.geometry.location.lat(),
+              lng: place.geometry.location.lng(),
+              city: '',
+              area: ''
+            };
+
+            form.lat = selectedLocation.value.lat;
+            form.lng = selectedLocation.value.lng;
+
+            addressComponents.forEach(component => {
+              const types = component.types;
+              if (types.includes('locality')) {
+                selectedLocation.value.city = component.long_name;
+                form.city = component.long_name;
+              }
+              if (types.includes('neighborhood') || types.includes('sublocality')) {
+                selectedLocation.value.area = component.long_name;
+                form.area = component.long_name;
+              }
+              if (types.includes('postal_code')) {
+                form.pincode = component.long_name;
+              }
+            });
+
+            locationError.value = '';
+          } catch (error) {
+            locationError.value = 'Error processing location';
+            console.error('Google Maps error:', error);
+          }
+        });
+      }
+      
       // Check if we're in edit mode
       if (route.params.id) {
         isEditMode.value = true;
@@ -1086,6 +1232,8 @@ export default {
       submitting.value = true;
       errorMessage.value = '';
       
+      const oldBalance = userBalance.value;
+      
       try {
         let response;
         if (isEditMode.value) {
@@ -1094,6 +1242,25 @@ export default {
         } else {
           // Create new requirement
           response = await axios.post('/api/student/request-tutor', form);
+          
+          // Optimistically update balance (subtract coins immediately for better UX)
+          userBalance.value = oldBalance - enquiryConfig.value.post_fee;
+          if (userStore.user) {
+            userStore.user.coins = userBalance.value;
+          }
+          
+          // Show coin deduction notification
+          showToast(`${enquiryConfig.value.post_fee} coins debited for posting requirement`, 'success');
+        }
+        
+        // Refresh wallet balance from server to get accurate balance after coin deduction
+        // The backend has already created the debit transaction and updated user.coins
+        if (!isEditMode.value) {
+          await fetchWalletBalance();
+          // Update user store with accurate balance from server
+          if (userStore.user) {
+            userStore.user.coins = userBalance.value;
+          }
         }
         
         showSuccess.value = true;
@@ -1141,6 +1308,7 @@ export default {
       customSubject,
       filteredSubjects,
       levelOptions,
+      loadingLevels,
       genderOptions,
       languageOptions,
       languageSearch,
@@ -1157,7 +1325,12 @@ export default {
       submitRequest,
       enquiryConfig,
       userBalance,
-      fetchWalletBalance
+      fetchWalletBalance,
+      locationInput,
+      selectedLocation,
+      locationError,
+      toast,
+      showToast
     };
   }
 };

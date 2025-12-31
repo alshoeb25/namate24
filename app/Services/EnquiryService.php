@@ -8,6 +8,7 @@ use App\Models\EnquiryUnlock;
 use App\Models\StudentRequirement;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class EnquiryService
@@ -22,24 +23,28 @@ class EnquiryService
         $unlockPrice = (int)($data['unlock_price'] ?? config('enquiry.unlock_fee', 0));
         $maxLeads = (int)($data['max_leads'] ?? config('enquiry.max_leads', 5));
 
-        $ownerId = $data['student_id'] ?? $student->students->id;
+        $studentId = $data['student_id'] ?? $student->student->id;
 
-        return DB::transaction(function () use ($data, $ownerId, $subjectIds, $postFee, $unlockPrice, $maxLeads) {
+        return DB::transaction(function () use ($data, $student, $studentId, $subjectIds, $postFee, $unlockPrice, $maxLeads) {
+
             if ($postFee > 0) {
-                $owner = User::findOrFail($ownerId);
-                $transaction = $this->walletService->debit(
-                    $owner,
-                    $postFee,
-                    'enquiry_post',
-                    'Posted a new enquiry',
-                    ['reason' => 'enquiry_post']
-                );
+                try {
+                    $transaction = $this->walletService->debit(
+                        $student,
+                        $postFee,
+                        'enquiry_post',
+                        'Posted a new enquiry',
+                        ['reason' => 'enquiry_post']
+                    );
 
-                $owner->notify(new CoinSpentNotification($transaction));
+                    $student->notify(new CoinSpentNotification($transaction));
+                } catch (\Exception $e) {
+                    throw $e;
+                }
             }
 
             $enquiry = StudentRequirement::create(array_merge($data, [
-                'student_id' => $ownerId,
+                'student_id' => $studentId,
                 'post_fee' => $postFee,
                 'unlock_price' => $unlockPrice,
                 'max_leads' => $maxLeads,
@@ -62,13 +67,19 @@ class EnquiryService
             $lockedEnquiry = StudentRequirement::whereKey($enquiry->id)->lockForUpdate()->firstOrFail();
             $lockedTutor = User::whereKey($tutor->id)->lockForUpdate()->firstOrFail();
 
+            // Get tutor ID from relationship
+            $tutorId = $lockedTutor->tutor ? $lockedTutor->tutor->id : null;
+            if (!$tutorId) {
+                throw new RuntimeException('User is not registered as a tutor.');
+            }
+
             if (in_array($lockedEnquiry->lead_status, ['full', 'closed', 'cancelled'], true) ||
                 $lockedEnquiry->current_leads >= $lockedEnquiry->max_leads) {
                 throw new RuntimeException('Lead closed. Maximum teachers reached.');
             }
 
             $existing = EnquiryUnlock::where('enquiry_id', $lockedEnquiry->id)
-                ->where('teacher_id', $lockedTutor->id)
+                ->where('teacher_id', $tutorId)
                 ->lockForUpdate()
                 ->first();
 
@@ -78,24 +89,29 @@ class EnquiryService
 
             $unlockPrice = (int)($lockedEnquiry->unlock_price ?? config('enquiry.unlock_fee', 0));
 
-            if ($unlockPrice > 0) {
-                $transaction = $this->walletService->debit(
-                    $lockedTutor,
-                    $unlockPrice,
-                    'enquiry_unlock',
-                    'Unlocked enquiry #' . $lockedEnquiry->id,
-                    [
-                        'enquiry_id' => $lockedEnquiry->id,
-                        'student_id' => $lockedEnquiry->student->id,
-                    ]
-                );
 
-                $lockedTutor->notify(new CoinSpentNotification($transaction));
+            if ($unlockPrice > 0) {
+                try {
+                    $transaction = $this->walletService->debit(
+                        $lockedTutor,
+                        $unlockPrice,
+                        'enquiry_unlock',
+                        'Unlocked enquiry #' . $lockedEnquiry->id,
+                        [
+                            'enquiry_id' => $lockedEnquiry->id,
+                            'student_id' => $lockedEnquiry->student_id,
+                        ]
+                    );
+
+                    $lockedTutor->notify(new CoinSpentNotification($transaction));
+                } catch (\Exception $e) {
+                    throw $e;
+                }
             }
 
             $unlock = EnquiryUnlock::create([
                 'enquiry_id' => $lockedEnquiry->id,
-                'teacher_id' => $lockedTutor->id,
+                'teacher_id' => $tutorId,
                 'unlock_price' => $unlockPrice,
             ]);
 
@@ -122,16 +138,6 @@ class EnquiryService
         $student = $enquiry->student;
         if (!$student) return;
 
-        // Log notification event (can be extended to send emails/SMS)
-        \Log::info('New teacher interest', [
-            'enquiry_id' => $enquiry->id,
-            'student_id' => $student->id,
-            'teacher_id' => $teacher->id,
-            'teacher_name' => $teacher->name,
-            'current_leads' => $enquiry->current_leads,
-            'max_leads' => $enquiry->max_leads,
-        ]);
-
         // Send notification (queued and broadcast)
         $student->notify(new \App\Notifications\TeacherInterestedNotification($enquiry, $teacher));
     }
@@ -143,12 +149,6 @@ class EnquiryService
     {
         $student = $enquiry->student;
         if (!$student) return;
-
-        \Log::info('Enquiry leads full', [
-            'enquiry_id' => $enquiry->id,
-            'student_id' => $student->id,
-            'max_leads_reached' => $enquiry->max_leads,
-        ]);
 
         // Send notification (queued and broadcast)
         $student->notify(new \App\Notifications\EnquiryFullNotification($enquiry));

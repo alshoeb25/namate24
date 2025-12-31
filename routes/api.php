@@ -33,11 +33,39 @@ Route::post('auth/google/callback', [\App\Http\Controllers\Api\SocialAuthControl
 
 Route::get('tutors', [TutorController::class,'index']);
 Route::get('tutors/{id}', [TutorController::class,'show']);
+Route::get('public/tutors/{id}', [TutorController::class,'publicShow']);
+
+// Advanced search endpoints for tutors
+Route::get('tutors/nearby', [TutorController::class,'nearby']);
+Route::get('tutors/by-location', [TutorController::class,'byLocation']);
 Route::get('cms/{slug}', [CmsPageController::class,'show']);
 Route::get('credit-packages', [CreditPackageController::class,'index']);
 Route::get('subjects', [SubjectController::class,'index']);
 
 Route::get('/search-subjects', [SubjectController::class, 'search']);
+
+// Field Labels API (Public - for form dropdowns)
+Route::get('field-labels', function(Request $request) {
+    $fieldName = $request->query('field');
+    if ($fieldName) {
+        return response()->json([
+            'field' => $fieldName,
+            'labels' => \App\Models\FieldLabel::getFieldLabels($fieldName)
+        ]);
+    }
+    
+    // Return all labels grouped by field
+    $labels = \App\Models\FieldLabel::where('is_active', true)
+        ->orderBy('field_name')
+        ->orderBy('order')
+        ->get()
+        ->groupBy('field_name')
+        ->map(function($items) {
+            return $items->pluck('label', 'field_value')->toArray();
+        });
+    
+    return response()->json($labels);
+});
 
 // Public Tutor Endpoints
 Route::get('tutor/levels/all', [TutorProfileController::class, 'getAllLevels']);
@@ -131,6 +159,11 @@ Route::middleware('auth:api')->group(function() {
     Route::post('requirements', [RequirementController::class,'store']);
     Route::get('requirements', [RequirementController::class,'index']);
     Route::get('requirements/{id}', [RequirementController::class,'show']);
+    
+    // Advanced search endpoints for requirements
+    Route::get('requirements/nearby', [RequirementController::class,'nearby']);
+    Route::get('requirements/by-location', [RequirementController::class,'byLocation']);
+    Route::get('requirements/for-me', [RequirementController::class,'forMe']);
 
     // Enquiry (lead-based) routes
     Route::get('enquiries/config', [EnquiryController::class, 'config']);

@@ -8,12 +8,15 @@ use App\Models\StudentRequirement;
 use App\Models\Subject;
 use App\Models\User;
 use App\Services\EnquiryService;
+use App\Services\LabelService;
 use Illuminate\Http\Request;
 
 class StudentController extends Controller
 {
-    public function __construct(private EnquiryService $enquiryService)
-    {
+    public function __construct(
+        private EnquiryService $enquiryService,
+        private LabelService $labelService
+    ) {
     }
 
     /**
@@ -22,6 +25,10 @@ class StudentController extends Controller
     public function requestTutor(Request $request)
     {
         $user = $request->user();
+        \Log::info('StudentController::requestTutor - User initiating tutor request', [
+            'user_id' => $user->id,
+            'user_coins' => $user->coins,
+        ]);
 
         // Validate the 3-section form data
         $data = $request->validate([
@@ -89,7 +96,7 @@ class StudentController extends Controller
         $subjectIds = Subject::whereIn('name', $data['subjects'])->pluck('id')->toArray();
 
         $payload = [
-            'student_id' => $data['student_id'] ?? $user->students->id,
+            'student_id' => $data['student_id'] ?? $user->student->id ?? null,
             'location' => $location,
             'city' => $data['city'],
             'area' => $data['area'],
@@ -142,14 +149,42 @@ class StudentController extends Controller
     {
         $user = $request->user();
         $studentId = $user->student->id;
+        
+        $perPage = $request->input('per_page', 10); // Default 10 items per page
+        
         $requirements = StudentRequirement::where('student_id', $studentId)
             ->with('subjects')
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate($perPage);
 
-        return response()->json([
-            'requirements' => $requirements
-        ]);
+        // Transform data to include labels for better display and Elasticsearch indexing
+        $requirements->getCollection()->transform(function ($requirement) {
+            return $this->addLabelsToRequirement($requirement);
+        });
+
+        return response()->json($requirements);
+    }
+
+    /**
+     * Add human-readable labels to requirement data
+     * Makes data useful for both display and Elasticsearch indexing
+     */
+    private function addLabelsToRequirement($requirement)
+    {
+        // Use LabelService to add all labels from database
+        $requirement = $this->labelService->addLabels($requirement);
+
+        // Add lead information
+        $requirement->lead_info = [
+            'current' => $requirement->current_leads ?? 0,
+            'max' => $requirement->max_leads ?? 0,
+            'available' => ($requirement->max_leads ?? 0) - ($requirement->current_leads ?? 0),
+            'percentage' => $requirement->max_leads > 0 
+                ? round(($requirement->current_leads / $requirement->max_leads) * 100) 
+                : 0,
+        ];
+
+        return $requirement;
     }
 
     /**
@@ -164,6 +199,9 @@ class StudentController extends Controller
             ->where('id', $id)
             ->with('subjects')
             ->firstOrFail();
+
+        // Add labels for better display
+        $requirement = $this->addLabelsToRequirement($requirement);
 
         return response()->json([
             'requirement' => $requirement

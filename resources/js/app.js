@@ -4,6 +4,10 @@ import router from './router';
 import '../css/app.css'; // minimal css
 import './echo';
 import App from './pages/App.vue';
+import { loadGoogleMapsAPI } from './composables/useGoogleMaps';
+
+// Load Google Maps API
+loadGoogleMapsAPI();
 
 // create pinia instance
 const pinia = createPinia()

@@ -13,8 +13,9 @@ class ProfileController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth');
-        $this->middleware('role:tutor');
+        // Public view does not require auth/role; all other actions remain protected
+        $this->middleware('auth')->except(['viewProfile']);
+        $this->middleware('role:tutor')->except(['viewProfile']);
     }
 
     /**
@@ -807,7 +808,9 @@ class ProfileController extends Controller
     public function viewProfile($id = null)
     {
         if ($id) {
-            $tutor = Tutor::with('user', 'subjects')->findOrFail($id);
+            $tutor = Tutor::with(['user', 'subjects'])
+                ->where('moderation_status', 'approved')
+                ->findOrFail($id);
         } else {
             $tutor = Auth::user()->tutor;
         }

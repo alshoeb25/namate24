@@ -56,4 +56,79 @@ class StudentRequirement extends Model
             ->withTimestamps()
             ->withPivot(['unlock_price']);
     }
+
+    /**
+     * Convert model to Elasticsearch-ready array for job/requirement searches
+     */
+    public function toElasticArray(): array
+    {
+        $this->loadMissing('student', 'subject', 'subjects');
+
+        $lat = is_numeric($this->lat) ? (float) $this->lat : null;
+        $lng = is_numeric($this->lng) ? (float) $this->lng : null;
+
+        $subjects = $this->subjects ? $this->subjects->pluck('name')->toArray() : [];
+
+        // Use LabelService for all labels from database
+        $labelService = app(\App\Services\LabelService::class);
+
+        $payload = [
+            'id' => $this->id,
+            'student_id' => $this->student_id,
+            'student_name' => $this->student?->name ?? $this->student_name ?? null,
+            'subject_id' => $this->subject_id,
+            'subjects' => $subjects,
+            'subject_name' => $this->subject?->name ?? null,
+            'budget_min' => (float) ($this->budget_min ?? 0),
+            'budget_max' => (float) ($this->budget_max ?? 0),
+            'budget' => $this->budget,
+            'budget_type' => $this->budget_type,
+            'budget_type_label' => FieldLabel::getLabel('budget_type', $this->budget_type) ?? $this->budget_type,
+            'mode' => $this->mode,
+            'service_type' => $this->service_type,
+            'service_type_label' => FieldLabel::getLabel('service_type', $this->service_type) ?? $this->service_type,
+            'city' => $this->city,
+            'state' => $this->state ?? null,
+            'area' => $this->area,
+            'location' => $this->location,
+            'location_display' => $this->location ?: ($this->city . ($this->area ? ', ' . $this->area : '')),
+            'pincode' => $this->pincode,
+            'details' => $this->details,
+            'gender_preference' => $this->gender_preference,
+            'gender_preference_label' => FieldLabel::getLabel('gender_preference', $this->gender_preference) ?? $this->gender_preference,
+            'level' => $this->level,
+            'availability' => $this->availability,
+            'availability_label' => FieldLabel::getLabel('availability', $this->availability) ?? $this->availability,
+            'languages' => $this->languages ?? [],
+            'meeting_options' => $this->meeting_options ?? [],
+            'meeting_options_labels' => is_array($this->meeting_options) 
+                ? array_map(fn($opt) => FieldLabel::getLabel('meeting_options', $opt) ?? $opt, $this->meeting_options)
+                : [],
+            'tutor_location_preference' => $this->tutor_location_preference,
+            'travel_distance' => $this->travel_distance,
+            'visible' => $this->visible ?? null,
+            'status' => $this->status,
+            'lead_status' => $this->lead_status,
+            'current_leads' => $this->current_leads ?? 0,
+            'max_leads' => $this->max_leads ?? 0,
+            'spots_available' => ($this->max_leads ?? 0) - ($this->current_leads ?? 0),
+            'posted_at' => $this->posted_at?->toIso8601String(),
+            'created_at' => $this->created_at?->toIso8601String(),
+        ];
+
+        // Add budget display
+        if ($this->budget && $payload['budget_type_label']) {
+            $payload['budget_display'] = '₹' . number_format($this->budget, 0) . ' ' . $payload['budget_type_label'];
+        }
+
+        if (!is_null($lat) && !is_null($lng)) {
+            $payload['location_geo'] = ['lat' => $lat, 'lon' => $lng];
+            $payload['lat'] = $lat;
+            $payload['lng'] = $lng;
+        }
+
+        return $payload;
+    }
+
+    // End of class
 }

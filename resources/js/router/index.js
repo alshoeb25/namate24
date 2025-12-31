@@ -4,6 +4,8 @@ import Home from '../pages/Home.vue';
 import Search from '../pages/Search.vue';
 import SearchResults from '../pages/SearchResults.vue';
 import TutorProfile from '../pages/TutorProfile.vue';
+import TutorPublicProfile from '../pages/TutorPublicProfile.vue';
+import TutorJobs from '../pages/TutorJobs.vue';
 import Login from '../pages/Login.vue';
 import Register from '../pages/Register.vue';
 import VerifyEmail from '../pages/VerifyEmail.vue';
@@ -36,6 +38,7 @@ import StudentLayout from '../components/layout/StudentLayout.vue';
 import StudentDashboard from '../pages/StudentDashboard.vue';
 import RequestTutor from '../pages/RequestTutor.vue';
 import RequirementsList from '../pages/RequirementsList.vue';
+import RequirementDetail from '../pages/RequirementDetail.vue';
 import StudentReviews from '../pages/StudentReviews.vue';
 import StudentWallet from '../pages/StudentWallet.vue';
 import StudentSettings from '../pages/StudentSettings.vue';
@@ -47,14 +50,17 @@ const routes = [
   { path: '/', name: 'home', component: Home },
   { path: '/search', name: 'search', component: SearchResults },
   { path: '/tutors', name: 'tutors', component: SearchResults },
-  { path: '/tutor-jobs', name: 'tutor-jobs', component: SearchResults },
+  { path: '/tutor-jobs', name: 'tutor-jobs', component: TutorJobs },
   
   // Dynamic SEO-friendly routes: /{subject}-tutors-in-{city}
   { path: '/:subject-tutors-in-:city', name: 'tutors.subject.city', component: SearchResults },
   { path: '/:subject-tutors', name: 'tutors.subject', component: SearchResults },
   { path: '/tutors-in-:city', name: 'tutors.city', component: SearchResults },
   
-  { path: '/tutor/:id', name: 'tutor.show', component: TutorProfile, props: true },
+  { path: '/tutor/:id', name: 'tutor.show', component: TutorPublicProfile, props: true },
+  
+  // Requirement Detail (for tutors)
+  { path: '/requirement/:id', name: 'requirement.show', component: RequirementDetail, props: true },
   
   // Tutor Profile Routes
   {
@@ -141,14 +147,14 @@ router.beforeEach(async (to, from, next) => {
       // token invalid — clear and send to login
       userStore.logout();
       if (to.path !== '/login' && to.path !== '/register') {
-        return next('/login');
+        return next({ path: '/login', query: { redirect: to.fullPath } });
       }
     }
   }
 
   const user = userStore.user;
 
-  // After login, redirect based on available roles
+  // After login, redirect based on query param or available roles
   if (user && to.path === '/') {
     // // If user has tutor role, go to tutor dashboard
     // if (user.tutor) {
@@ -160,14 +166,35 @@ router.beforeEach(async (to, from, next) => {
     // }
   }
 
-  // Protect tutor routes - require tutor record
-  if (to.path.startsWith('/tutor/') && user && !user.tutor) {
-    return next('/');
+  // Protect tutor routes - require tutor record, but allow public tutor profile (/tutor/:id)
+  const isPublicTutorProfile = to.name === 'tutor.show';
+  if (to.path.startsWith('/tutor/') && !isPublicTutorProfile) {
+    if (!user) {
+      return next({ path: '/login', query: { redirect: to.fullPath } });
+    }
+    if (!user.tutor) {
+      return next('/');
+    }
+  }
+
+  // Requirement detail requires authentication and tutor role
+  if (to.name === 'requirement.show') {
+    if (!user) {
+      return next({ path: '/login', query: { redirect: to.fullPath } });
+    }
+    if (!user.tutor) {
+      return next('/');
+    }
   }
 
   // Protect student routes - require student record
-  if (to.path.startsWith('/student/') && user && !user.student) {
-    return next('/');
+  if (to.path.startsWith('/student/')) {
+    if (!user) {
+      return next({ path: '/login', query: { redirect: to.fullPath } });
+    }
+    if (!user.student) {
+      return next('/');
+    }
   }
 
   return next();
