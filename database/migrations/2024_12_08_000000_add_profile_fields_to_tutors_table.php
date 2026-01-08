@@ -11,6 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('tutors')) {
+            // Tutors table not yet created; skip safely (covered in create migration)
+            return;
+        }
+
         Schema::table('tutors', function (Blueprint $table) {
             // Address fields
             if (!Schema::hasColumn('tutors', 'address')) {
@@ -71,6 +76,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (!Schema::hasTable('tutors')) {
+            return;
+        }
+
         Schema::table('tutors', function (Blueprint $table) {
             $columns = ['address', 'state', 'country', 'postal_code', 'introductory_video', 
                        'video_title', 'teaching_methodology', 'educations', 'experiences', 

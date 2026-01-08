@@ -20,13 +20,23 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('headline')->nullable();
             $table->text('about')->nullable();
+            // Extended profile fields (ensure availability when earlier alter migration is skipped)
+            $table->text('teaching_methodology')->nullable();
+            $table->json('educations')->nullable();
+            $table->json('experiences')->nullable();
+            $table->json('courses')->nullable();
+            $table->text('availability')->nullable();
             $table->unsignedSmallInteger('experience_years')->default(0);
             $table->decimal('price_per_hour', 8, 2)->nullable();
             $table->enum('moderation_status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->enum('teaching_mode', ['online','offline','both'])->default('online');
             $table->string('city')->nullable();
+            $table->string('address')->nullable();
             $table->string('state')->nullable();
             $table->string('country')->nullable();
+            $table->string('postal_code')->nullable();
+            $table->string('introductory_video')->nullable();
+            $table->string('video_title')->nullable();
             $table->decimal('lat', 10, 7)->nullable();
             $table->decimal('lng', 10, 7)->nullable();
             $table->boolean('verified')->default(false);
@@ -35,6 +45,7 @@ return new class extends Migration
             $table->unsignedInteger('rating_count')->default(0);
             $table->string('gender')->nullable();
             $table->json('badges')->nullable(); // e.g. ["top_rated"]
+            $table->json('settings')->nullable();
             $table->timestamps();
         });
 
