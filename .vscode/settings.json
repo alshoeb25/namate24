@@ -79,13 +79,6 @@
     "javascript": true,
     "vue": true
   },
-  "github.copilot.advanced": {
-    "debug.overrideEngine": "gpt-4",
-    "debug.testOverrideProxyUrl": "",
-    "debug.overrideProxyUrl": "",
-    "inlineSuggestEnable": true,
-    "listCount": 10
-  },
   "workbench.editor.limit.enabled": true,
   "workbench.editor.limit.value": 10,
   "workbench.editor.limit.perEditorGroup": true
