@@ -69,7 +69,11 @@
             </div>
             <div>
                 <div class="label">Amount</div>
-                <div class="value">₹{{ number_format($order->amount, 2) }}</div>
+                @php
+                    $currency = $order->currency ?? 'INR';
+                    $symbol = $currency === 'USD' ? '$' : '₹';
+                @endphp
+                <div class="value">{{ $symbol }}{{ number_format($order->amount, 2) }}</div>
             </div>
             <div>
                 <div class="label">Status</div>
@@ -90,13 +94,26 @@
                 </div>
             </div>
             <div class="totals">
+                @php
+                    $currency = $order->currency ?? 'INR';
+                    $symbol = $currency === 'USD' ? '$' : '₹';
+                    $pricing = $order->meta['pricing'] ?? null;
+                    $isIndia = $pricing['is_india'] ?? ($currency === 'INR');
+                    if ($currency === 'INR' && $isIndia && $pricing) {
+                        $subtotal = (float) ($pricing['subtotal_inr'] ?? $order->amount);
+                        $taxAmount = (float) ($pricing['tax_amount_inr'] ?? 0);
+                    } else {
+                        $subtotal = (float) $order->amount;
+                        $taxAmount = 0.0;
+                    }
+                @endphp
                 <div class="grid">
                     <div class="muted">Subtotal</div>
-                    <div class="value">₹{{ number_format($order->amount, 2) }}</div>
-                    <div class="muted">Tax</div>
-                    <div class="value">Included</div>
+                    <div class="value">{{ $symbol }}{{ number_format($subtotal, 2) }}</div>
+                    <div class="muted">Tax{{ ($currency === 'INR' && $isIndia) ? ' (GST)' : '' }}</div>
+                    <div class="value">{{ $symbol }}{{ number_format($taxAmount, 2) }}</div>
                     <div class="muted">Total Paid</div>
-                    <div class="value">₹{{ number_format($order->amount, 2) }}</div>
+                    <div class="value">{{ $symbol }}{{ number_format($order->amount, 2) }}</div>
                 </div>
             </div>
         </div>

@@ -175,7 +175,7 @@
 
       <div class="flex flex-col items-start gap-3">
         <img src="https://image2url.com/images/1765253042333-dd88da98-ff0a-47d6-b112-9bda33ebbc3c.png" class="h-8" alt="Namate 24">
-        <p class="text-gray-400 text-sm">© 2025 Namate 24, Inc.</p>
+        <p class="text-gray-400 text-sm">© 2026 Namate 24, Inc.</p>
       </div>
     </div>
   </footer>

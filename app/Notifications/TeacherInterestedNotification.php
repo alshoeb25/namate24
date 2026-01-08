@@ -65,7 +65,7 @@ class TeacherInterestedNotification extends Notification implements ShouldQueue
             'title' => 'New Teacher Interest',
             'message' => "{$this->teacher->name} is interested in your {$this->enquiry->subject} requirement.",
             'enquiry_id' => $this->enquiry->id,
-            'teacher_id' => $this->teacher->id,
+            'tutor_id' => $this->teacher->id,
             'teacher_name' => $this->teacher->name,
             'subject' => $this->enquiry->subject,
             'current_leads' => $this->enquiry->current_leads,

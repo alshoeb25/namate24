@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Order;
 use App\Models\CoinTransaction;
+use App\Models\PaymentTransaction;
 use App\Models\Invoice;
 use App\Models\User;
 use App\Notifications\PaymentSuccessNotification;
@@ -46,11 +47,11 @@ class CheckPendingPaymentStatus implements ShouldQueue
         ]);
 
         try {
-            // Find order and transaction
+            // Find order and payment transaction
             $order = Order::find($this->orderId);
-            $transaction = CoinTransaction::find($this->transactionId);
+            $paymentTx = PaymentTransaction::find($this->transactionId);
 
-            if (!$order || !$transaction) {
+            if (!$order || !$paymentTx) {
                 Log::warning('Order or transaction not found', [
                     'order_id' => $this->orderId,
                     'transaction_id' => $this->transactionId,
@@ -59,7 +60,7 @@ class CheckPendingPaymentStatus implements ShouldQueue
             }
 
             // Check if already processed
-            if ($order->status !== 'PENDING' && $order->status !== 'pending') {
+            if (!in_array($order->status, ['pending', 'initiated', 'PENDING', 'INITIATED'])) {
                 Log::info('Order already processed', [
                     'order_id' => $this->orderId,
                     'status' => $order->status,
@@ -86,25 +87,43 @@ class CheckPendingPaymentStatus implements ShouldQueue
 
             if ($orderStatus === 'paid') {
                 // Payment succeeded - process success flow
-                $this->processSuccessfulPayment($order, $transaction, $razorpayOrder);
+                $this->processSuccessfulPayment($order, $paymentTx, $razorpayOrder);
             } elseif (in_array($orderStatus, ['attempted', 'created'])) {
-                // Still pending - log and do nothing
-                Log::info('Payment still pending after 15 minutes', [
+                // Still pending (user may have cancelled/exited) - log and do nothing
+                // Don't mark as failed unless there's evidence of actual payment failure
+                Log::info('Payment still pending - user may have cancelled or exited', [
                     'order_id' => $this->orderId,
                     'razorpay_status' => $orderStatus,
                 ]);
                 
                 // Update meta to indicate we checked
-                $meta = $transaction->meta ?? [];
-                $transaction->update([
+                $meta = $paymentTx->meta ?? [];
+                $paymentTx->update([
                     'meta' => array_merge($meta, [
                         'status_checked_at' => now()->toDateTimeString(),
                         'razorpay_status' => $orderStatus,
                     ]),
                 ]);
             } else {
-                // Payment failed
-                $this->processFailedPayment($order, $transaction, $orderStatus, 'Payment expired or failed');
+                // Only mark as failed if status indicates actual failure (not cancellation/exit)
+                // Statuses like 'closed', 'expired' indicate actual failure, not just cancellation
+                if (in_array($orderStatus, ['expired', 'closed'])) {
+                    $this->processFailedPayment($order, $paymentTx, $orderStatus, 'Payment window expired or closed');
+                } else {
+                    // Unknown status - log but don't mark as failed to avoid penalizing users
+                    Log::info('Unknown Razorpay order status - treating as pending', [
+                        'order_id' => $this->orderId,
+                        'razorpay_status' => $orderStatus,
+                    ]);
+                    
+                    $meta = $paymentTx->meta ?? [];
+                    $paymentTx->update([
+                        'meta' => array_merge($meta, [
+                            'status_checked_at' => now()->toDateTimeString(),
+                            'razorpay_status' => $orderStatus,
+                        ]),
+                    ]);
+                }
             }
 
             DB::commit();
@@ -122,7 +141,7 @@ class CheckPendingPaymentStatus implements ShouldQueue
     /**
      * Process successful payment
      */
-    private function processSuccessfulPayment($order, $transaction, $razorpayOrder)
+    private function processSuccessfulPayment($order, $paymentTx, $razorpayOrder)
     {
         $user = User::find($order->user_id);
         
@@ -145,18 +164,15 @@ class CheckPendingPaymentStatus implements ShouldQueue
         ]);
 
         // Calculate coins
-        $meta = $transaction->meta ?? [];
-        $coins = $meta['coins'] ?? $order->coins ?? 0;
-        $bonusCoins = $meta['bonus_coins'] ?? $order->bonus_coins ?? 0;
+        $meta = $paymentTx->meta ?? [];
+        $coins = $paymentTx->coins ?? ($meta['coins'] ?? ($order->coins ?? 0));
+        $bonusCoins = $paymentTx->bonus_coins ?? ($meta['bonus_coins'] ?? ($order->bonus_coins ?? 0));
         $totalCoins = $coins + $bonusCoins;
 
-        // Update transaction (store status within meta)
-        $transaction->update([
-            'payment_id' => $paymentId,
-            'amount' => $totalCoins,
-            'balance_after' => $user->coins + $totalCoins,
-            'description' => "Coin purchase: {$meta['package_name']} - {$coins} coins" . 
-                ($bonusCoins > 0 ? " + {$bonusCoins} bonus" : ""),
+        // Mark payment transaction SUCCESS (do not store coin balance here)
+        $paymentTx->update([
+            'razorpay_payment_id' => $paymentId,
+            'status' => 'SUCCESS',
             'meta' => array_merge($meta, [
                 'status' => 'completed',
                 'completed_at' => now()->toDateTimeString(),
@@ -165,15 +181,33 @@ class CheckPendingPaymentStatus implements ShouldQueue
             ]),
         ]);
 
-        // Credit coins to user
-        $user->increment('coins', $totalCoins);
-        $user->refresh();
+        // Idempotent coin credit + transaction create under lock
+        $lockedUser = User::where('id', $user->id)->lockForUpdate()->first();
+        $coinTx = CoinTransaction::firstOrCreate(
+            [
+                'user_id' => $lockedUser->id,
+                'order_id' => (string) $order->id,
+                'type' => 'purchase',
+            ],
+            [
+                'amount' => $totalCoins,
+                'balance_after' => 0,
+                'payment_id' => $paymentId,
+                'description' => ($meta['package_name'] ?? 'Coin purchase') . ": {$coins} coins" . ($bonusCoins > 0 ? " + {$bonusCoins} bonus" : ''),
+                'meta' => array_merge($meta, ['status' => 'completed']),
+            ]
+        );
 
-        // Create invoice
-        $invoice = $this->createInvoice($order, $transaction, $user);
+        if ($coinTx->wasRecentlyCreated) {
+            $lockedUser->increment('coins', $totalCoins);
+            $coinTx->balance_after = $lockedUser->coins;
+            $coinTx->save();
+        }
+
+        $invoice = $this->createInvoice($order, $coinTx, $user);
 
         // Send notification
-        $user->notify(new PaymentSuccessNotification($order, $transaction, $invoice));
+        $user->notify(new PaymentSuccessNotification($order, $coinTx, $invoice));
 
         Log::info('Pending payment processed successfully via job', [
             'order_id' => $order->id,
@@ -186,7 +220,7 @@ class CheckPendingPaymentStatus implements ShouldQueue
     /**
      * Process failed payment
      */
-    private function processFailedPayment($order, $transaction, $razorpayStatus, $reason)
+    private function processFailedPayment($order, $paymentTx, $razorpayStatus, $reason)
     {
         $user = User::find($order->user_id);
         
@@ -205,9 +239,9 @@ class CheckPendingPaymentStatus implements ShouldQueue
             ]),
         ]);
 
-        // Update transaction (store status within meta)
-        $meta = $transaction->meta ?? [];
-        $transaction->update([
+        // Update payment transaction (store status within meta)
+        $meta = $paymentTx->meta ?? [];
+        $paymentTx->update([
             'meta' => array_merge($meta, [
                 'status' => 'failed',
                 'failure_reason' => $reason,
@@ -215,10 +249,11 @@ class CheckPendingPaymentStatus implements ShouldQueue
                 'failed_at' => now()->toDateTimeString(),
                 'failed_via_job' => true,
             ]),
+            'status' => 'FAILED',
         ]);
 
         // Send notification
-        $user->notify(new PaymentFailedNotification($order, $transaction, $reason));
+        $user->notify(new PaymentFailedNotification($order, $paymentTx, $reason));
 
         Log::info('Pending payment marked as failed via job', [
             'order_id' => $order->id,

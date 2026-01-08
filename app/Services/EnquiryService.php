@@ -79,7 +79,7 @@ class EnquiryService
             }
 
             $existing = EnquiryUnlock::where('enquiry_id', $lockedEnquiry->id)
-                ->where('teacher_id', $tutorId)
+                ->where('tutor_id', $tutorId)
                 ->lockForUpdate()
                 ->first();
 
@@ -111,7 +111,7 @@ class EnquiryService
 
             $unlock = EnquiryUnlock::create([
                 'enquiry_id' => $lockedEnquiry->id,
-                'teacher_id' => $tutorId,
+                'tutor_id' => $tutorId,
                 'unlock_price' => $unlockPrice,
             ]);
 

@@ -78,15 +78,26 @@
             <i class="fas fa-gift mr-2"></i>Refer & Earn
           </button>
           <button
-            @click="activeTab = 'transactions'"
+            @click="activeTab = 'coin-transactions'"
             :class="[
               'flex-1 px-6 py-4 font-semibold transition-all',
-              activeTab === 'transactions'
+              activeTab === 'coin-transactions'
                 ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white'
                 : 'text-gray-600 hover:bg-gray-50'
             ]"
           >
-            <i class="fas fa-history mr-2"></i>Transactions
+            <i class="fas fa-coins mr-2"></i>Coin Transactions
+          </button>
+          <button
+            @click="activeTab = 'payment-transactions'"
+            :class="[
+              'flex-1 px-6 py-4 font-semibold transition-all',
+              activeTab === 'payment-transactions'
+                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white'
+                : 'text-gray-600 hover:bg-gray-50'
+            ]"
+          >
+            <i class="fas fa-receipt mr-2"></i>Payment Transactions
           </button>
         </div>
       </div>
@@ -99,6 +110,7 @@
             ref="buyCoinsComponent"
             :packages="packages"
             :loading="loading"
+            :userCountryCode="$store?.state?.user?.country_code || 'IN'"
             :prefill="{
               name: $store?.state?.user?.name || '',
               email: $store?.state?.user?.email || '',
@@ -119,13 +131,13 @@
           />
         </div>
 
-        <!-- Transactions Tab -->
-        <div v-show="activeTab === 'transactions'">
+        <!-- Coin Transactions Tab -->
+        <div v-show="activeTab === 'coin-transactions'">
 
           <!-- Transaction History -->
           <div class="bg-white rounded-2xl shadow-md p-6">
             <h2 class="text-2xl font-bold text-gray-800 mb-4">
-              <i class="fas fa-history mr-2"></i>Transaction History
+              <i class="fas fa-coins mr-2"></i>Coin Transaction History
             </h2>
             
             <div v-if="!wallet.transactions || wallet.transactions.data.length === 0" class="text-center py-12 text-gray-500">
@@ -162,6 +174,74 @@
                   <p class="text-xs text-gray-500">Balance: {{ transaction.balance_after }}</p>
                 </div>
               </div>
+              
+              <!-- View More Button -->
+              <div v-if="wallet.transactions.total > 5" class="text-center pt-4">
+                <button
+                  @click="activeTab = 'coin-transactions'"
+                  class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-lg hover:from-pink-600 hover:to-purple-700 transition shadow-md"
+                >
+                  <i class="fas fa-list"></i>
+                  View All Transactions ({{ wallet.transactions.total }})
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Transactions Tab -->
+        <div v-show="activeTab === 'payment-transactions'">
+          <div class="bg-white rounded-2xl shadow-md p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">
+              <i class="fas fa-receipt mr-2"></i>Payment Transactions
+            </h2>
+            <div v-if="paymentTxLoading" class="text-gray-500 py-6">Loading latest transactions...</div>
+            <div v-else>
+              <div v-if="paymentTx.length === 0" class="text-center py-10 text-gray-500">
+                <i class="fas fa-receipt text-6xl mb-4 text-gray-300"></i>
+                <p>No payment transactions yet</p>
+              </div>
+              <div v-else class="space-y-3 mb-4">
+                <div
+                  v-for="tx in paymentTx"
+                  :key="tx.id"
+                  class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+                >
+                  <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                      <i class="fas fa-shopping-cart text-green-600 text-lg"></i>
+                    </div>
+                    <div>
+                      <p class="font-semibold text-gray-800">Coin Purchase</p>
+                      <p class="text-sm text-gray-500">{{ formatDate(tx.created_at) }}</p>
+                      <p class="text-xs text-gray-500" v-if="tx.razorpay_payment_id">{{ tx.razorpay_payment_id }}</p>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-lg font-bold text-gray-800">₹{{ tx.amount }}</p>
+                    <p class="text-xs">
+                      <span
+                        class="px-2 py-0.5 rounded-full font-medium"
+                        :class="{
+                          'bg-green-100 text-green-700': (tx.status||'').toUpperCase()==='SUCCESS',
+                          'bg-amber-100 text-amber-700': (tx.status||'').toUpperCase()==='PENDING',
+                          'bg-blue-100 text-blue-700': (tx.status||'').toUpperCase()==='INITIATED',
+                          'bg-red-100 text-red-700': (tx.status||'').toUpperCase()==='FAILED'
+                        }"
+                      >
+                        {{ (tx.status||'').toUpperCase() }}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between">
+                <p class="text-gray-600">View full payment history with status and invoices.</p>
+                <router-link to="/tutor/wallet/payment-history" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-pink-600 text-white hover:bg-pink-700">
+                  <i class="fas fa-history"></i>
+                  View more
+                </router-link>
+              </div>
             </div>
           </div>
         </div>
@@ -180,7 +260,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import axios from 'axios';
 import ReferralShareCard from '../components/Wallet/ReferralShareCard.vue';
 import BuyCoins from '../components/Wallet/BuyCoins.vue';
@@ -200,6 +280,8 @@ export default {
     const activeTab = ref('buy');
     const buyCoinsComponent = ref(null);
     const transactionModal = ref({ visible: false, status: 'success', details: {} });
+    const paymentTx = ref([]);
+    const paymentTxLoading = ref(false);
 
     const fetchWallet = async () => {
       try {
@@ -307,11 +389,18 @@ export default {
       };
     };
 
-    const retryPayment = () => {
+    const retryPayment = (newOrderData) => {
       transactionModal.value.visible = false;
-      // Call BuyCoins retry method to create new order and open Razorpay
-      if (buyCoinsComponent.value?.retryPayment) {
-        buyCoinsComponent.value.retryPayment();
+      
+      // If we have new order data from API, initiate payment with it
+      if (newOrderData && newOrderData.order && newOrderData.package) {
+        // Open Razorpay checkout with new order
+        if (buyCoinsComponent.value && buyCoinsComponent.value.openRazorpayCheckout) {
+          buyCoinsComponent.value.openRazorpayCheckout(newOrderData.package, newOrderData.order, newOrderData.transaction_id);
+        }
+      } else {
+        // Fallback: just show toast to buy again
+        showToast('Please select a package to retry payment', 'info');
       }
     };
 
@@ -372,6 +461,28 @@ export default {
     onMounted(() => {
       fetchWallet();
       fetchPackages();
+      // Preload latest 5 payment transactions
+      fetchLatestPaymentTransactions();
+    });
+
+    const fetchLatestPaymentTransactions = async () => {
+      try {
+        paymentTxLoading.value = true;
+        const { data } = await axios.get('/api/wallet/payment-transactions', {
+          params: { per_page: 5, page: 1 }
+        });
+        paymentTx.value = data?.transactions?.data || [];
+      } catch (error) {
+        console.error('Failed to fetch payment transactions:', error);
+      } finally {
+        paymentTxLoading.value = false;
+      }
+    };
+
+    watch(activeTab, (tab) => {
+      if (tab === 'payment-transactions' && paymentTx.value.length === 0) {
+        fetchLatestPaymentTransactions();
+      }
     });
 
     return {
@@ -392,7 +503,9 @@ export default {
       transactionModal,
       retryPayment,
       downloadReceipt,
-      contactSupport
+      contactSupport,
+      paymentTx,
+      paymentTxLoading
     };
   }
 };

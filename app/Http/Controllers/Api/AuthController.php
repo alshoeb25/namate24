@@ -113,6 +113,8 @@ class AuthController extends Controller
             ->load(['roles', 'tutor', 'student', 'wallet'])
             ->append('avatar_url');
 
+        // Auto-detect and set country if not defined
+        $this->autoDetectCountry($user, $request);
 
         // Check if email is not verified
         if ($user->email && !$user->email_verified_at) {
@@ -338,6 +340,74 @@ class AuthController extends Controller
             \Log::error('Referral processing failed during registration: ' . $e->getMessage());
             return null;
         }
+    }
+
+    /**
+     * Auto-detect and set user's country from IP if not defined
+     */
+    private function autoDetectCountry(User $user, Request $request): void
+    {
+        // Check if user already has country information
+        if (!empty($user->country_code)) {
+            return;
+        }
+
+        // Check tutor/student tables for existing country info
+        if ($user->tutor && !empty($user->tutor->country)) {
+            return;
+        }
+        if ($user->student && !empty($user->student->country_code)) {
+            return;
+        }
+
+        // Get IP address
+        $ip = $request->ip();
+        
+        // Skip local/private IPs
+        if ($this->isLocalIp($ip)) {
+            // Default to India for local development
+            $user->update(['country_code' => 'IN']);
+            return;
+        }
+
+        try {
+            // Use ip-api.com for geolocation (free, no API key needed)
+            $response = @file_get_contents("http://ip-api.com/json/{$ip}?fields=status,countryCode");
+            
+            if ($response) {
+                $data = json_decode($response, true);
+                
+                if (isset($data['status']) && $data['status'] === 'success') {
+                    $countryCode = $data['countryCode'] ?? null;
+                    
+                    // Set country code if detected
+                    if ($countryCode) {
+                        $user->update(['country_code' => $countryCode]);
+                        \Log::info('Auto-detected country for user', [
+                            'user_id' => $user->id,
+                            'country_code' => $countryCode,
+                            'ip' => $ip
+                        ]);
+                        return;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Country detection failed: ' . $e->getMessage());
+        }
+
+        // Fallback: Default to India if detection fails
+        $user->update(['country_code' => 'IN']);
+        \Log::info('Defaulted to India for user', ['user_id' => $user->id]);
+    }
+
+    /**
+     * Check if IP is local/private
+     */
+    private function isLocalIp(string $ip): bool
+    {
+        return in_array($ip, ['127.0.0.1', '::1', 'localhost']) 
+            || filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
     }
 }
 

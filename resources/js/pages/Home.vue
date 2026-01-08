@@ -158,32 +158,7 @@ export default {
       'default': { icon: 'https://img.icons8.com/ios-filled/50/3F51B5/book.png', bgColor: '#E8EAF6' }
     };
 
-    const featuredTeachers = ref([
-      {
-        id: 1,
-        name: 'Sarah Jain',
-        photo: 'https://image2url.com/images/1765181971596-87182fef-e224-4cd5-988f-9e288f3dad7b.png',
-        mode: 'Online, Offline',
-        subjects: ['Algebra', 'Calculus'],
-        rating: 4.9
-      },
-      {
-        id: 2,
-        name: 'Rahul Trivedi',
-        photo: 'https://image2url.com/images/1765182082393-64829582-e598-47cb-b30d-6ab41cc836db.png',
-        mode: 'Online',
-        subjects: ['Physics', 'Chemistry'],
-        rating: 5.0
-      },
-      {
-        id: 3,
-        name: 'Prathima Roy',
-        photo: 'https://image2url.com/images/1765182131342-c42f7847-c01b-4bc3-b8a3-70a182163597.png',
-        mode: 'Online',
-        subjects: ['English Lit', 'ESL'],
-        rating: 4.8
-      },
-    ]);
+    const featuredTeachers = ref([]);
 
     const isAuthenticated = computed(() => userStore.token !== null);
     const user = computed(() => userStore.user);
@@ -216,6 +191,25 @@ export default {
       }
     };
 
+    // Fetch featured teachers from API
+    const fetchFeaturedTeachers = async () => {
+      try {
+        const response = await axios.get('/api/tutors/featured');
+        featuredTeachers.value = response.data.data.map(tutor => ({
+          id: tutor.user?.id || tutor.user_id,
+          name: tutor.user?.name || 'Teacher',
+          photo: tutor.user?.avatar_url || tutor.photo_url || 'https://via.placeholder.com/150',
+          mode: tutor.teaching_mode === 'both' ? 'Online, Offline' : tutor.teaching_mode === 'online' ? 'Online' : 'Offline',
+          subjects: (tutor.subjects || []).slice(0, 2).map(s => s.name),
+          rating: tutor.rating_avg || 0
+        }));
+      } catch (error) {
+        console.error('Failed to fetch featured teachers:', error);
+        // Keep empty array on error
+        featuredTeachers.value = [];
+      }
+    };
+
     const performSearch = () => {
       router.push({
         name: 'search',
@@ -228,7 +222,7 @@ export default {
 
     const searchBySubject = (subjectName) => {
       router.push({
-        name: 'search',
+        name: 'tutors',
         query: {
           subject: subjectName,
         }
@@ -236,7 +230,10 @@ export default {
     };
 
     const viewMoreTeachers = () => {
-      router.push({ name: 'search' });
+      router.push({ 
+        name: 'tutors',
+        query: { featured: 'true' }
+      });
     };
 
     const logout = () => {
@@ -247,6 +244,7 @@ export default {
     onMounted(async () => {
       await userStore.fetchUser();
       await fetchSubjects();
+      await fetchFeaturedTeachers();
     });
 
     return {

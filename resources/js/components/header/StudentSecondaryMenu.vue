@@ -62,6 +62,10 @@
                 <i class="fas fa-history text-sm w-5"></i>
                 Payment History
               </router-link>
+              <router-link to="/student/wallet/coin-transactions" class="px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors flex items-center gap-3">
+                <i class="fas fa-coins text-sm w-5"></i>
+                Coin Transactions
+              </router-link>
               <router-link to="/student/wallet/referrals" class="px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors flex items-center gap-3">
                 <i class="fas fa-user-friends text-sm w-5"></i>
                 Refer Friends
@@ -110,6 +114,7 @@
               <ul class="mt-2 pl-4 space-y-2">
                 <li><router-link to="/student/wallet" @click="closeMobileMenu" class="block py-1 text-sm text-gray-600 hover:text-blue-600"><i class="fas fa-wallet text-xs w-5 mr-2"></i>My Wallet</router-link></li>
                 <li><router-link to="/student/wallet/payment-history" @click="closeMobileMenu" class="block py-1 text-sm text-gray-600 hover:text-blue-600"><i class="fas fa-history text-xs w-5 mr-2"></i>Payment History</router-link></li>
+                <li><router-link to="/student/wallet/coin-transactions" @click="closeMobileMenu" class="block py-1 text-sm text-gray-600 hover:text-blue-600"><i class="fas fa-coins text-xs w-5 mr-2"></i>Coin Transactions</router-link></li>
                 <li><router-link to="/student/wallet/referrals" @click="closeMobileMenu" class="block py-1 text-sm text-gray-600 hover:text-blue-600"><i class="fas fa-user-friends text-xs w-5 mr-2"></i>Refer Friends</router-link></li>
               </ul>
             </details>

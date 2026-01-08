@@ -371,4 +371,226 @@ class StudentController extends Controller
             'message' => 'Requirement deleted successfully.'
         ]);
     }
+
+    /**
+     * Get list of interested teachers for an enquiry
+     * Returns teachers who have unlocked the enquiry
+     */
+    public function getInterestedTeachers(Request $request, $id)
+    {
+        $user = $request->user();
+        $studentId = $user->student->id ?? $user->id;
+
+        $requirement = StudentRequirement::where('student_id', $studentId)
+            ->where('id', $id)
+            ->firstOrFail();
+
+        // Get all tutors who unlocked this enquiry
+        $teachers = $requirement->unlockBy()
+            ->with('user')
+            ->get()
+            ->map(function ($tutor) {
+                $user = $tutor->user;
+
+                return [
+                    'id' => $tutor->id, // tutors.id
+                    'name' => $user->name ?? null,
+                    'email' => $user->email ?? null,
+                    'phone' => $user->phone ?? null,
+                    'photo' => $tutor->photo_url ?? ($user->avatar_url ?? null),
+                    'rating' => $tutor->rating_avg ?? null,
+                    'hourly_rate' => $tutor->price_per_hour ?? null,
+                    'bio' => $tutor->about ?? null,
+                    'interested_at' => $tutor->pivot?->created_at,
+                ];
+            });
+
+        return response()->json([
+            'enquiry_id' => $requirement->id,
+            'total_interested' => count($teachers),
+            'teachers' => $teachers,
+        ]);
+    }
+
+    /**
+     * Hire a specific teacher for an enquiry
+     * Marks enquiry as hired and notifies all teachers
+     */
+    public function hireTeacher(Request $request, $id)
+    {
+        $user = $request->user();
+        $studentId = $user->student->id ?? $user->id;
+
+        $data = $request->validate([
+            'teacher_id' => 'required|integer|exists:tutors,id',
+        ]);
+
+        $requirement = StudentRequirement::where('student_id', $studentId)
+            ->where('id', $id)
+            ->firstOrFail();
+
+        // teacher_id now references tutors.id (not users.id)
+        $tutorId = $data['teacher_id'];
+        $tutor = \App\Models\Tutor::with('user')->find($tutorId);
+        
+        if (!$tutor || !$tutor->user) {
+            return response()->json([
+                'message' => 'Tutor not found or account not active.',
+            ], 404);
+        }
+        
+        // Verify teacher has unlocked this enquiry
+        $hasUnlocked = $requirement->unlockBy()
+            ->where('tutors.id', $tutorId)
+            ->exists();
+
+        if (!$hasUnlocked) {
+            return response()->json([
+                'message' => 'This tutor has not expressed interest in your enquiry.',
+            ], 422);
+        }
+
+        // Update enquiry status to hired
+        $requirement->update([
+            'status' => 'hired',
+            'lead_status' => 'closed',
+            // Store hired tutor as tutors.id
+            'hired_teacher_id' => $tutorId,
+            'hired_at' => now(),
+        ]);
+
+        // Notify hired teacher
+        if ($tutor && $tutor->user) {
+            $tutor->user->notify(new \App\Notifications\TeacherHiredNotification($requirement, $user));
+        }
+
+        // Notify other interested teachers that lead was taken
+        $otherTutors = $requirement->unlockBy()
+            ->where('tutors.id', '!=', $tutorId)
+            ->with('user')
+            ->get();
+
+        foreach ($otherTutors as $otherTutor) {
+            if ($otherTutor->user) {
+                $otherTutor->user->notify(new \App\Notifications\LeadTakenNotification($requirement, $tutor));
+            }
+        }
+
+        return response()->json([
+            'message' => 'You have successfully hired ' . ($tutor->user->name ?? 'Tutor') . '!',
+            'requirement' => $requirement->fresh(),
+            'hired_teacher' => [
+                'id' => $tutor->id,
+                'name' => $tutor->user->name ?? null,
+                'email' => $tutor->user->email ?? null,
+                'phone' => $tutor->user->phone ?? null,
+            ],
+        ]);
+    }
+
+    /**
+     * Get hired tutors with bookings and reviews
+     * GET /api/student/hired-tutors
+     */
+    public function hiredTutors(Request $request)
+    {
+        $user = $request->user();
+        $studentId = $user->student->id ?? $user->id;
+
+        // Get hired tutors from bookings
+        $bookings = \App\Models\Booking::with(['tutor', 'tutor.user', 'tutor.subjects'])
+            ->where('student_id', $studentId)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($booking) {
+                $review = \App\Models\Review::where('booking_id', $booking->id)->first();
+                return [
+                    'id' => $booking->id,
+                    'source' => 'booking',
+                    'tutor_id' => $booking->tutor_id,
+                    'tutor' => $booking->tutor,
+                    'start_at' => $booking->start_at,
+                    'end_at' => $booking->end_at,
+                    'session_price' => $booking->session_price,
+                    'status' => $booking->status,
+                    'payment_status' => $booking->payment_status,
+                    'created_at' => $booking->created_at,
+                    'review' => $review ? [
+                        'id' => $review->id,
+                        'rating' => $review->rating,
+                        'comment' => $review->comment,
+                        'created_at' => $review->created_at,
+                    ] : null,
+                ];
+            });
+
+        // Get hired tutors from requirements
+        $hiredFromRequirements = StudentRequirement::where('student_id', $studentId)
+            ->where('status', 'hired')
+            ->whereNotNull('hired_teacher_id')
+            ->with(['subject', 'subjects'])
+            ->orderBy('hired_at', 'desc')
+            ->get()
+            ->map(function ($requirement) {
+                // Get the hired tutor (hired_teacher_id is tutor_id from tutors table)
+                $tutor = \App\Models\Tutor::with(['user', 'subjects'])->find($requirement->hired_teacher_id);
+                
+                if (!$tutor || !$tutor->user) {
+                    return null;
+                }
+
+                // Check if there's a review for this requirement/teacher combination
+                $review = \App\Models\Review::where('student_id', $requirement->student_id)
+                    ->where('tutor_id', $tutor->id)
+                    ->where(function($q) use ($requirement) {
+                        $q->whereNull('booking_id')
+                          ->orWhere('related_requirement_id', $requirement->id);
+                    })
+                    ->first();
+
+                return [
+                    'id' => 'req_' . $requirement->id,
+                    'source' => 'requirement',
+                    'requirement_id' => $requirement->id,
+                    'tutor_id' => $tutor->id,
+                    'tutor' => [
+                        'id' => $tutor->id,
+                        'user_id' => $tutor->user_id,
+                        'rating_avg' => $tutor->rating_avg,
+                        'rating_count' => $tutor->rating_count,
+                        'verified' => $tutor->verified,
+                        'user' => [
+                            'id' => $tutor->user->id,
+                            'name' => $tutor->user->name,
+                            'avatar_url' => $tutor->user->avatar_url,
+                        ],
+                        'subjects' => $tutor->subjects,
+                    ],
+                    'start_at' => $requirement->hired_at,
+                    'end_at' => null,
+                    'session_price' => $requirement->budget ?? 0,
+                    'status' => 'confirmed',
+                    'payment_status' => 'pending',
+                    'created_at' => $requirement->hired_at,
+                    'subjects_requested' => $requirement->subjects ? $requirement->subjects->pluck('name')->join(', ') : '',
+                    'review' => $review ? [
+                        'id' => $review->id,
+                        'rating' => $review->rating,
+                        'comment' => $review->comment,
+                        'created_at' => $review->created_at,
+                    ] : null,
+                ];
+            })
+            ->filter(); // Remove null entries
+
+        // Merge both collections and sort by created_at
+        $allHiredTutors = $bookings->concat($hiredFromRequirements)
+            ->sortByDesc('created_at')
+            ->values();
+
+        return response()->json([
+            'data' => $allHiredTutors,
+            'total' => $allHiredTutors->count(),
+        ]);
+    }
 }

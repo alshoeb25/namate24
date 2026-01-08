@@ -5,10 +5,12 @@ namespace App\Filament\Resources;
 use App\Models\Review;
 use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
@@ -28,19 +30,27 @@ class ReviewResource extends Resource
     {
         return $form
             ->schema([
-                TextInput::make('reviewable.user.name')
+                TextInput::make('tutor.user.name')
                     ->label('Tutor')
                     ->disabled(),
-                TextInput::make('user.name')
-                    ->label('Reviewer')
+                TextInput::make('student.name')
+                    ->label('Student/Reviewer')
                     ->disabled(),
                 TextInput::make('rating')
                     ->numeric()
-                    ->min(1)
-                    ->max(5)
                     ->disabled(),
                 RichEditor::make('comment')
-                    ->columnSpanFull(),
+                    ->columnSpanFull()
+                    ->disabled(),
+                Select::make('moderation_status')
+                    ->label('Status')
+                    ->options([
+                        'pending' => 'Pending',
+                        'approved' => 'Approved',
+                        'rejected' => 'Rejected',
+                    ])
+                    ->required()
+                    ->native(false),
                 Toggle::make('is_hidden')
                     ->label('Hide Review'),
             ]);
@@ -50,12 +60,12 @@ class ReviewResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('reviewable.user.name')
+                TextColumn::make('tutor.user.name')
                     ->label('Tutor')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('user.name')
-                    ->label('Reviewer')
+                TextColumn::make('student.name')
+                    ->label('Student')
                     ->searchable(),
                 TextColumn::make('rating')
                     ->badge()
@@ -67,12 +77,29 @@ class ReviewResource extends Resource
                 TextColumn::make('comment')
                     ->limit(50)
                     ->wrap(),
+                TextColumn::make('moderation_status')
+                    ->label('Status')
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'approved' => 'success',
+                        'rejected' => 'danger',
+                        'pending' => 'warning',
+                        default => 'gray',
+                    }),
                 ToggleColumn::make('is_hidden')
                     ->label('Hidden'),
                 TextColumn::make('created_at')
-                    ->dateTime(),
+                    ->dateTime()
+                    ->sortable(),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
+                SelectFilter::make('moderation_status')
+                    ->options([
+                        'pending' => 'Pending',
+                        'approved' => 'Approved',
+                        'rejected' => 'Rejected',
+                    ]),
                 SelectFilter::make('rating')
                     ->options([
                         1 => '1 Star',
@@ -88,6 +115,18 @@ class ReviewResource extends Resource
                     ]),
             ])
             ->actions([
+                Action::make('approve')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->action(fn (Review $record) => $record->update(['moderation_status' => 'approved']))
+                    ->visible(fn (Review $record) => $record->moderation_status !== 'approved'),
+                Action::make('reject')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->action(fn (Review $record) => $record->update(['moderation_status' => 'rejected']))
+                    ->visible(fn (Review $record) => $record->moderation_status !== 'rejected'),
                 ViewAction::make(),
                 EditAction::make(),
             ]);

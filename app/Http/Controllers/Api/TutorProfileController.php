@@ -8,6 +8,7 @@ use App\Models\Level;
 use App\Models\Subject;
 use App\Models\Tutor;
 use App\Models\User;
+use App\Services\WhatsAppService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -73,26 +74,55 @@ class TutorProfileController extends Controller
     }
 
     /**
-     * Send Phone OTP
+     * Send Phone OTP via WhatsApp
      */
     public function sendPhoneOtp(Request $request): JsonResponse
     {
-        $validated = $request->validate(['phone' => 'required|string']);
+        $validated = $request->validate([
+            'phone' => 'required|string|regex:/^[0-9+\-\s()]+$/',
+            'method' => 'nullable|in:whatsapp,sms', // Default: whatsapp
+        ]);
+
+        $method = $validated['method'] ?? 'whatsapp';
+        $phone = WhatsAppService::formatPhone($validated['phone']);
 
         // Generate OTP (6 digits)
         $otp = random_int(100000, 999999);
         $expiresAt = now()->addMinutes(10);
 
         Auth::user()->update([
-            'phone' => $validated['phone'],
+            'phone' => $phone,
             'phone_otp' => $otp,
             'phone_otp_expires_at' => $expiresAt,
         ]);
 
-        // TODO: Send OTP via SMS service
-        // SmsService::send($validated['phone'], "Your OTP: $otp");
+        // Send OTP via WhatsApp or SMS
+        if ($method === 'whatsapp') {
+            $whatsappService = new WhatsAppService();
+            $result = $whatsappService->sendOTP($phone, (string)$otp);
+            
+            if (!$result['success']) {
+                return response()->json([
+                    'message' => 'Failed to send WhatsApp OTP. Try SMS method.',
+                    'error' => $result['error'] ?? 'Unknown error',
+                ], 422);
+            }
+            
+            return response()->json([
+                'message' => 'OTP sent to WhatsApp',
+                'phone' => $phone,
+                'method' => 'whatsapp',
+            ]);
+        }
 
-        return response()->json(['message' => 'OTP sent to phone']);
+        // Fallback to SMS (implement your SMS provider)
+        // SmsService::send($phone, "Your Namate24 OTP: $otp");
+
+        return response()->json([
+            'message' => 'OTP sent via SMS',
+            'phone' => $phone,
+            'method' => 'sms',
+        ]);
     }
 
     /**
@@ -863,5 +893,63 @@ class TutorProfileController extends Controller
         $tutor->update($validated);
 
         return response()->json(['message' => 'Settings updated', 'tutor' => $tutor]);
+    }
+
+    /**
+     * Get WhatsApp Chat Link for Tutor
+     */
+    public function getWhatsAppLink($tutorId): JsonResponse
+    {
+        $tutor = Tutor::with('user')->findOrFail($tutorId);
+
+        // Check privacy settings
+        if ($tutor->do_not_share_contact) {
+            return response()->json([
+                'message' => 'Tutor has disabled contact sharing',
+                'available' => false,
+            ], 403);
+        }
+
+        $phone = $tutor->whatsapp_number ?? $tutor->user->phone;
+        
+        if (!$phone) {
+            return response()->json([
+                'message' => 'WhatsApp number not available',
+                'available' => false,
+            ], 404);
+        }
+
+        $message = "Hi {$tutor->user->name}, I found your profile on Namate24. I'm interested in your tutoring services.";
+        
+        return response()->json([
+            'available' => true,
+            'chat_link' => WhatsAppService::getChatLink($phone, $message),
+            'api_link' => WhatsAppService::getApiLink($phone, $message),
+            'phone' => WhatsAppService::formatPhone($phone),
+        ]);
+    }
+
+    /**
+     * Get Company WhatsApp Contact
+     */
+    public function getCompanyWhatsApp(): JsonResponse
+    {
+        $companyPhone = config('services.whatsapp.company_number');
+        
+        if (!$companyPhone) {
+            return response()->json([
+                'message' => 'Company WhatsApp not configured',
+                'available' => false,
+            ], 404);
+        }
+
+        $message = "Hi, I need help with Namate24 platform.";
+
+        return response()->json([
+            'available' => true,
+            'chat_link' => WhatsAppService::getChatLink($companyPhone, $message),
+            'api_link' => WhatsAppService::getApiLink($companyPhone, $message),
+            'phone' => WhatsAppService::formatPhone($companyPhone),
+        ]);
     }
 }

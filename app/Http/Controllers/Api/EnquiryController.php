@@ -49,7 +49,7 @@ class EnquiryController extends Controller
                 'unlocks as has_unlocked' => function ($q) use ($user) {
                     $tutorId = $user->tutor ? $user->tutor->id : null;
                     if ($tutorId) {
-                        $q->where('teacher_id', $tutorId);
+                        $q->where('tutor_id', $tutorId);
                     }
                 }
             ]);
@@ -95,7 +95,7 @@ class EnquiryController extends Controller
 
         $tutorId = $user->tutor ? $user->tutor->id : null;
         $hasUnlocked = $tutorId ? EnquiryUnlock::where('enquiry_id', $enquiry->id)
-            ->where('teacher_id', $tutorId)
+            ->where('tutor_id', $tutorId)
             ->exists() : false;
 
         $studentId = $user->student ? $user->student->id : null;

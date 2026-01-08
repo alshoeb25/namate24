@@ -41,7 +41,18 @@
             </p>
             
             <div class="mt-3 pt-3 border-t border-gray-200">
-              <p class="text-3xl font-bold text-gray-800">₹{{ pkg.price }}</p>
+              <div class="space-y-1">
+                <p class="text-3xl font-bold text-gray-800">
+                  <span v-if="displayPrice(pkg).symbol === '₹'">₹{{ displayPrice(pkg).total }}</span>
+                  <span v-else>
+                    ${{ displayPrice(pkg).total }}
+                    <span class="text-sm text-gray-500">({{ displayPrice(pkg).hint }})</span>
+                  </span>
+                </p>
+                <p v-if="displayPrice(pkg).symbol === '₹'" class="text-xs text-gray-500">
+                  Base: ₹{{ displayPrice(pkg).base }} · GST: ₹{{ displayPrice(pkg).tax }}
+                </p>
+              </div>
               <p v-if="pkg.description" class="text-xs text-gray-500 mt-2">{{ pkg.description }}</p>
             </div>
           </div>
@@ -115,6 +126,16 @@ export default {
       type: Boolean,
       default: false
     },
+    // Optional: country code (e.g., 'IN') of current user to show pricing hints
+    userCountryCode: {
+      type: String,
+      default: 'IN'
+    },
+    // Default currency (INR for India)
+    defaultCurrency: {
+      type: String,
+      default: 'INR'
+    },
     // Razorpay public key (required to open checkout)
     razorpayKey: {
       type: String,
@@ -157,6 +178,31 @@ export default {
     this.ensureRazorpay();
   },
   methods: {
+    displayPrice(pkg) {
+      const inr = Number(pkg.price || 0);
+      const usdRate = (import.meta?.env?.VITE_COIN_USD_RATE_PER_INR ?? 0.0125);
+      const isIndia = ['IN', 'IND', '91'].includes(String(this.userCountryCode || '').toUpperCase());
+      if (isIndia) {
+        const gstRate = Number(import.meta?.env?.VITE_COIN_GST_RATE ?? 0.18);
+        const tax = Math.round(inr * gstRate * 100) / 100;
+        const total = Math.round((inr + tax) * 100) / 100;
+        return {
+          symbol: '₹',
+          base: inr.toFixed(2),
+          tax: tax.toFixed(2),
+          total: total.toFixed(2),
+          hint: `GST included (${(gstRate*100).toFixed(0)}%)`
+        };
+      }
+      const usd = Math.round(inr * Number(usdRate) * 100) / 100;
+      return {
+        symbol: '$',
+        base: usd.toFixed(2),
+        tax: (0).toFixed(2),
+        total: usd.toFixed(2),
+        hint: `~₹${inr.toFixed(2)} (charged in USD)`
+      };
+    },
     ensureRazorpay() {
       if (typeof window === 'undefined') return;
       if (window.Razorpay) {
@@ -225,10 +271,12 @@ export default {
         return;
       }
 
+      // Use the exact currency and amount from backend (already includes GST for India)
+      // Fallback to INR if backend doesn't specify currency
       const options = {
         key: this.resolvedRazorpayKey,
-        amount: order.amount || (order.price * 100),
-        currency: order.currency || 'INR',
+        amount: order.amount, // Amount in smallest currency unit (paise for INR, cents for USD)
+        currency: order.currency || this.defaultCurrency, // Currency set by backend, default INR
         name: 'Namate24',
         description: pkg.name,
         order_id: order.id || order.razorpay_order_id,
@@ -243,30 +291,28 @@ export default {
           this.handlePaymentSuccess(response, order, pkg);
         },
         modal: {
-          ondismiss: () => {
-            this.processingId = null;
-            this.isProcessing = false;
+          ondismiss: async () => {
+            try {
+              // Record payment cancellation in backend
+              await axios.post('/api/wallet/payment-cancelled', {
+                order_id: order.id,
+                transaction_id: this.currentTransactionId,
+                reason: 'user_dismissed'
+              });
+            } catch (err) {
+              console.error('Failed to record payment cancellation', err);
+            } finally {
+              this.processingId = null;
+              this.isProcessing = false;
+            }
           }
         }
       };
 
       const rzp = new window.Razorpay(options);
       rzp.on('payment.failed', (resp) => {
-        const orderId = resp?.error?.metadata?.order_id;
-        if (orderId) {
-          axios.post(`/api/wallet/order/${orderId}/cancel`, {
-            reason: resp?.error?.description || 'Payment failed',
-          }).catch(() => {});
-        }
-        // Gateway failures are retryable; store package for retry
-        this.failedPackage = this.failedPackage || pkg;
-        // ensure we remember original package id if Razorpay metadata not set
-        if (!this.failedPackage.id) {
-          this.failedPackage = { ...pkg };
-        }
-        this.$emit('payment-failed', { pkg: this.failedPackage, error: resp.error, isRetryable: true });
-        this.processingId = null;
-        this.isProcessing = false;
+        // Mark order and transaction as failed in backend
+        this.markPaymentFailed(order, pkg, resp);
       });
       rzp.open();
     },
@@ -300,6 +346,47 @@ export default {
         };
         this.$emit('payment-failed', { pkg, error: err, isRetryable: false });
         this.$emit('payment-notify', notify);
+      } finally {
+        this.processingId = null;
+        this.isProcessing = false;
+      }
+    },
+
+    async markPaymentFailed(order, pkg, response) {
+      try {
+        // Call API to mark order and transaction as failed
+        const payload = {
+          order_id: order.id,
+          transaction_id: this.currentTransactionId,
+          razorpay_error: response?.error?.code || 'GATEWAY_ERROR',
+          error_description: response?.error?.description || 'Payment gateway error',
+          error_reason: response?.error?.reason || 'unknown'
+        };
+
+        await axios.post('/api/wallet/payment-failed', payload);
+
+        console.log('Payment failure recorded', payload);
+
+        // Store package for retry
+        this.failedPackage = this.failedPackage || pkg;
+        if (!this.failedPackage.id) {
+          this.failedPackage = { ...pkg };
+        }
+
+        // Emit event with retry option for gateway failures
+        const notify = {
+          type: 'error',
+          title: 'Payment failed',
+          message: response?.error?.description || 'Payment gateway declined the transaction',
+          ctaUrl: '/wallet/payment-history'
+        };
+
+        this.$emit('payment-failed', { pkg: this.failedPackage, error: response?.error, isRetryable: true });
+        this.$emit('payment-notify', notify);
+      } catch (err) {
+        console.error('Failed to record payment failure', err);
+        // Still emit failure event even if recording fails
+        this.$emit('payment-failed', { pkg, error: response?.error, isRetryable: true });
       } finally {
         this.processingId = null;
         this.isProcessing = false;

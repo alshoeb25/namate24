@@ -14,7 +14,7 @@ class Tutor extends Model
     
     protected $fillable = [
         'user_id','headline','about','experience_years','price_per_hour',
-        'teaching_mode','city','area','phone','country_code','lat','lng','verified','rating_avg','rating_count',
+        'teaching_mode','city','area','phone','whatsapp_number','country_code','lat','lng','verified','rating_avg','rating_count',
         'gender','badges','moderation_status','address','state','country','postal_code',
         'introductory_video','video_title','youtube_intro_url','teaching_methodology','educations','experiences',
         'speciality','strength','current_role',
@@ -64,6 +64,18 @@ class Tutor extends Model
         return $this->hasMany(TutorDocument::class);
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class, 'tutor_id');
+    }
+
+    public function approvedReviews(): HasMany
+    {
+        return $this->hasMany(Review::class, 'tutor_id')
+            ->where('moderation_status', 'approved')
+            ->orderByDesc('created_at');
+    }
+
     public function getPhotoUrlAttribute()
     {
         if ($this->photo) {
@@ -73,6 +85,32 @@ class Tutor extends Model
         // Default photo - use user's name for personalized placeholder
         $userName = $this->user->name ?? 'Tutor';
         return 'https://ui-avatars.com/api/?name=' . urlencode($userName) . '&size=400&background=9333ea&color=ffffff';
+    }
+
+    /**
+     * Calculate and update rating_avg and rating_count based on approved reviews
+     */
+    public function updateRating(): void
+    {
+        $approvedReviews = $this->reviews()
+            ->where('moderation_status', 'approved')
+            ->get();
+
+        if ($approvedReviews->isEmpty()) {
+            $this->update([
+                'rating_avg' => null,
+                'rating_count' => 0,
+            ]);
+            return;
+        }
+
+        $avg = $approvedReviews->avg('rating');
+        $count = $approvedReviews->count();
+
+        $this->update([
+            'rating_avg' => round($avg, 2),
+            'rating_count' => $count,
+        ]);
     }
 
     /**

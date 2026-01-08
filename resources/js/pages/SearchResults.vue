@@ -22,6 +22,11 @@
                           filters.verified ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200']">
             <i class="fas fa-check-circle mr-1"></i> Verified
           </button>
+            <button @click="toggleFilter('featured')" 
+              :class="['px-4 py-2 rounded-full text-sm font-medium transition-colors',
+                filters.featured ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200']">
+              <i class="fas fa-star mr-1"></i> Featured
+            </button>
           
           <select v-model="filters.experience" 
                   class="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 border-none outline-none">
@@ -88,9 +93,13 @@
                        :enquiry="enquiry" />
             </template>
             <template v-else>
-              <TutorCard v-for="tutor in filteredTutors" 
-                         :key="tutor.id" 
-                         :tutor="tutor" />
+              <div v-for="tutor in filteredTutors" :key="tutor.id" class="relative">
+                <span v-if="isFeatured(tutor)"
+                      class="absolute right-3 top-3 inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-amber-800 bg-amber-100 rounded-full border border-amber-200">
+                  ★ Featured
+                </span>
+                <TutorCard :tutor="tutor" />
+              </div>
             </template>
           </div>
 
@@ -222,6 +231,7 @@ const filters = ref({
   online: false,
   home: false,
   verified: false,
+  featured: false,
   experience: '',
   priceRange: ''
 });
@@ -230,6 +240,7 @@ const hasActiveFilters = computed(() => {
   return filters.value.online || 
          filters.value.home || 
          filters.value.verified || 
+         filters.value.featured || 
          filters.value.experience || 
          filters.value.priceRange;
 });
@@ -254,6 +265,10 @@ const filteredTutors = computed(() => {
   
   if (filters.value.verified) {
     result = result.filter(t => t.verified);
+  }
+
+  if (filters.value.featured) {
+    result = result.filter(isFeatured);
   }
 
   if (filters.value.experience) {
@@ -302,6 +317,16 @@ const averageExperience = computed(() => {
   return (total / tutors.value.length).toFixed(1);
 });
 
+const getRating = (tutor) => {
+  return tutor?.rating_avg ?? tutor?.rating ?? tutor?.tutor?.rating_avg ?? 0;
+};
+
+const isFeatured = (tutor) => {
+  const rating = getRating(tutor);
+  const verified = tutor?.verified ?? tutor?.tutor?.verified ?? false;
+  return verified && rating >= 4.5;
+};
+
 function toggleFilter(filterName) {
   filters.value[filterName] = !filters.value[filterName];
   // loadTutors() will be called by filters watch
@@ -312,6 +337,7 @@ function resetFilters() {
     online: false,
     home: false,
     verified: false,
+    featured: false,
     experience: '',
     priceRange: ''
   };
@@ -343,6 +369,7 @@ async function loadTutors() {
     if (filters.value.online) params.online = 'true';
     if (filters.value.home) params.home = 'true';
     if (filters.value.verified) params.verified = 'true';
+    if (filters.value.featured) params.featured = 'true';
     if (filters.value.experience) params.experience = filters.value.experience;
     if (filters.value.priceRange) params.price_range = filters.value.priceRange;
 

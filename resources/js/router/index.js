@@ -42,6 +42,7 @@ import RequirementDetail from '../pages/RequirementDetail.vue';
 import StudentReviews from '../pages/StudentReviews.vue';
 import StudentWallet from '../pages/StudentWallet.vue';
 import StudentSettings from '../pages/StudentSettings.vue';
+import HiredTutors from '../pages/HiredTutors.vue';
 
 // Profile Management
 import ProfileManagement from '../pages/ProfileManagement.vue';
@@ -96,6 +97,7 @@ const routes = [
   // Tutor Wallet Routes
   { path: '/tutor/wallet', name: 'tutor.wallet', component: () => import('../pages/TutorWallet.vue') },
   { path: '/tutor/wallet/payment-history', name: 'tutor.payment-history', component: () => import('../pages/PaymentHistory.vue') },
+  { path: '/tutor/wallet/coin-transactions', name: 'tutor.coin-transactions', component: () => import('../pages/CoinTransactions.vue') },
   { path: '/tutor/wallet/referrals', name: 'tutor.referrals', component: () => import('../pages/ReferralPage.vue') },
 
   // Profile Management
@@ -110,8 +112,10 @@ const routes = [
       { path: 'request-tutor', name: 'student.request-tutor', component: RequestTutor },
       { path: 'requirements', name: 'student.requirements', component: RequirementsList },
       { path: 'requirements/:id/edit', name: 'student.requirement-edit', component: RequestTutor },
+      { path: 'hired-tutors', name: 'student.hired-tutors', component: HiredTutors },
       { path: 'wallet', name: 'student.wallet', component: () => import('../pages/StudentWallet.vue') },
       { path: 'wallet/payment-history', name: 'student.payment-history', component: () => import('../pages/PaymentHistory.vue') },
+      { path: 'wallet/coin-transactions', name: 'student.coin-transactions', component: () => import('../pages/CoinTransactions.vue') },
       { path: 'wallet/referrals', name: 'student.referrals', component: () => import('../pages/ReferralPage.vue') },
       { path: 'reviews', name: 'student.reviews', component: StudentReviews },
       { path: 'settings', name: 'student.settings', component: () => import('../pages/StudentSettings.vue') },

@@ -79,6 +79,16 @@
                 <p class="text-sm text-gray-500 text-center mt-1">Rate your tutors</p>
             </router-link>
 
+            <!-- Hired Tutors -->
+            <router-link to="/student/hired-tutors"
+                class="dashboard-card flex flex-col items-center justify-center gap-4 bg-white rounded-2xl p-6 shadow-md hover:shadow-xl">
+                <div class="icon-container bg-gradient-to-br from-orange-500 to-red-600">
+                    <i class="fas fa-users text-white text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-800 text-center">Hired Tutors</h3>
+                <p class="text-sm text-gray-500 text-center mt-1">View your tutors</p>
+            </router-link>
+
             <!-- Conversations -->
             <router-link to="/conversations"
                 class="dashboard-card flex flex-col items-center justify-center gap-4 bg-white rounded-2xl p-6 shadow-md hover:shadow-xl">
@@ -168,6 +178,18 @@
                 <div>
                     <p class="text-lg font-semibold text-gray-800">Reviews</p>
                     <p class="text-sm text-gray-500">Rate your tutors</p>
+                </div>
+                <i class="fas fa-chevron-right text-gray-400 ml-auto"></i>
+            </router-link>
+
+            <!-- Hired Tutors -->
+            <router-link to="/student/hired-tutors" class="dashboard-card flex items-center gap-4 bg-white rounded-2xl p-4 shadow-md">
+                <div class="icon-container-mobile bg-gradient-to-br from-orange-500 to-red-600">
+                    <i class="fas fa-users text-white"></i>
+                </div>
+                <div>
+                    <p class="text-lg font-semibold text-gray-800">Hired Tutors</p>
+                    <p class="text-sm text-gray-500">View your tutors</p>
                 </div>
                 <i class="fas fa-chevron-right text-gray-400 ml-auto"></i>
             </router-link>

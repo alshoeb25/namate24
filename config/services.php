@@ -47,4 +47,29 @@ return [
         'webhook_secret' => env('RAZORPAY_WEBHOOK_SECRET'),
     ],
 
+    'whatsapp' => [
+        'provider' => env('WHATSAPP_PROVIDER', 'twilio'), // twilio, msg91, gupshup
+        'company_number' => env('WHATSAPP_COMPANY_NUMBER'),
+        
+        // Twilio Configuration
+        'twilio' => [
+            'account_sid' => env('TWILIO_ACCOUNT_SID'),
+            'auth_token' => env('TWILIO_AUTH_TOKEN'),
+            'from_number' => env('TWILIO_WHATSAPP_FROM'),
+        ],
+
+        // MSG91 Configuration
+        'msg91' => [
+            'auth_key' => env('MSG91_AUTH_KEY'),
+            'sender_id' => env('MSG91_SENDER_ID'),
+            'template_id' => env('MSG91_WHATSAPP_TEMPLATE_ID'),
+        ],
+
+        // Gupshup Configuration
+        'gupshup' => [
+            'api_key' => env('GUPSHUP_API_KEY'),
+            'app_name' => env('GUPSHUP_APP_NAME'),
+        ],
+    ],
+
 ];

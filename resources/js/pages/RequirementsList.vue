@@ -15,6 +15,90 @@
         </div>
       </div>
 
+      <!-- Refund Confirmation Modal -->
+      <div v-if="showRefundModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+          <div class="text-center mb-4">
+            <i class="fas fa-coins text-5xl text-yellow-500 mb-4"></i>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Refund Available</h2>
+          </div>
+          <p class="text-gray-700 mb-4">You will receive a refund of <strong class="text-lg text-green-600">{{ refundAmount }} coins</strong> since no teacher has unlocked your enquiry yet.</p>
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <p class="text-sm text-blue-800"><i class="fas fa-info-circle mr-2"></i>This is the amount you paid when posting this enquiry.</p>
+          </div>
+          <div class="flex gap-3">
+            <button @click="cancelRefund" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium">
+              Cancel
+            </button>
+            <button @click="confirmRefund" class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition font-medium">
+              <i class="fas fa-check mr-2"></i>Confirm Refund
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interested Teachers Modal -->
+      <div v-if="showInterestedModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-96 overflow-y-auto">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">
+              <i class="fas fa-users mr-2 text-blue-600"></i>Interested Teachers
+            </h2>
+            <button @click="closeInterestedModal" class="text-gray-500 hover:text-gray-700">
+              <i class="fas fa-times text-2xl"></i>
+            </button>
+          </div>
+
+          <div v-if="interestedTeachers.length === 0" class="text-center py-8">
+            <i class="fas fa-inbox text-gray-300 text-5xl mb-4"></i>
+            <p class="text-gray-600">No teachers have expressed interest yet.</p>
+          </div>
+
+          <div v-else class="space-y-4">
+            <p class="text-sm text-gray-600 mb-4">
+              <strong>{{ interestedTeachers.length }}</strong> teacher{{ interestedTeachers.length > 1 ? 's' : '' }} want{{ interestedTeachers.length > 1 ? '' : 's' }} to work with you.
+            </p>
+            
+            <div v-for="teacher in interestedTeachers" :key="teacher.id" class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+              <div class="flex items-start justify-between mb-3">
+                <div class="flex items-start gap-3 flex-1">
+                  <img v-if="teacher.photo" :src="teacher.photo" :alt="teacher.name" class="w-12 h-12 rounded-full object-cover">
+                  <div v-else class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                    <i class="fas fa-user text-blue-600"></i>
+                  </div>
+                  <div class="flex-1">
+                    <h3 class="font-bold text-gray-800">{{ teacher.name }}</h3>
+                    <p class="text-sm text-gray-600">{{ teacher.email }}</p>
+                    <div class="flex items-center gap-3 mt-2">
+                      <span v-if="teacher.rating" class="text-sm">
+                        <i class="fas fa-star text-yellow-500"></i> {{ teacher.rating }}/5
+                      </span>
+                      <span v-if="teacher.hourly_rate" class="text-sm text-gray-600">₹{{ teacher.hourly_rate }}/hr</span>
+                    </div>
+                  </div>
+                </div>
+                <button 
+                  v-if="selectedRequirement?.hired_teacher_id !== teacher.id"
+                  @click="selectTeacher(teacher.id)"
+                  :disabled="hireLoading"
+                  class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition disabled:bg-gray-400">
+                  <i class="fas fa-check-circle mr-1"></i>{{ hireLoading ? 'Hiring...' : 'Hire' }}
+                </button>
+                <div v-else class="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium">
+                  <i class="fas fa-check-circle mr-1"></i>Hired
+                </div>
+              </div>
+              
+              <p v-if="teacher.bio" class="text-sm text-gray-700 mb-3">{{ teacher.bio }}</p>
+              
+              <div v-if="teacher.interested_at" class="text-xs text-gray-500">
+                <i class="fas fa-clock mr-1"></i>Interested on {{ formatDate(teacher.interested_at) }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Requirements List -->
       <div class="space-y-4">
         <div v-for="req in requirements" :key="req.id" class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition">
@@ -42,19 +126,31 @@
                 </span>
               </div>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex flex-col items-end gap-2">
               <span class="px-3 py-1 rounded-full text-sm font-medium" 
-                    :class="req.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'">
+                    :class="req.status === 'active' ? 'bg-green-100 text-green-700' : (req.status === 'hired' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700')">
                 {{ req.status_label || req.status }}
               </span>
-              <button v-if="req.status === 'active'" @click="closeRequirement(req.id)" 
-                      class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition">
-                <i class="fas fa-times-circle mr-1"></i>Close
-              </button>
-              <button @click="editRequirement(req.id)" 
-                      class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition">
-                <i class="fas fa-edit mr-1"></i>Edit
-              </button>
+              <div class="flex gap-2">
+                <button v-if="req.status === 'active' && req.current_leads > 0" 
+                        @click="openInterestedModal(req.id)" 
+                        class="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition whitespace-nowrap">
+                  <i class="fas fa-eye mr-1"></i>View Teachers
+                </button>
+                <button v-if="req.status === 'active' && req.current_leads === 0" 
+                        @click="openRefundModal(req.id)" 
+                        class="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition whitespace-nowrap">
+                  <i class="fas fa-coins mr-1"></i>Get Refund
+                </button>
+                <button v-if="req.status === 'active'" @click="closeRequirement(req.id)" 
+                        class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition">
+                  <i class="fas fa-times-circle mr-1"></i>Close
+                </button>
+                <button @click="editRequirement(req.id)" 
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition">
+                  <i class="fas fa-edit mr-1"></i>Edit
+                </button>
+              </div>
             </div>
           </div>
           
@@ -161,6 +257,17 @@ export default {
     const loading = ref(true);
     const error = ref('');
     const pagination = ref(null);
+    
+    // Refund modal state
+    const showRefundModal = ref(false);
+    const refundAmount = ref(0);
+    const refundRequirementId = ref(null);
+    
+    // Interested teachers modal state
+    const showInterestedModal = ref(false);
+    const interestedTeachers = ref([]);
+    const selectedRequirement = ref(null);
+    const hireLoading = ref(false);
 
     const fetchRequirements = async (page = 1) => {
       loading.value = true;
@@ -194,6 +301,87 @@ export default {
 
     const editRequirement = (id) => {
       router.push(`/student/requirements/${id}/edit`);
+    };
+
+    const openRefundModal = (id) => {
+      const req = requirements.value.find(r => r.id === id);
+      if (req && req.current_leads === 0 && req.post_fee > 0) {
+        refundAmount.value = req.post_fee;
+        refundRequirementId.value = id;
+        showRefundModal.value = true;
+      }
+    };
+
+    const cancelRefund = () => {
+      showRefundModal.value = false;
+      refundAmount.value = 0;
+      refundRequirementId.value = null;
+    };
+
+    const confirmRefund = async () => {
+      try {
+        await axios.post(`/api/student/requirements/${refundRequirementId.value}/close`);
+        showRefundModal.value = false;
+        refundAmount.value = 0;
+        refundRequirementId.value = null;
+        
+        // Refresh requirements
+        fetchRequirements();
+        alert('Refund processed successfully!');
+      } catch (err) {
+        console.error('Error processing refund:', err);
+        alert('Failed to process refund');
+      }
+    };
+
+    const openInterestedModal = async (id) => {
+      try {
+        const response = await axios.get(`/api/student/requirements/${id}/interested-teachers`);
+        interestedTeachers.value = response.data.teachers || [];
+        selectedRequirement.value = requirements.value.find(r => r.id === id);
+        showInterestedModal.value = true;
+      } catch (err) {
+        console.error('Error loading interested teachers:', err);
+        alert('Failed to load interested teachers');
+      }
+    };
+
+    const closeInterestedModal = () => {
+      showInterestedModal.value = false;
+      interestedTeachers.value = [];
+      selectedRequirement.value = null;
+    };
+
+    const selectTeacher = async (teacherId) => {
+      if (!selectedRequirement.value) return;
+      
+      hireLoading.value = true;
+      try {
+        const response = await axios.post(`/api/student/requirements/${selectedRequirement.value.id}/hire-teacher`, {
+          teacher_id: teacherId
+        });
+        
+        alert(response.data.message);
+        
+        // Update selected requirement
+        const req = requirements.value.find(r => r.id === selectedRequirement.value.id);
+        if (req) {
+          req.status = 'hired';
+          req.hired_teacher_id = teacherId;
+          selectedRequirement.value = { ...req };
+        }
+        
+        // Update teachers list
+        interestedTeachers.value = interestedTeachers.value.map(t => ({
+          ...t,
+          hired: t.id === teacherId
+        }));
+      } catch (err) {
+        console.error('Error hiring teacher:', err);
+        alert(err.response?.data?.message || 'Failed to hire teacher');
+      } finally {
+        hireLoading.value = false;
+      }
     };
 
     const closeRequirement = async (id) => {
@@ -274,11 +462,23 @@ export default {
       loading, 
       error,
       pagination,
+      showRefundModal,
+      refundAmount,
+      showInterestedModal,
+      interestedTeachers,
+      selectedRequirement,
+      hireLoading,
       editRequirement,
       closeRequirement,
       formatDate,
       changePage,
-      visiblePages
+      visiblePages,
+      openRefundModal,
+      cancelRefund,
+      confirmRefund,
+      openInterestedModal,
+      closeInterestedModal,
+      selectTeacher
     };
   }
 };

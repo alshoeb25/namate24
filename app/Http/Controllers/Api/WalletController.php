@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CoinPackage;
 use App\Models\CoinTransaction;
 use App\Models\Referral;
+use App\Models\PaymentTransaction;
 use App\Models\User;
 use App\Models\Order;
 use App\Models\Invoice;
@@ -28,10 +29,13 @@ class WalletController extends Controller
     {
         $user = $request->user();
         
-        $perPage = $request->per_page ?? 20;
+        // Return only latest 5 transactions for wallet overview
         $transactions = CoinTransaction::where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
-            ->paginate($perPage);
+            ->limit(5)
+            ->get();
+
+        $totalTransactions = CoinTransaction::where('user_id', $user->id)->count();
 
         $referralStats = [
             'total_referrals' => Referral::where('referrer_id', $user->id)->count(),
@@ -49,18 +53,8 @@ class WalletController extends Controller
             'referral_stats' => $referralStats,
             'stats' => $stats,
             'transactions' => [
-                'data' => $transactions->items(),
-                'pagination' => [
-                    'current_page' => $transactions->currentPage(),
-                    'per_page' => $transactions->perPage(),
-                    'total' => $transactions->total(),
-                    'last_page' => $transactions->lastPage(),
-                    'from' => $transactions->firstItem(),
-                    'to' => $transactions->lastItem(),
-                    'has_more_pages' => $transactions->hasMorePages(),
-                    'next_page_url' => $transactions->nextPageUrl(),
-                    'prev_page_url' => $transactions->previousPageUrl(),
-                ],
+                'data' => $transactions,
+                'total' => $totalTransactions,
             ],
         ]);
     }
@@ -71,40 +65,140 @@ class WalletController extends Controller
     public function paymentHistory(Request $request)
     {
         $user = $request->user();
-        
-        $query = CoinTransaction::where('user_id', $user->id);
+        $typeFilter = $request->get('type', 'all');
+        $statusFilter = strtolower($request->get('status', 'all'));
+        $search = $request->get('search');
+        $from = $request->get('from_date');
+        $to = $request->get('to_date');
+        $perPage = (int) ($request->per_page ?? 20);
+        $page = (int) ($request->page ?? 1);
 
-        // Filter by type
-        if ($request->has('type') && $request->type !== 'all') {
-            $query->where('type', $request->type);
+        // Build PaymentTransaction query (Razorpay-backed purchases)
+        $pQuery = PaymentTransaction::where('user_id', $user->id);
+
+        if ($typeFilter !== 'all') {
+            if ($typeFilter === 'purchase') {
+                $pQuery->where('type', 'coin_purchase');
+            } else {
+                // Non-purchase types not tracked as payments
+                $pQuery->whereRaw('1=0');
+            }
         }
 
-        // Filter by status
-        if ($request->has('status')) {
-            $query->whereJsonContains('meta->status', $request->status);
+        if ($statusFilter !== 'all') {
+            if (in_array($statusFilter, ['success', 'completed'])) {
+                $pQuery->where('status', 'SUCCESS');
+            } elseif (in_array($statusFilter, ['failed', 'failure'])) {
+                $pQuery->where('status', 'FAILED');
+            } elseif ($statusFilter === 'pending') {
+                $pQuery->where('status', 'PENDING');
+            } elseif (in_array($statusFilter, ['initiated', 'init'])) {
+                $pQuery->where('status', 'INITIATED');
+            }
         }
 
-        // Search by description or payment ID
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
+        if ($search) {
+            $pQuery->where(function ($q) use ($search) {
                 $q->where('description', 'like', "%{$search}%")
-                    ->orWhere('payment_id', 'like', "%{$search}%")
-                    ->orWhere('order_id', 'like', "%{$search}%");
+                  ->orWhere('razorpay_order_id', 'like', "%{$search}%")
+                  ->orWhere('razorpay_payment_id', 'like', "%{$search}%");
             });
         }
 
-        // Date range filter
-        if ($request->has('from_date')) {
-            $query->whereDate('created_at', '>=', $request->from_date);
-        }
-        if ($request->has('to_date')) {
-            $query->whereDate('created_at', '<=', $request->to_date);
+        if ($from) $pQuery->whereDate('created_at', '>=', $from);
+        if ($to) $pQuery->whereDate('created_at', '<=', $to);
+
+        $payments = $pQuery->orderBy('created_at', 'desc')->get();
+
+        // Build CoinTransaction query for non-purchase entries (referrals, debits, admin)
+        $cQuery = CoinTransaction::where('user_id', $user->id);
+
+        if ($typeFilter !== 'all') {
+            if ($typeFilter === 'debit') {
+                $cQuery->where(function ($q) {
+                    $q->where('amount', '<', 0)
+                      ->orWhereIn('type', ['enquiry_post', 'enquiry_unlock', 'admin_debit', 'booking']);
+                });
+            } elseif ($typeFilter === 'credit') {
+                $cQuery->where(function ($q) {
+                    $q->where('amount', '>', 0)
+                      ->orWhereIn('type', ['referral_bonus', 'referral_reward', 'admin_credit']);
+                });
+                // Exclude purchase credits (those tied to orders)
+                $cQuery->where(function ($q) {
+                    $q->whereNull('order_id')
+                      ->orWhere('order_id', 0);
+                });
+            } elseif ($typeFilter === 'purchase') {
+                // Show purchases from PaymentTransaction only
+                $cQuery->whereRaw('1=0');
+            } else {
+                $cQuery->where('type', $typeFilter);
+            }
+        } else {
+            // Exclude purchase credits by default to avoid duplication with payments
+            $cQuery->where(function ($q) {
+                $q->whereNull('order_id')
+                  ->orWhere('order_id', 0);
+            });
         }
 
-        $perPage = $request->per_page ?? 20;
-        $transactions = $query->orderBy('created_at', 'desc')
-            ->paginate($perPage);
+        // Coin transactions have no status; they are only persisted when finalized
+
+        if ($search) {
+            $cQuery->where(function ($q) use ($search) {
+                $q->where('description', 'like', "%{$search}%");
+            });
+        }
+
+        if ($from) $cQuery->whereDate('created_at', '>=', $from);
+        if ($to) $cQuery->whereDate('created_at', '<=', $to);
+
+        $coins = $cQuery->orderBy('created_at', 'desc')->get();
+
+        // Normalize and merge
+        $items = collect();
+
+        foreach ($payments as $p) {
+            $invoice = $p->order_id ? Invoice::where('order_id', $p->order_id)->first() : null;
+            $items->push([
+                'id' => $p->id,
+                'source' => 'payment',
+                'type' => 'purchase',
+                'status' => $p->status,
+                'description' => $p->description,
+                'order_id' => $p->order_id,
+                'razorpay_order_id' => $p->razorpay_order_id,
+                'razorpay_payment_id' => $p->razorpay_payment_id,
+                'amount_money' => $p->amount,
+                'currency' => $p->currency,
+                'coins' => ($p->coins ?? 0) + ($p->bonus_coins ?? 0),
+                'invoice_id' => $invoice->id ?? null,
+                'invoice_number' => $invoice->invoice_number ?? null,
+                'invoice_download_url' => $invoice ? url('api/wallet/invoice/' . $invoice->id . '/download') : null,
+                'created_at' => $p->created_at,
+            ]);
+        }
+
+        foreach ($coins as $c) {
+            $items->push([
+                'id' => $c->id,
+                'source' => 'coin',
+                'type' => $c->type,
+                'description' => $c->description,
+                'order_id' => $c->order_id,
+                'razorpay_order_id' => null,
+                'razorpay_payment_id' => null,
+                'amount_coins' => $c->amount,
+                'direction' => ($c->amount ?? 0) >= 0 ? 'CREDIT' : 'DEBIT',
+                'created_at' => $c->created_at,
+            ]);
+        }
+
+        // Sort and paginate
+        $sorted = $items->sortByDesc('created_at')->values();
+        $total = $sorted->count();
+        $paged = $sorted->slice(($page - 1) * $perPage, $perPage)->values();
 
         // Calculate statistics and sync user balance to net balance
         $stats = $this->calculateAndSyncBalance($user);
@@ -113,18 +207,204 @@ class WalletController extends Controller
             'balance' => $stats['net_balance'],
             'stats' => $stats,
             'transactions' => [
-                'data' => $transactions->items(),
+                'data' => $paged,
                 'pagination' => [
-                    'current_page' => $transactions->currentPage(),
-                    'per_page' => $transactions->perPage(),
-                    'total' => $transactions->total(),
-                    'last_page' => $transactions->lastPage(),
-                    'from' => $transactions->firstItem(),
-                    'to' => $transactions->lastItem(),
-                    'has_more_pages' => $transactions->hasMorePages(),
-                    'next_page_url' => $transactions->nextPageUrl(),
-                    'prev_page_url' => $transactions->previousPageUrl(),
+                    'current_page' => $page,
+                    'per_page' => $perPage,
+                    'total' => $total,
+                    'last_page' => (int) ceil(max(1, $total) / max(1, $perPage)),
+                    'from' => $total ? (($page - 1) * $perPage + 1) : 0,
+                    'to' => min($page * $perPage, $total),
+                    'has_more_pages' => $page * $perPage < $total,
+                    'next_page_url' => null,
+                    'prev_page_url' => null,
                 ],
+            ],
+        ]);
+    }
+
+    /**
+     * PaymentTransaction-only listing with status/search filters
+     */
+    public function paymentTransactions(Request $request)
+    {
+        $user = $request->user();
+        $statusFilter = strtolower($request->get('status', 'all'));
+        $search = $request->get('search');
+        $perPage = (int) ($request->per_page ?? 10);
+        $page = (int) ($request->page ?? 1);
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortDir = strtolower($request->get('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+        $query = PaymentTransaction::where('user_id', $user->id);
+
+        // Normalize status filter
+        if ($statusFilter !== 'all') {
+            if (in_array($statusFilter, ['success', 'completed'])) {
+                $query->where('status', 'SUCCESS');
+            } elseif (in_array($statusFilter, ['failed', 'failure'])) {
+                $query->where('status', 'FAILED');
+            } elseif ($statusFilter === 'pending') {
+                $query->where('status', 'PENDING');
+            } elseif (in_array($statusFilter, ['initiated', 'init'])) {
+                $query->where('status', 'INITIATED');
+            }
+        }
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('description', 'like', "%{$search}%")
+                    ->orWhere('razorpay_order_id', 'like', "%{$search}%")
+                    ->orWhere('razorpay_payment_id', 'like', "%{$search}%")
+                    ->orWhere('order_id', 'like', "%{$search}%");
+            });
+        }
+
+        // Sorting: whitelist allowed fields
+        $allowedSorts = ['created_at', 'amount', 'status'];
+        if (!in_array($sortBy, $allowedSorts, true)) {
+            $sortBy = 'created_at';
+        }
+        $query->orderBy($sortBy, $sortDir);
+
+        $paginator = $query->paginate($perPage, ['*'], 'page', $page);
+
+        // Map to API-friendly shape and attach invoice hints
+        $data = $paginator->getCollection()->map(function ($p) {
+            $invoice = $p->order_id ? Invoice::where('order_id', $p->order_id)->first() : null;
+            return [
+                'id' => $p->id,
+                'type' => 'purchase',
+                'status' => $p->status,
+                'description' => $p->description,
+                'order_id' => $p->order_id,
+                'razorpay_order_id' => $p->razorpay_order_id,
+                'razorpay_payment_id' => $p->razorpay_payment_id,
+                'amount' => $p->amount,
+                'currency' => $p->currency,
+                'coins' => ($p->coins ?? 0) + ($p->bonus_coins ?? 0),
+                'invoice_id' => $invoice->id ?? null,
+                'invoice_number' => $invoice->invoice_number ?? null,
+                'invoice_download_url' => $invoice ? url('api/wallet/invoice/' . $invoice->id . '/download') : null,
+                'created_at' => $p->created_at,
+            ];
+        })->values();
+
+        $successCount = PaymentTransaction::where('user_id', $user->id)->where('status', 'SUCCESS')->count();
+        $failedCount = PaymentTransaction::where('user_id', $user->id)->where('status', 'FAILED')->count();
+        $pendingCount = PaymentTransaction::where('user_id', $user->id)->where('status', 'PENDING')->count();
+        $initiatedCount = PaymentTransaction::where('user_id', $user->id)->where('status', 'INITIATED')->count();
+
+        return response()->json([
+            'transactions' => [
+                'data' => $data,
+                'pagination' => [
+                    'current_page' => $paginator->currentPage(),
+                    'per_page' => $paginator->perPage(),
+                    'total' => $paginator->total(),
+                    'last_page' => $paginator->lastPage(),
+                    'from' => $paginator->firstItem(),
+                    'to' => $paginator->lastItem(),
+                    'has_more_pages' => $paginator->hasMorePages(),
+                    'next_page_url' => $paginator->nextPageUrl(),
+                    'prev_page_url' => $paginator->previousPageUrl(),
+                ],
+            ],
+            'stats' => [
+                'success_count' => $successCount,
+                'failed_count' => $failedCount,
+                'pending_count' => $pendingCount,
+                'initiated_count' => $initiatedCount,
+            ],
+        ]);
+    }
+
+    /**
+     * Get coin transactions with filters, search, and pagination
+     * For CoinTransaction model only (wallet debits/credits, referrals, etc.)
+     */
+    public function coinTransactions(Request $request)
+    {
+        $user = $request->user();
+        $typeFilter = $request->get('type', 'all');
+        $search = $request->get('search');
+        $perPage = (int) ($request->per_page ?? 20);
+        $page = (int) ($request->page ?? 1);
+
+        $query = CoinTransaction::where('user_id', $user->id);
+
+        // Type filter mapping
+        if ($typeFilter !== 'all') {
+            if ($typeFilter === 'purchase') {
+                $query->where('type', 'purchase');
+            } elseif ($typeFilter === 'post_requirement') {
+                $query->where('type', 'enquiry_post');
+            } elseif ($typeFilter === 'enquiry') {
+                $query->where('type', 'enquiry_unlock');
+            } elseif ($typeFilter === 'referrals') {
+                $query->whereIn('type', ['referral_bonus', 'referral_reward']);
+            } elseif ($typeFilter === 'debit') {
+                $query->where('amount', '<', 0);
+            } elseif ($typeFilter === 'credit') {
+                $query->where('amount', '>', 0);
+            } else {
+                // Direct type match
+                $query->where('type', $typeFilter);
+            }
+        }
+
+        // Search by description, type, or amount
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('description', 'like', "%{$search}%")
+                  ->orWhere('type', 'like', "%{$search}%")
+                  ->orWhere('amount', 'like', "%{$search}%");
+            });
+        }
+
+        $query->orderBy('created_at', 'desc');
+
+        $paginator = $query->paginate($perPage, ['*'], 'page', $page);
+
+        // Map to consistent format
+        $data = $paginator->getCollection()->map(function ($tx) {
+            return [
+                'id' => $tx->id,
+                'type' => $tx->type,
+                'description' => $tx->description,
+                'amount' => $tx->amount,
+                'amount_coins' => $tx->amount,
+                'balance_after' => $tx->balance_after,
+                'source' => 'coin',
+                'status' => 'completed',
+                'meta' => $tx->meta ?? [],
+                'created_at' => $tx->created_at,
+            ];
+        })->values();
+
+        return response()->json([
+            'transactions' => [
+                'data' => $data,
+                'pagination' => [
+                    'current_page' => $paginator->currentPage(),
+                    'per_page' => $paginator->perPage(),
+                    'total' => $paginator->total(),
+                    'last_page' => $paginator->lastPage(),
+                    'from' => $paginator->firstItem(),
+                    'to' => $paginator->lastItem(),
+                    'has_more_pages' => $paginator->hasMorePages(),
+                    'next_page_url' => $paginator->nextPageUrl(),
+                    'prev_page_url' => $paginator->previousPageUrl(),
+                ],
+            ],
+            'stats' => [
+                'total_transactions' => $paginator->total(),
+                'total_earned' => CoinTransaction::where('user_id', $user->id)
+                    ->where('amount', '>', 0)
+                    ->sum('amount'),
+                'total_spent' => abs(CoinTransaction::where('user_id', $user->id)
+                    ->where('amount', '<', 0)
+                    ->sum('amount')),
             ],
         ]);
     }
@@ -134,6 +414,7 @@ class WalletController extends Controller
      */
     private function calculateAndSyncBalance(User $user): array
     {
+        // Only include confirmed SUCCESS entries in balance
         $totalEarned = CoinTransaction::where('user_id', $user->id)
             ->where('amount', '>', 0)
             ->sum('amount');
@@ -155,13 +436,13 @@ class WalletController extends Controller
             'total_earned' => $totalEarned,
             'total_spent' => $totalSpent,
             'net_balance' => $netBalance,
-            'total_purchases' => CoinTransaction::where('user_id', $user->id)
-                ->where('type', 'purchase')
-                ->whereJsonContains('meta->status', 'completed')
+            'total_purchases' => PaymentTransaction::where('user_id', $user->id)
+                ->where('type', 'coin_purchase')
+                ->where('status', 'SUCCESS')
                 ->count(),
-            'failed_payments' => CoinTransaction::where('user_id', $user->id)
-                ->where('type', 'purchase')
-                ->whereJsonContains('meta->status', 'failed')
+            'failed_payments' => PaymentTransaction::where('user_id', $user->id)
+                ->where('type', 'coin_purchase')
+                ->where('status', 'FAILED')
                 ->count(),
             'enquiries_posted' => CoinTransaction::where('user_id', $user->id)
                 ->where('type', 'enquiry_post')
@@ -203,21 +484,76 @@ class WalletController extends Controller
         $package = CoinPackage::active()->findOrFail($request->package_id);
         $user = $request->user();
 
+        // Determine pricing: force INR and always apply GST so Razorpay total matches UI package display
+        $isIndia = true; // force GST inclusion
+        $gstRate = (float) (env('COIN_GST_RATE', 0.18));
+        $currency = 'INR';
+
+        $subtotal = (float) $package->price;
+        // Always apply GST
+        $taxAmount = round($subtotal * $gstRate, 2);
+        $totalAmount = round($subtotal + $taxAmount, 2);
+        \Log::info('Coin purchase calculation', [
+            'user_id' => $user->id,
+            'package_id' => $package->id,
+            'package_price' => $package->price,
+            'subtotal' => $subtotal,
+            'gst_rate' => $gstRate,
+            'tax_amount' => $taxAmount,
+            'total_amount' => $totalAmount,
+        ]);
+
         DB::beginTransaction();
 
         try {
+            // IDEMPOTENT: Mark any previous INITIATED/PENDING orders as FAILED
+            // This ensures clean state before creating new order
+            // Safe to run multiple times - only affects non-final statuses
+            $failedOrdersCount = Order::where('user_id', $user->id)
+                ->whereIn('status', ['INITIATED',  'initiated'])
+                ->update([
+                    'status' => 'failed',
+                    'updated_at' => now(),
+                ]);
+
+            // Also mark corresponding payment transactions as FAILED
+            if ($failedOrdersCount > 0) {
+                PaymentTransaction::where('user_id', $user->id)
+                    ->whereIn('status', ['INITIATED', 'initiated'])
+                    ->update([
+                        'status' => 'FAILED',
+                        'updated_at' => now(),
+                    ]);
+
+                \Log::info('Previous initiated orders marked as failed', [
+                    'user_id' => $user->id,
+                    'failed_orders_count' => $failedOrdersCount,
+                ]);
+            }
+
             // STEP 1: Create internal order FIRST
             $receipt = 'coin_' . $user->id . '_' . time();
 
             $order = Order::create([
                 'user_id' => $user->id,
-                'amount' => $package->price,
-                'currency' => 'INR',
+                'amount' => $totalAmount,
+                'currency' => $currency,
                 'package_id' => $package->id,
                 'coins' => $package->coins,
                 'bonus_coins' => $package->bonus_coins,
-                'status' => 'PENDING',
+                'status' => 'INITIATED',
                 'receipt' => $receipt,
+                'meta' => [
+                    'package_name' => $package->name,
+                    'pricing' => [
+                        'is_india' => $isIndia,
+                        'gst_rate' => $isIndia ? $gstRate : 0,
+                        'subtotal_inr' => $subtotal,
+                        'tax_amount_inr' => $taxAmount,
+                        'total_amount' => $totalAmount,
+                        'currency' => $currency,
+                    ],
+                ],
             ]);
 
             // STEP 2: Create Razorpay order
@@ -227,8 +563,8 @@ class WalletController extends Controller
             );
 
             $razorpayOrder = $rzp->order->create([
-                'amount' => (int) ($package->price * 100),
-                'currency' => 'INR',
+                'amount' => (int) ($totalAmount * 100),
+                'currency' => $currency,
                 'receipt' => $receipt,
                 'payment_capture' => 1,
                 'notes' => [
@@ -244,23 +580,28 @@ class WalletController extends Controller
                 'razorpay_order_id' => $razorpayOrder['id'],
             ]);
 
-            // STEP 3: Create transaction (INITIATED)
-            $transaction = CoinTransaction::create([
+            // STEP 3: Create payment transaction (INITIATED)
+            $transaction = PaymentTransaction::create([
                 'user_id' => $user->id,
                 'order_id' => $order->id,
                 'razorpay_order_id' => $razorpayOrder['id'],
-                'type' => 'CREDIT',
-                'amount' => $package->price,
-                'coins' => $package->coins + $package->bonus_coins,
-                'balance_after' => $user->coins,
+                'type' => 'coin_purchase',
                 'status' => 'INITIATED',
+                'amount' => $totalAmount,
+                'currency' => $currency,
+                'coins' => $package->coins,
+                'bonus_coins' => $package->bonus_coins,
                 'description' => "Coin purchase: {$package->name}",
                 'meta' => [
                     'package_id' => $package->id,
                     'package_name' => $package->name,
-                    // Persist coin breakdown so verification can rely on it later
-                    'coins' => $package->coins,
-                    'bonus_coins' => $package->bonus_coins,
+                    'pricing' => [
+                        'is_india' => $isIndia,
+                        'currency' => $currency,
+                        'subtotal_inr' => $subtotal,
+                        'tax_amount_inr' => $taxAmount,
+                        'total_amount' => $totalAmount,
+                    ],
                 ],
             ]);
 
@@ -275,8 +616,10 @@ class WalletController extends Controller
                     'id' => $razorpayOrder['id'],
                     'db_order_id' => $order->id,
                     'razorpay_order_id' => $razorpayOrder['id'],
-                    'amount' => intval($package->price * 100),
-                    'currency' => 'INR',
+                    'amount' => intval($totalAmount * 100),
+                    'currency' => $currency,
+                    'gst_amount' => $taxAmount,
+                    'gst_rate' => $isIndia ? $gstRate : 0,
                 ],
                 'transaction_id' => $transaction->id,
                 'package' => [
@@ -290,6 +633,14 @@ class WalletController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'phone' => $user->phone,
+                ],
+                'pricing' => [
+                    'is_india' => $isIndia,
+                    'gst_rate' => $isIndia ? $gstRate : 0,
+                    'subtotal_inr' => $subtotal,
+                    'tax_amount_inr' => $taxAmount,
+                    'total' => $totalAmount,
+                    'currency' => $currency,
                 ],
             ]);
         } catch (\Throwable $e) {
@@ -309,6 +660,44 @@ class WalletController extends Controller
     }
 
     /**
+     * Determine if user should be taxed as India resident.
+     * Checks: user.country_code, tutor.country, student.country_code.
+     */
+    private function isIndianUser(User $user): bool
+    {
+        $cc = strtoupper((string) ($user->country_code ?? ''));
+        if ($cc === 'IN' || $cc === 'IND' || $cc === '91') {
+            return true;
+        }
+
+        $tutor = $user->tutor;
+        if ($tutor && $tutor->country) {
+            if (strtoupper(trim($tutor->country)) === 'INDIA') {
+                return true;
+            }
+        }
+
+        $student = $user->student;
+        if ($student) {
+            $scc = strtoupper((string) ($student->country_code ?? ''));
+            if ($scc === 'IN' || $scc === 'IND' || $scc === '91') {
+                return true;
+            }
+        }
+        // If no country information is available anywhere, default to India
+        $hasAnyCountry = false;
+        if (!empty($cc)) { $hasAnyCountry = true; }
+        if ($tutor && !empty($tutor->country)) { $hasAnyCountry = true; }
+        if ($student && !empty($student->country_code)) { $hasAnyCountry = true; }
+
+        if (!$hasAnyCountry) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Verify Razorpay payment and credit coins
      * 
      * Flow:
@@ -321,25 +710,25 @@ class WalletController extends Controller
     public function verifyPayment(Request $request)
     {
         $data = $request->validate([
-            'transaction_id' => 'required|exists:coin_transactions,id',
+            'transaction_id' => 'required|exists:payment_transactions,id',
             'razorpay_payment_id' => 'required|string',
             'razorpay_order_id' => 'required|string',
             'razorpay_signature' => 'required|string',
         ]);
-
-        $transaction = CoinTransaction::findOrFail($data['transaction_id']);
+        // The transaction here is a PaymentTransaction
+        $paymentTx = PaymentTransaction::findOrFail($data['transaction_id']);
         $user = $request->user();
 
         // Verify transaction belongs to user
-        if ($transaction->user_id !== $user->id) {
+        if ($paymentTx->user_id !== $user->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized',
             ], 403);
         }
 
-        // Check if already processed
-        if ($transaction->payment_id) {
+        // Check if already processed (SUCCESS)
+        if ($paymentTx->status === 'SUCCESS') {
             return response()->json([
                 'success' => true,
                 'message' => 'Payment already processed',
@@ -348,28 +737,52 @@ class WalletController extends Controller
             ]);
         }
 
+        // If transaction is FAILED, don't allow verification - must retry with new order
+        if ($paymentTx->status === 'FAILED') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This payment has failed. Please retry with a new transaction.',
+            ], 422);
+        }
+
+        // Only INITIATED or PENDING transactions can be verified
+        if (!in_array($paymentTx->status, ['INITIATED', 'PENDING'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid transaction status for verification',
+            ], 422);
+        }
+
         // Step 1: Verify Razorpay signature
         $payload = $data['razorpay_order_id'] . '|' . $data['razorpay_payment_id'];
         $expectedSig = hash_hmac('sha256', $payload, config('services.razorpay.secret'));
 
         if (!hash_equals($expectedSig, $data['razorpay_signature'])) {
-            // Update transaction as failed
-            $meta = $transaction->meta;
-            $transaction->update([
+            // Update payment transaction as FAILED
+            $meta = $paymentTx->meta ?? [];
+            $paymentTx->update([
                 'meta' => array_merge($meta, [
                     'status' => 'failed',
                     'failure_reason' => 'Invalid signature',
+                    'failed_at' => now()->toIso8601String(),
                 ]),
+                'status' => 'FAILED',
             ]);
 
             // Update order as failed
             $failedOrder = Order::where('razorpay_order_id', $data['razorpay_order_id'])->first();
             if ($failedOrder) {
-                $failedOrder->update(['status' => 'failed']);
+                $failedOrder->update([
+                    'status' => 'failed',
+                    'meta' => array_merge($failedOrder->meta ?? [], [
+                        'failure_reason' => 'Invalid payment signature',
+                        'failed_at' => now()->toIso8601String(),
+                    ]),
+                ]);
             }
 
             // Send failure notification + push
-            $user->notify(new PaymentFailedNotification($failedOrder ?? new Order(), $transaction, 'Invalid signature'));
+            $user->notify(new PaymentFailedNotification($failedOrder ?? new Order(), $paymentTx, 'Invalid signature'));
 
             \Log::warning('Payment signature verification failed', [
                 'user_id' => $user->id,
@@ -398,26 +811,18 @@ class WalletController extends Controller
                 'paid_at' => now(),
             ]);
 
-            // Get coins from meta
-            $meta = $transaction->meta ?? [];
-            $coins = $meta['coins']
-                ?? ($order->coins ?? null)
-                ?? $transaction->coins
-                ?? 0;
-            $bonusCoins = $meta['bonus_coins']
-                ?? ($order->bonus_coins ?? null)
-                ?? 0;
+            // Get coins from payment meta
+            $meta = $paymentTx->meta ?? [];
+            $coins = $paymentTx->coins ?? ($meta['coins'] ?? ($order->coins ?? 0));
+            $bonusCoins = $paymentTx->bonus_coins ?? ($meta['bonus_coins'] ?? ($order->bonus_coins ?? 0));
 
             // If we only have a total coin count, treat it as base coins with zero bonus
             $totalCoins = $coins + $bonusCoins;
 
-            // Step 3: Update the pending transaction to completed
-            $transaction->update([
-                'amount' => $totalCoins,
-                'balance_after' => $user->coins + $totalCoins,
-                'payment_id' => $data['razorpay_payment_id'],
-                'description' => "{$meta['package_name']}: {$coins} coins" . 
-                    ($bonusCoins > 0 ? " + {$bonusCoins} bonus" : ""),
+            // Step 3: Mark payment transaction completed
+            $paymentTx->update([
+                'razorpay_payment_id' => $data['razorpay_payment_id'],
+                'status' => 'SUCCESS',
                 'meta' => array_merge($meta, [
                     'status' => 'completed',
                     'razorpay_payment_id' => $data['razorpay_payment_id'],
@@ -425,21 +830,41 @@ class WalletController extends Controller
                 ]),
             ]);
 
-            // Step 4: Add coins to user wallet
-            $user->increment('coins', $totalCoins);
-            $user->refresh();
+            // Idempotency guard: if a success coin transaction already exists, skip crediting again
+            // Idempotent coin credit and transaction create
+            $lockedUser = User::where('id', $user->id)->lockForUpdate()->first();
+            $coinTx = CoinTransaction::firstOrCreate(
+                [
+                    'user_id' => $lockedUser->id,
+                    'order_id' => (string) $order->id,
+                    'type' => 'purchase',
+                ],
+                [
+                    'amount' => $totalCoins,
+                    'balance_after' => 0,
+                    'payment_id' => $data['razorpay_payment_id'],
+                    'description' => ($meta['package_name'] ?? 'Coin purchase') . ": {$coins} coins" . ($bonusCoins > 0 ? " + {$bonusCoins} bonus" : ''),
+                    'meta' => array_merge($meta, ['status' => 'completed']),
+                ]
+            );
 
-                // Step 5: Create invoice and generate PDF
-                $invoice = $this->createInvoice($order, $transaction, $user);
+            if ($coinTx->wasRecentlyCreated) {
+                $lockedUser->increment('coins', $totalCoins);
+                $coinTx->balance_after = $lockedUser->coins;
+                $coinTx->save();
+            }
 
-                // Step 6: Send success notification + push
-                $user->notify(new PaymentSuccessNotification($order, $transaction, $invoice));
+                // Step 6: Create invoice and generate PDF
+                $invoice = $this->createInvoice($order, $coinTx, $user);
+
+                // Step 7: Send success notification + push
+                $user->notify(new PaymentSuccessNotification($order, $coinTx, $invoice));
 
             DB::commit();
 
             \Log::info('Payment completed successfully', [
                 'user_id' => $user->id,
-                'transaction_id' => $transaction->id,
+                'transaction_id' => $paymentTx->id,
                 'order_id' => $order->id,
                 'razorpay_order_id' => $data['razorpay_order_id'],
                 'payment_id' => $data['razorpay_payment_id'],
@@ -458,10 +883,10 @@ class WalletController extends Controller
                 ],
                 'balance' => $user->coins,
                 'transaction' => [
-                    'id' => $transaction->id,
+                    'id' => $coinTx->id,
                     'status' => 'completed',
-                    'amount' => $transaction->amount,
-                    'updated_at' => $transaction->updated_at,
+                    'amount' => $coinTx->amount,
+                    'updated_at' => $coinTx->updated_at,
                 ],
                 'order' => [
                     'id' => $order->id,
@@ -487,20 +912,29 @@ class WalletController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            // Mark transaction as failed
-            $meta = $transaction->meta;
-            $transaction->update([
+            // Mark payment transaction as FAILED
+            $meta = $paymentTx->meta ?? [];
+            $paymentTx->update([
                 'meta' => array_merge($meta, [
                     'status' => 'failed',
                     'failure_reason' => 'Server error: ' . $e->getMessage(),
                 ]),
+                'status' => 'FAILED',
             ]);
 
+            // Mark order as failed
+            $order = Order::where('razorpay_order_id', $data['razorpay_order_id'])->first();
+            if ($order) {
+                $order->update([
+                    'status' => 'failed',
+                    'meta' => array_merge($order->meta ?? [], [
+                        'failure_reason' => 'Payment verification error',
+                        'failed_at' => now()->toIso8601String(),
+                    ]),
+                ]);
                 // Send failure notification
-                $order = Order::where('razorpay_order_id', $data['razorpay_order_id'])->first();
-                if ($order) {
-                    $user->notify(new PaymentFailedNotification($order, $transaction, 'Server error'));
-                }
+                $user->notify(new PaymentFailedNotification($order, $paymentTx, 'Server error'));
+            }
 
             return response()->json([
                 'success' => false,
@@ -697,8 +1131,8 @@ class WalletController extends Controller
             return redirect()->back()->with('error', 'Invalid payment response');
         }
 
-        // Find transaction by order ID
-        $transaction = CoinTransaction::where('order_id', $orderId)->first();
+        // Find payment transaction by Razorpay order id
+        $transaction = PaymentTransaction::where('razorpay_order_id', $orderId)->first();
 
         if (!$transaction) {
             return redirect()->back()->with('error', 'Transaction not found');
@@ -768,35 +1202,35 @@ class WalletController extends Controller
         $orderId = $payment['order_id'];
         $paymentId = $payment['id'];
 
-        $transaction = CoinTransaction::where('order_id', $orderId)->first();
+        // Match by Razorpay order id on payment transactions
+        $paymentTx = PaymentTransaction::where('razorpay_order_id', $orderId)->first();
 
-        if (!$transaction) {
+        if (!$paymentTx) {
             \Log::warning('Transaction not found for order: ' . $orderId);
             return;
         }
 
         // Skip if already processed
-        if ($transaction->payment_id) {
+        if ($paymentTx->razorpay_payment_id || $paymentTx->status === 'SUCCESS') {
             \Log::info('Payment already processed: ' . $paymentId);
             return;
         }
 
         DB::beginTransaction();
         try {
-            $user = User::find($transaction->user_id);
-            $meta = $transaction->meta;
-            $totalCoins = $meta['coins'] + $meta['bonus_coins'];
+            $user = User::find($paymentTx->user_id);
+            $meta = $paymentTx->meta ?? [];
+            $coins = $paymentTx->coins ?? ($meta['coins'] ?? 0);
+            $bonus = $paymentTx->bonus_coins ?? ($meta['bonus_coins'] ?? 0);
+            $totalCoins = $coins + $bonus;
 
-            // Credit coins to user
-            $user->increment('coins', $totalCoins);
+            // Idempotent coin credit + transaction create under lock
+            $lockedUser = User::where('id', $user->id)->lockForUpdate()->first();
 
-            // Update transaction
-            $transaction->update([
-                'amount' => $totalCoins,
-                'balance_after' => $user->coins,
-                'payment_id' => $paymentId,
-                'description' => "Purchased {$meta['package_name']} - {$meta['coins']} coins" . 
-                    ($meta['bonus_coins'] > 0 ? " + {$meta['bonus_coins']} bonus" : ""),
+            // Mark payment transaction SUCCESS
+            $paymentTx->update([
+                'razorpay_payment_id' => $paymentId,
+                'status' => 'SUCCESS',
                 'meta' => array_merge($meta, [
                     'status' => 'completed',
                     'captured_at' => now(),
@@ -814,15 +1248,35 @@ class WalletController extends Controller
                         'paid_at' => now(),
                     ]);
 
-                    // Create invoice
-                    $invoice = $this->createInvoice($order, $transaction, $user);
+                    // Create coin transaction and invoice (idempotent)
+                    $coinTx = CoinTransaction::firstOrCreate(
+                        [
+                            'user_id' => $lockedUser->id,
+                            'order_id' => (string) $order->id,
+                            'type' => 'purchase',
+                        ],
+                        [
+                            'amount' => $totalCoins,
+                            'balance_after' => 0,
+                            'payment_id' => $paymentId,
+                            'description' => ($meta['package_name'] ?? 'Coin purchase') . " - {$coins} coins" . ($bonus > 0 ? " + {$bonus} bonus" : ''),
+                            'meta' => array_merge($meta, ['status' => 'completed']),
+                        ]
+                    );
+                    if ($coinTx->wasRecentlyCreated) {
+                        $lockedUser->increment('coins', $totalCoins);
+                        $coinTx->balance_after = $lockedUser->coins;
+                        $coinTx->save();
+                    }
+
+                    $invoice = $this->createInvoice($order, $coinTx, $user);
 
                     // Send notification
-                    $user->notify(new PaymentSuccessNotification($order, $transaction, $invoice));
+                    $user->notify(new PaymentSuccessNotification($order, $coinTx, $invoice));
                 }
 
             DB::commit();
-            \Log::info('Payment captured successfully', ['transaction_id' => $transaction->id]);
+            \Log::info('Payment captured successfully', ['payment_tx_id' => $paymentTx->id]);
         } catch (\Throwable $e) {
             DB::rollBack();
             \Log::error('Failed to process captured payment: ' . $e->getMessage());
@@ -842,16 +1296,16 @@ class WalletController extends Controller
             return;
         }
 
-        $transaction = CoinTransaction::where('order_id', $orderId)->first();
+        $paymentTx = PaymentTransaction::where('razorpay_order_id', $orderId)->first();
 
-        if (!$transaction) {
+        if (!$paymentTx) {
             \Log::warning('Transaction not found for failed payment: ' . $orderId);
             return;
         }
 
-        $meta = $transaction->meta;
-        $transaction->update([
-            'payment_id' => $paymentId,
+        $meta = $paymentTx->meta ?? [];
+        $paymentTx->update([
+            'razorpay_payment_id' => $paymentId,
             'meta' => array_merge($meta, [
                 'status' => 'failed',
                 'failed_at' => now(),
@@ -859,6 +1313,7 @@ class WalletController extends Controller
                 'error_description' => $payment['error_description'] ?? null,
                 'failure_reason' => $payment['error_reason'] ?? 'Unknown',
             ]),
+            'status' => 'FAILED',
         ]);
 
             // Update order and send notification
@@ -866,15 +1321,15 @@ class WalletController extends Controller
             if ($order) {
                 $order->update(['status' => 'failed']);
             
-                $user = User::find($transaction->user_id);
+                $user = User::find($paymentTx->user_id);
                 if ($user) {
                     $reason = $payment['error_description'] ?? $payment['error_reason'] ?? 'Payment failed';
-                    $user->notify(new PaymentFailedNotification($order, $transaction, $reason));
+                    $user->notify(new PaymentFailedNotification($order, $paymentTx, $reason));
                 }
             }
 
         \Log::info('Payment failed', [
-            'transaction_id' => $transaction->id,
+            'transaction_id' => $paymentTx->id,
             'reason' => $payment['error_description'] ?? 'Unknown',
         ]);
     }
@@ -886,22 +1341,22 @@ class WalletController extends Controller
     {
         $orderId = $order['id'];
         
-        $transaction = CoinTransaction::where('order_id', $orderId)->first();
+        $paymentTx = PaymentTransaction::where('razorpay_order_id', $orderId)->first();
 
-        if (!$transaction) {
+        if (!$paymentTx) {
             \Log::warning('Transaction not found for paid order: ' . $orderId);
             return;
         }
 
-        $meta = $transaction->meta;
-        $transaction->update([
+        $meta = $paymentTx->meta ?? [];
+        $paymentTx->update([
             'meta' => array_merge($meta, [
                 'order_status' => 'paid',
                 'paid_at' => now(),
             ]),
         ]);
 
-        \Log::info('Order marked as paid', ['transaction_id' => $transaction->id]);
+        \Log::info('Order marked as paid', ['transaction_id' => $paymentTx->id]);
     }
 
     /**
@@ -911,20 +1366,23 @@ class WalletController extends Controller
     {
         $user = $request->user();
         
-        $transaction = CoinTransaction::where('order_id', $orderId)
-            ->where('user_id', $user->id)
-            ->first();
+        $transaction = PaymentTransaction::where(function ($q) use ($orderId) {
+                    $q->where('order_id', $orderId)
+                      ->orWhere('razorpay_order_id', $orderId);
+                })
+                ->where('user_id', $user->id)
+                ->first();
 
         if (!$transaction) {
             return response()->json(['error' => 'Order not found'], 404);
         }
 
-        $meta = $transaction->meta;
+        $meta = $transaction->meta ?? [];
         
         return response()->json([
             'order_id' => $transaction->order_id,
-            'payment_id' => $transaction->payment_id,
-            'status' => $meta['status'] ?? 'pending',
+            'payment_id' => $transaction->razorpay_payment_id,
+            'status' => $transaction->status ?? ($meta['status'] ?? 'pending'),
             'amount' => $transaction->amount,
             'description' => $transaction->description,
             'created_at' => $transaction->created_at,
@@ -940,7 +1398,7 @@ class WalletController extends Controller
     {
         $user = $request->user();
         
-        $transaction = CoinTransaction::where('order_id', $orderId)
+        $transaction = PaymentTransaction::where('order_id', $orderId)
             ->where('user_id', $user->id)
             ->first();
 
@@ -974,6 +1432,205 @@ class WalletController extends Controller
             'message' => 'Payment cancelled successfully',
             'order_id' => $orderId,
         ]);
+    }
+
+    /**
+     * Mark payment as failed when Razorpay gateway returns failure
+     */
+    public function markPaymentFailed(Request $request)
+    {
+        $user = $request->user();
+        
+        $orderId = $request->input('order_id');
+        $transactionId = $request->input('transaction_id');
+        $razorpayError = $request->input('razorpay_error', 'GATEWAY_ERROR');
+        $errorDescription = $request->input('error_description', 'Payment gateway error');
+        $errorReason = $request->input('error_reason', 'unknown');
+
+        try {
+            DB::beginTransaction();
+
+            // Find and update payment transaction
+            $transaction = PaymentTransaction::where('user_id', $user->id);
+            
+            if ($transactionId) {
+                $transaction = $transaction->where('id', $transactionId)->first();
+            } else {
+                $transaction = $transaction->where('order_id', $orderId)->first();
+            }
+
+            if (!$transaction) {
+                return response()->json(['error' => 'Transaction not found'], 404);
+            }
+
+            // Check if already processed
+            if (in_array($transaction->status, ['SUCCESS', 'FAILED', 'COMPLETED'])) {
+                return response()->json([
+                    'message' => 'Payment already processed',
+                    'status' => $transaction->status
+                ], 422);
+            }
+
+            // Update transaction as failed
+            $meta = $transaction->meta ?? [];
+            $transaction->update([
+                'status' => 'FAILED',
+                'meta' => array_merge($meta, [
+                    'status' => 'failed',
+                    'failure_reason' => $errorDescription,
+                    'razorpay_error' => $razorpayError,
+                    'error_reason' => $errorReason,
+                    'failed_at' => now()->toDateTimeString(),
+                    'failed_via_gateway' => true,
+                ]),
+            ]);
+
+            // Update associated order as failed
+            $order = Order::where('id', $orderId)
+                ->orWhere('razorpay_order_id', $orderId)
+                ->first();
+
+            if ($order) {
+                $orderMeta = $order->meta ?? [];
+                $order->update([
+                    'status' => 'failed',
+                    'meta' => array_merge($orderMeta, [
+                        'failure_reason' => $errorDescription,
+                        'razorpay_error' => $razorpayError,
+                        'failed_at' => now()->toDateTimeString(),
+                    ]),
+                ]);
+            }
+
+            DB::commit();
+
+            \Log::info('Payment marked as failed via gateway', [
+                'order_id' => $orderId,
+                'transaction_id' => $transactionId,
+                'user_id' => $user->id,
+                'error_code' => $razorpayError,
+                'error_description' => $errorDescription,
+            ]);
+
+            return response()->json([
+                'message' => 'Payment marked as failed',
+                'order_id' => $orderId,
+                'transaction_id' => $transaction->id,
+                'status' => 'failed'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            \Log::error('Failed to mark payment as failed', [
+                'order_id' => $orderId,
+                'transaction_id' => $transactionId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'error' => 'Failed to process payment failure',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Handle payment cancellation when user dismisses payment modal
+     */
+    public function cancelledPayment(Request $request)
+    {
+        $user = $request->user();
+        
+        $orderId = $request->input('order_id');
+        $transactionId = $request->input('transaction_id');
+        $reason = $request->input('reason', 'user_dismissed');
+
+        try {
+            DB::beginTransaction();
+
+            // Find and update payment transaction
+            $transaction = PaymentTransaction::where('user_id', $user->id);
+            
+            if ($transactionId) {
+                $transaction = $transaction->where('id', $transactionId)->first();
+            } else {
+                $transaction = $transaction->where('order_id', $orderId)->first();
+            }
+
+            if (!$transaction) {
+                return response()->json(['error' => 'Transaction not found'], 404);
+            }
+
+            // Check if already processed
+            if (in_array($transaction->status, ['SUCCESS', 'FAILED', 'COMPLETED', 'CANCELLED'])) {
+                return response()->json([
+                    'message' => 'Payment already processed',
+                    'status' => $transaction->status
+                ], 422);
+            }
+
+            // Update transaction as cancelled
+            $meta = $transaction->meta ?? [];
+            $transaction->update([
+                'status' => 'CANCELLED',
+                'meta' => array_merge($meta, [
+                    'status' => 'cancelled',
+                    'cancellation_reason' => $reason,
+                    'cancelled_at' => now()->toDateTimeString(),
+                    'cancelled_by_user' => true,
+                ]),
+            ]);
+
+            // Update associated order as cancelled
+            $order = Order::where('id', $orderId)
+                ->orWhere('razorpay_order_id', $orderId)
+                ->first();
+
+            if ($order) {
+                $orderMeta = $order->meta ?? [];
+                $order->update([
+                    'status' => 'cancelled',
+                    'meta' => array_merge($orderMeta, [
+                        'cancellation_reason' => $reason,
+                        'cancelled_at' => now()->toDateTimeString(),
+                        'cancelled_by_user' => true,
+                    ]),
+                ]);
+            }
+
+            DB::commit();
+
+            \Log::info('Payment cancelled by user', [
+                'order_id' => $orderId,
+                'transaction_id' => $transactionId,
+                'user_id' => $user->id,
+                'reason' => $reason,
+            ]);
+
+            return response()->json([
+                'message' => 'Payment cancelled successfully',
+                'order_id' => $orderId,
+                'transaction_id' => $transaction->id,
+                'status' => 'cancelled'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            \Log::error('Failed to cancel payment', [
+                'order_id' => $orderId,
+                'transaction_id' => $transactionId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'error' => 'Failed to process payment cancellation',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -1055,15 +1712,17 @@ class WalletController extends Controller
 
     /**
      * Retry failed payment - creates new order and transaction
+     * IMPORTANT: This does NOT update the failed order/transaction.
+     * It creates completely new order and transaction records.
      */
     public function retryPayment(Request $request, $orderId)
     {
         $user = $request->user();
 
-        // Find the failed order
+        // Find the failed or initiated order that needs retry
         $failedOrder = Order::where('id', $orderId)
             ->where('user_id', $user->id)
-            ->where('status', 'failed')
+            ->whereIn('status', ['failed', 'FAILED', 'initiated', 'INITIATED', 'pending', 'PENDING'])
             ->first();
 
         if (!$failedOrder) {
@@ -1072,6 +1731,16 @@ class WalletController extends Controller
                 'message' => 'Order not found or cannot be retried',
             ], 404);
         }
+
+        // Mark the old failed order as explicitly failed if not already
+        if (!in_array($failedOrder->status, ['failed', 'FAILED'])) {
+            $failedOrder->update(['status' => 'failed']);
+        }
+
+        // Mark old payment transaction as failed
+        PaymentTransaction::where('order_id', $failedOrder->id)
+            ->whereIn('status', ['INITIATED', 'PENDING'])
+            ->update(['status' => 'FAILED']);
 
         // Get the package
         $package = CoinPackage::find($failedOrder->package_id);
@@ -1085,20 +1754,46 @@ class WalletController extends Controller
         DB::beginTransaction();
 
         try {
-            // Create new order
+            // Create new order (copy from failed order)
             $receipt = 'coin_retry_' . $user->id . '_' . time();
 
+            // Determine pricing: force INR and only apply GST for India users
+            $isIndia = $this->isIndianUser($user);
+            \Log::info('Retry payment - isIndianUser: ' . ($isIndia ? 'true' : 'false'), [
+                'user_id' => $user->id,
+                'country_code' => $user->country_code,
+            ]);
+            $gstRate = (float) (env('COIN_GST_RATE', 0.18));
+            $currency = 'INR';
+
+            $subtotal = (float) $package->price;
+            $taxAmount = $isIndia ? round($subtotal * $gstRate, 2) : 0.0;
+            $totalAmount = round($subtotal + $taxAmount, 2);
+
+            // Create new order copying data from failed order
             $newOrder = Order::create([
                 'user_id' => $user->id,
-                'amount' => $package->price,
-                'currency' => 'INR',
+                'amount' => $totalAmount,
+                'currency' => $currency,
                 'package_id' => $package->id,
                 'coins' => $package->coins,
                 'bonus_coins' => $package->bonus_coins,
-                'status' => 'PENDING',
+                'status' => 'INITIATED',
                 'receipt' => $receipt,
                 'meta' => [
                     'retry_of_order' => $failedOrder->id,
+                    'original_order_created_at' => $failedOrder->created_at->toIso8601String(),
+                    'package_name' => $package->name,
+                    'coins' => $package->coins,
+                    'bonus_coins' => $package->bonus_coins,
+                    'pricing' => [
+                        'is_india' => $isIndia,
+                        'gst_rate' => $isIndia ? $gstRate : 0,
+                        'subtotal_inr' => $subtotal,
+                        'tax_amount_inr' => $taxAmount,
+                        'total_amount' => $totalAmount,
+                        'currency' => $currency,
+                    ],
                 ],
             ]);
 
@@ -1109,8 +1804,8 @@ class WalletController extends Controller
             );
 
             $razorpayOrder = $rzp->order->create([
-                'amount' => (int) ($package->price * 100),
-                'currency' => 'INR',
+                'amount' => (int) ($totalAmount * 100),
+                'currency' => $currency,
                 'receipt' => $receipt,
                 'payment_capture' => 1,
                 'notes' => [
@@ -1127,15 +1822,17 @@ class WalletController extends Controller
                 'razorpay_order_id' => $razorpayOrder['id'],
             ]);
 
-            // Create new transaction
-            $transaction = CoinTransaction::create([
+            // Create new payment transaction (INITIATED)
+            $transaction = PaymentTransaction::create([
                 'user_id' => $user->id,
                 'order_id' => $newOrder->id,
                 'razorpay_order_id' => $razorpayOrder['id'],
-                'type' => 'CREDIT',
-                'amount' => $package->price,
-                'coins' => $package->coins + $package->bonus_coins,
-                'balance_after' => $user->coins,
+                'type' => 'coin_purchase',
+                'status' => 'INITIATED',
+                'amount' => $totalAmount,
+                'currency' => $currency,
+                'coins' => $package->coins,
+                'bonus_coins' => $package->bonus_coins,
                 'description' => "Coin purchase (Retry): {$package->name}",
                 'meta' => [
                     'package_id' => $package->id,
@@ -1144,6 +1841,15 @@ class WalletController extends Controller
                     'bonus_coins' => $package->bonus_coins,
                     'status' => 'INITIATED',
                     'retry_of_order' => $failedOrder->id,
+                    'original_transaction_id' => PaymentTransaction::where('order_id', $failedOrder->id)->value('id'),
+                    'pricing' => [
+                        'is_india' => $isIndia,
+                        'currency' => $currency,
+                        'subtotal_inr' => $subtotal,
+                        'tax_amount_inr' => $taxAmount,
+                        'gst_rate' => $isIndia ? $gstRate : 0,
+                        'total_amount' => $totalAmount,
+                    ],
                 ],
             ]);
 
@@ -1162,8 +1868,10 @@ class WalletController extends Controller
                     'id' => $razorpayOrder['id'],
                     'db_order_id' => $newOrder->id,
                     'razorpay_order_id' => $razorpayOrder['id'],
-                    'amount' => intval($package->price * 100),
-                    'currency' => 'INR',
+                    'amount' => intval($totalAmount * 100),
+                    'currency' => $currency,
+                    'gst_amount' => $taxAmount,
+                    'gst_rate' => $isIndia ? $gstRate : 0,
                 ],
                 'transaction_id' => $transaction->id,
                 'package' => [
@@ -1172,6 +1880,14 @@ class WalletController extends Controller
                     'coins' => $package->coins,
                     'bonus_coins' => $package->bonus_coins,
                     'price' => $package->price,
+                ],
+                'pricing' => [
+                    'is_india' => $isIndia,
+                    'gst_rate' => $isIndia ? $gstRate : 0,
+                    'subtotal_inr' => $subtotal,
+                    'tax_amount_inr' => $taxAmount,
+                    'total' => $totalAmount,
+                    'currency' => $currency,
                 ],
             ]);
         } catch (\Throwable $e) {
@@ -1209,7 +1925,7 @@ class WalletController extends Controller
             ], 404);
         }
 
-        $transaction = CoinTransaction::where('order_id', $order->id)->first();
+        $transaction = PaymentTransaction::where('order_id', $order->id)->first();
 
         if (!$transaction) {
             return response()->json([

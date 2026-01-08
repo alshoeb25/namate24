@@ -41,6 +41,7 @@ class TutorController extends Controller
             'experience' => $request->input('experience'),
             'rating_min' => $request->input('rating_min'),
             'sort_by' => $request->input('sort_by'),
+            'featured' => $request->input('featured'),
         ];
 
         // Handle price_range filter (convert to min/max)
@@ -82,6 +83,31 @@ class TutorController extends Controller
             // Fallback to database query if Elasticsearch fails
             return $this->fallbackSearch($request);
         }
+    }
+
+    /**
+     * Get featured tutors
+     * GET /api/tutors/featured
+     */
+    public function featured(Request $request)
+    {
+        $perPage = (int)$request->query('per_page', 6);
+        
+        // Get featured tutors - highest rated, verified tutors
+        $tutors = Tutor::with('user', 'subjects')
+            ->where('moderation_status', 'approved')
+            ->where('verified', true)
+            ->whereNotNull('rating_avg')
+            ->where('rating_avg', '>=', 4.5)
+            ->orderBy('rating_avg', 'desc')
+            ->orderBy('rating_count', 'desc')
+            ->limit($perPage)
+            ->get();
+
+        return response()->json([
+            'data' => $tutors,
+            'total' => $tutors->count(),
+        ]);
     }
 
     /**
@@ -239,6 +265,15 @@ class TutorController extends Controller
     protected function fallbackSearch(Request $request)
     {
         $query = Tutor::with('user','subjects')->where('moderation_status','approved');
+
+        // Featured filter
+        if ($request->input('featured') === 'true') {
+            $query->where('verified', true)
+                  ->whereNotNull('rating_avg')
+                  ->where('rating_avg', '>=', 4.5)
+                  ->orderBy('rating_avg', 'desc')
+                  ->orderBy('rating_count', 'desc');
+        }
 
         // Subject search
         if ($subjectId = $request->input('subject_id')) {

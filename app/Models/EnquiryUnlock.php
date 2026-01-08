@@ -9,7 +9,7 @@ class EnquiryUnlock extends Model
 {
     protected $fillable = [
         'enquiry_id',
-        'teacher_id',
+        'tutor_id',
         'unlock_price',
     ];
 
@@ -18,8 +18,14 @@ class EnquiryUnlock extends Model
         return $this->belongsTo(StudentRequirement::class, 'enquiry_id');
     }
 
+    public function tutor(): BelongsTo
+    {
+        return $this->belongsTo(Tutor::class, 'tutor_id');
+    }
+
+    // Backward-compatible alias
     public function teacher(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'teacher_id');
+        return $this->tutor();
     }
 }

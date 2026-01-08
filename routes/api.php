@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\PayoutController;
 use App\Http\Controllers\Api\CmsPageController;
 use App\Http\Controllers\Api\WalletController;
+use App\Http\Controllers\Api\Admin\CoinPackageController as AdminCoinPackageController;
 use App\Http\Controllers\Api\EnquiryController;
 use App\Http\Controllers\Api\TutorProfileController;
 use App\Http\Controllers\Api\Admin\SubjectModuleController;
@@ -32,6 +33,7 @@ Route::post('password/reset', [PasswordResetController::class, 'reset']);
 Route::post('auth/google/callback', [\App\Http\Controllers\Api\SocialAuthController::class, 'googleCallback']);
 
 Route::get('tutors', [TutorController::class,'index']);
+Route::get('tutors/featured', [TutorController::class,'featured']);
 Route::get('tutors/{id}', [TutorController::class,'show']);
 Route::get('public/tutors/{id}', [TutorController::class,'publicShow']);
 
@@ -153,7 +155,35 @@ Route::middleware('auth:api')->group(function() {
         Route::put('requirements/{id}', [\App\Http\Controllers\Api\StudentController::class, 'updateRequirement']);
         Route::post('requirements/{id}/close', [\App\Http\Controllers\Api\StudentController::class, 'closeRequirement']);
         Route::delete('requirements/{id}', [\App\Http\Controllers\Api\StudentController::class, 'deleteRequirement']);
+        
+        // New endpoints for refund, viewing interested teachers, and hiring
+        Route::get('requirements/{id}/interested-teachers', [\App\Http\Controllers\Api\StudentController::class, 'getInterestedTeachers']);
+        Route::post('requirements/{id}/hire-teacher', [\App\Http\Controllers\Api\StudentController::class, 'hireTeacher']);
+        
+        // Hired tutors
+        Route::get('hired-tutors', [\App\Http\Controllers\Api\StudentController::class, 'hiredTutors']);
+
+        // Student Reviews
+        Route::get('reviews', [ReviewController::class, 'myReviews']);
+        Route::patch('reviews/{review}', [ReviewController::class, 'updateMine']);
     });
+
+    // Teacher Refund Requests Routes
+    Route::prefix('tutor')->group(function () {
+        Route::get('refunds', [\App\Http\Controllers\Api\TutorRefundController::class, 'myRefunds']);
+        Route::get('refunds/{id}', [\App\Http\Controllers\Api\TutorRefundController::class, 'getRefund']);
+    });
+
+    Route::post('enquiry/{id}/request-refund', [\App\Http\Controllers\Api\TutorRefundController::class, 'requestRefund']);
+
+    // Admin Refund Management Routes
+    Route::middleware('role:admin')->prefix('admin/refunds')->group(function () {
+        Route::get('pending', [\App\Http\Controllers\Api\TutorRefundController::class, 'pendingRefunds']);
+        Route::get('stats', [\App\Http\Controllers\Api\TutorRefundController::class, 'refundStats']);
+        Route::post('{id}/approve', [\App\Http\Controllers\Api\TutorRefundController::class, 'approveRefund']);
+        Route::post('{id}/reject', [\App\Http\Controllers\Api\TutorRefundController::class, 'rejectRefund']);
+    });
+
     Route::post('tutors', [TutorController::class,'store']);
 
     Route::post('requirements', [RequirementController::class,'store']);
@@ -173,6 +203,8 @@ Route::middleware('auth:api')->group(function() {
     });
     Route::get('enquiries/{enquiry}', [EnquiryController::class, 'show']);
 
+    // Reviews
+    Route::get('reviews', [ReviewController::class, 'index']);
     Route::post('tutors/{tutor}/reviews', [ReviewController::class,'store']);
 
     // Tutor Documents (Tutor role)
@@ -186,9 +218,13 @@ Route::middleware('auth:api')->group(function() {
     Route::prefix('wallet')->group(function () {
         Route::get('/', [WalletController::class, 'index']); // Get balance and transactions
         Route::get('payment-history', [WalletController::class, 'paymentHistory']); // Get payment history with filters
+        Route::get('payment-transactions', [WalletController::class, 'paymentTransactions']); // PaymentTransaction-only API
+        Route::get('coin-transactions', [WalletController::class, 'coinTransactions']); // CoinTransaction-only API with filters
         Route::get('packages', [WalletController::class, 'packages']); // Get coin packages
         Route::post('purchase', [WalletController::class, 'purchaseCoins']); // Create Razorpay order
         Route::post('verify-payment', [WalletController::class, 'verifyPayment']); // Verify payment and credit coins
+        Route::post('payment-failed', [WalletController::class, 'markPaymentFailed']); // Mark payment as failed from gateway
+        Route::post('payment-cancelled', [WalletController::class, 'cancelledPayment']); // Handle user dismissing payment modal
         Route::get('referral', [WalletController::class, 'getReferralInfo']); // Get referral code and stats
         Route::post('apply-referral', [WalletController::class, 'applyReferralCode']); // Apply referral code
         Route::get('order/{orderId}/status', [WalletController::class, 'getOrderStatus']); // Get order status
@@ -285,7 +321,18 @@ Route::middleware('auth:api')->group(function() {
         Route::post('settings', [TutorProfileController::class, 'updateSettings'])->name('update-settings');
     });
 
+    // WhatsApp Contact Routes (Public)
+    Route::get('tutor/{tutorId}/whatsapp', [TutorProfileController::class, 'getWhatsAppLink'])->name('tutor.whatsapp');
+    Route::get('company/whatsapp', [TutorProfileController::class, 'getCompanyWhatsApp'])->name('company.whatsapp');
+
     Route::middleware('role:admin')->group(function(){
+        // Coin Packages (Admin CRUD)
+        Route::get('coin-packages', [AdminCoinPackageController::class, 'index']);
+        Route::post('coin-packages', [AdminCoinPackageController::class, 'store']);
+        Route::put('coin-packages/{coinPackage}', [AdminCoinPackageController::class, 'update']);
+        Route::delete('coin-packages/{coinPackage}', [AdminCoinPackageController::class, 'destroy']);
+        Route::post('coin-packages/{coinPackage}/toggle-popular', [AdminCoinPackageController::class, 'togglePopular']);
+        Route::post('coin-packages/{coinPackage}/toggle-active', [AdminCoinPackageController::class, 'toggleActive']);
         Route::post('credit-packages', [CreditPackageController::class,'store']);
         Route::put('credit-packages/{creditPackage}', [CreditPackageController::class,'update']);
         Route::delete('credit-packages/{creditPackage}', [CreditPackageController::class,'destroy']);

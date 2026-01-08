@@ -21,7 +21,7 @@
           <div class="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3">
             <div>
               <p class="text-xs uppercase tracking-wide text-gray-500">Transaction ID</p>
-              <p class="font-semibold text-gray-900">{{ details.transactionId || '—' }}</p>
+              <p class="font-mono font-semibold text-gray-900">{{ encryptedTransactionId }}</p>
             </div>
             <span :class="statusBadgeClass">{{ statusLabel }}</span>
           </div>
@@ -72,7 +72,11 @@
                 <span class="text-gray-600">Discount</span>
                 <span class="font-semibold text-green-600">-{{ formatAmount(details.discount) }}</span>
               </div>
-              <div v-if="details.tax" class="flex items-center justify-between">
+              <div v-if="gstAmount > 0" class="flex items-center justify-between">
+                <span class="text-gray-600">GST ({{ gstRate }}%)</span>
+                <span class="font-semibold text-gray-900">{{ formatAmount(gstAmount) }}</span>
+              </div>
+              <div v-if="details.tax && !gstAmount" class="flex items-center justify-between">
                 <span class="text-gray-600">Tax</span>
                 <span class="font-semibold text-gray-900">{{ formatAmount(details.tax) }}</span>
               </div>
@@ -96,24 +100,24 @@
 
         <div class="flex flex-wrap gap-3 border-t border-gray-100 px-6 py-4">
           <button
-            v-if="status === 'failed' && details.isRetryable"
-            @click="$emit('retry')"
-            class="flex-1 rounded-xl border border-pink-500 px-4 py-3 font-semibold text-pink-600 transition hover:bg-pink-50"
+            v-if="status === 'success'"
+            @click="viewInvoice"
+            class="flex-1 rounded-xl bg-pink-500 px-4 py-3 font-semibold text-white transition hover:bg-pink-600"
+          >
+            <i class="fas fa-file-invoice mr-2"></i>View Invoice
+          </button>
+          <button
+            v-if="status === 'failed'"
+            @click="retryPayment"
+            class="flex-1 rounded-xl bg-pink-500 px-4 py-3 font-semibold text-white transition hover:bg-pink-600"
           >
             <i class="fas fa-redo mr-2"></i>Retry Payment
           </button>
           <button
-            v-else-if="status !== 'failed'"
-            @click="downloadReceipt"
+            @click="goToPaymentTransactions"
             class="flex-1 rounded-xl border border-pink-500 px-4 py-3 font-semibold text-pink-600 transition hover:bg-pink-50"
           >
-            <i class="fas fa-file-download mr-2"></i>Download Receipt
-          </button>
-          <button
-            @click="$emit('support')"
-            class="flex-1 rounded-xl bg-pink-500 px-4 py-3 font-semibold text-white transition hover:bg-pink-600"
-          >
-            <i class="fas fa-headset mr-2"></i>Contact Support
+            <i class="fas fa-list mr-2"></i>View All Transactions
           </button>
         </div>
       </div>
@@ -179,12 +183,107 @@ export default {
       if (this.status === 'failed') return 'Payment Failed';
       if (this.status === 'pending') return 'Payment Pending';
       return 'Payment Successful';
+    },
+    encryptedTransactionId() {
+      const id = String(this.details.transactionId || '');
+      if (!id || id === '—') return '—';
+      // Show first 4 and last 4 characters, mask middle
+      if (id.length <= 8) return id;
+      const start = id.substring(0, 4);
+      const end = id.substring(id.length - 4);
+      const middle = '*'.repeat(Math.min(id.length - 8, 8));
+      return `${start}${middle}${end}`;
+    },
+    gstAmount() {
+      // Try to get GST from details.gstAmount or calculate from tax
+      if (this.details.gstAmount !== undefined) {
+        return Number(this.details.gstAmount);
+      }
+      if (this.details.tax !== undefined) {
+        return Number(this.details.tax);
+      }
+      // Calculate from basePrice and totalAmount if available
+      const base = Number(this.details.basePrice || 0);
+      const total = Number(this.details.totalAmount || 0);
+      const discount = Number(this.details.discount || 0);
+      if (base > 0 && total > 0) {
+        return total - base + discount;
+      }
+      return 0;
+    },
+    gstRate() {
+      // Try to get GST rate from details or calculate
+      if (this.details.gstRate !== undefined) {
+        return Number(this.details.gstRate * 100).toFixed(0);
+      }
+      const base = Number(this.details.basePrice || 0);
+      if (base > 0 && this.gstAmount > 0) {
+        const rate = (this.gstAmount / base) * 100;
+        return rate.toFixed(0);
+      }
+      return '18'; // default GST rate
     }
   },
   methods: {
     formatAmount(value) {
       const num = Number(value ?? 0);
       return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(num);
+    },
+    viewInvoice() {
+      const orderId = this.details?.orderId;
+      const invoiceId = this.details?.invoiceId;
+      
+      if (invoiceId) {
+        window.location.href = `/api/wallet/invoice/${invoiceId}/download`;
+      } else if (orderId) {
+        window.location.href = `/api/orders/${orderId}/receipt`;
+      } else {
+        this.$emit('download');
+      }
+    },
+    retryPayment() {
+      const orderId = this.details?.orderId;
+      
+      if (!orderId) {
+        this.$emit('retry');
+        return;
+      }
+
+      // Call retry API to create new order/transaction
+      axios.post(`/api/wallet/order/${orderId}/retry`)
+        .then(response => {
+          if (response.data.success) {
+            // New order created, emit retry with new order data
+            this.$emit('retry', response.data);
+            // Navigate to payment transactions
+            this.goToPaymentTransactions();
+          } else {
+            alert(response.data.message || 'Failed to retry payment');
+          }
+        })
+        .catch(error => {
+          console.error('Retry failed:', error);
+          alert('Failed to retry payment. Please try again.');
+        });
+    },
+    goToPaymentTransactions() {
+      // Close modal first
+      this.$emit('close');
+      
+      // Determine user role from store or current route
+      const currentPath = window.location.pathname;
+      let targetPath = '/student/wallet/payment-transactions';
+      
+      if (currentPath.includes('/tutor/')) {
+        targetPath = '/tutor/wallet/payment-transactions';
+      }
+      
+      // Navigate using router if available, otherwise use window.location
+      if (this.$router) {
+        this.$router.push(targetPath);
+      } else {
+        window.location.href = targetPath;
+      }
     },
     downloadReceipt() {
       const orderId = this.details?.orderId;

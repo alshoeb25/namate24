@@ -90,6 +90,16 @@ class TutorSearchService
             $must[] = ['term' => ['online_available' => true]];
         }
 
+        // 🌟 Featured filter (high-rated, verified tutors)
+        if (!empty($filters['featured']) && $filters['featured'] === 'true') {
+            $must[] = ['term' => ['verified' => true]];
+            $must[] = [
+                'range' => [
+                    'rating_avg' => ['gte' => 4.5]
+                ]
+            ];
+        }
+
         // 📍 Location-based search with distance
         if (!empty($filters['location']) || ($lat !== null && $lng !== null)) {
             $this->addLocationFilter($must, $filters);
@@ -133,6 +143,12 @@ class TutorSearchService
         // Add sorting
         if (!empty($filters['sort_by'])) {
             $queryBody['sort'] = $this->getSortOptions($filters['sort_by'], $filters, $lat, $lng);
+        } elseif (!empty($filters['featured']) && $filters['featured'] === 'true') {
+            // Featured sorting: by rating and rating count
+            $queryBody['sort'] = [
+                ['rating_avg' => ['order' => 'desc']],
+                ['rating_count' => ['order' => 'desc']],
+            ];
         } else {
             // Default: Sort by verified status and rating
             $queryBody['sort'] = [
