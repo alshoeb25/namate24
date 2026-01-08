@@ -116,12 +116,14 @@ class AuthController extends Controller
         // Auto-detect and set country if not defined
         $this->autoDetectCountry($user, $request);
 
-        // Check if email is not verified
+        // Check if email is not verified; resend verification link automatically
         if ($user->email && !$user->email_verified_at) {
+            $this->sendVerificationEmail($user);
             return response()->json([
-                'message' => 'Please verify your email before logging in.',
+                'message' => 'Please verify your email before logging in. We have sent a fresh verification link to your email.',
                 'email_verified' => false,
                 'user' => $user,
+                'email_sent' => true,
             ], 403);
         }
 
@@ -149,25 +151,26 @@ class AuthController extends Controller
         if (!$user->email) {
             return;
         }
+        // Ensure token is present and valid (24h)
+        if (!$user->email_verification_token || ($user->email_verification_token_expires_at && Carbon::now()->greaterThan($user->email_verification_token_expires_at))) {
+            $user->update([
+                'email_verification_token' => Str::random(64),
+                'email_verification_token_expires_at' => Carbon::now()->addHours(24),
+            ]);
+            $user->refresh();
+        }
 
-        $verificationUrl = config('app.frontend_url') . '/verify-email?token=' . $user->email_verification_token;
-        
-        $subject = 'Verify Your Email - Namate24';
-        $message = "
-            <p>Hello {$user->name},</p>
-            <p>Thank you for signing up for Namate24!</p>
-            <p>Please verify your email address by clicking the link below:</p>
-            <p><a href='{$verificationUrl}' style='background-color: #ec4899; color: white; padding: 10px 20px; text-decoration: none; border-radius: 20px; display: inline-block;'>Verify Email</a></p>
-            <p>This link expires in 24 hours.</p>
-            <p>If you didn't sign up for Namate24, please ignore this email.</p>
-        ";
+        $verificationUrl = url('/api/email/verify?token=' . $user->email_verification_token);
 
         try {
-            Mail::html($message, function ($mail) use ($user, $subject) {
+            Mail::send('emails.verify-email', [
+                'user' => $user,
+                'verificationUrl' => $verificationUrl,
+            ], function ($mail) use ($user) {
                 $mail->to($user->email)
-                     ->subject($subject);
+                    ->subject('Verify Your Email - Namate24');
             });
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             \Log::error('Email sending failed: ' . $e->getMessage());
         }
     }

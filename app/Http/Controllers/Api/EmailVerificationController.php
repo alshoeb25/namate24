@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class EmailVerificationController extends Controller
 {
@@ -30,35 +31,26 @@ class EmailVerificationController extends Controller
             return response()->json(['message' => 'Email already verified'], 400);
         }
 
-        // Generate verification token
+        // Generate (or refresh) verification token and expiry
         $token = Str::random(64);
         $user->update([
             'email_verification_token' => $token,
             'email_verification_token_expires_at' => Carbon::now()->addHours(24),
         ]);
 
-        // Send verification email
-        $verificationUrl = url('/verify-email?token=' . $token);
-        
-        // Send email (using simple approach - you can integrate Laravel Mailable class)
-        $subject = 'Verify Your Email - Namate24';
-        $message = "
-            <p>Hello {$user->name},</p>
-            <p>Please verify your email address by clicking the link below:</p>
-            <p><a href='{$verificationUrl}' style='background-color: #ec4899; color: white; padding: 10px 20px; text-decoration: none; border-radius: 20px;'>Verify Email</a></p>
-            <p>This link expires in 24 hours.</p>
-            <p>If you didn't sign up for Namate24, please ignore this email.</p>
-        ";
+        // Build backend verification URL (clicking this will verify and then redirect to frontend)
+        $verificationUrl = url('/api/email/verify?token=' . $token);
 
-        // Simple mail sending (Laravel default)
         try {
-            Mail::html($message, function ($mail) use ($user, $subject) {
+            Mail::send('emails.verify-email', [
+                'user' => $user,
+                'verificationUrl' => $verificationUrl,
+            ], function ($mail) use ($user) {
                 $mail->to($user->email)
-                     ->subject($subject);
+                    ->subject('Verify Your Email - Namate24');
             });
-        } catch (\Exception $e) {
-            // Log error but don't fail - in development this might not work
-            \Log::error('Email sending failed: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('Email sending failed: ' . $e->getMessage());
         }
 
         return response()->json([
@@ -71,23 +63,25 @@ class EmailVerificationController extends Controller
      */
     public function verifyEmail(Request $request)
     {
-        $request->validate([
-            'token' => 'required|string',
-        ]);
+        $token = $request->get('token');
 
-        $user = User::where('email_verification_token', $request->token)->first();
+        if (!$token) {
+            return $this->verificationResponse(false, 'Verification token missing');
+        }
+
+        $user = User::where('email_verification_token', $token)->first();
 
         if (!$user) {
-            return response()->json(['message' => 'Invalid verification token'], 404);
+            return $this->verificationResponse(false, 'Invalid verification token');
         }
 
         // Check if token expired
         if ($user->email_verification_token_expires_at && Carbon::now()->isAfter($user->email_verification_token_expires_at)) {
-            return response()->json(['message' => 'Verification token expired'], 400);
+            return $this->verificationResponse(false, 'Verification token expired');
         }
 
         if ($user->email_verified_at) {
-            return response()->json(['message' => 'Email already verified'], 400);
+            return $this->verificationResponse(true, 'Email already verified');
         }
 
         // Mark email as verified
@@ -97,10 +91,7 @@ class EmailVerificationController extends Controller
             'email_verification_token_expires_at' => null,
         ]);
 
-        return response()->json([
-            'message' => 'Email verified successfully! You can now login.',
-            'user' => $user,
-        ], 200);
+        return $this->verificationResponse(true, 'Email verified successfully! You can now login.', $user);
     }
 
     /**
@@ -123,5 +114,30 @@ class EmailVerificationController extends Controller
         }
 
         return $this->sendVerificationEmail($request);
+    }
+
+    /**
+     * Respond to verification based on client (JSON vs redirect)
+     */
+    private function verificationResponse(bool $success, string $message, ?User $user = null)
+    {
+        // If request expects JSON (API/AJAX), respond with JSON
+        if (request()->expectsJson()) {
+            $status = $success ? 200 : 400;
+            return response()->json([
+                'success' => $success,
+                'message' => $message,
+                'user' => $user,
+            ], $status);
+        }
+
+        // Otherwise redirect to frontend with status
+        $frontend = rtrim(config('app.frontend_url', '/'), '/');
+        $target = $frontend . '/email-verified?status=' . ($success ? 'success' : 'failed');
+        if (!$success) {
+            $target .= '&reason=' . urlencode($message);
+        }
+
+        return redirect()->away($target);
     }
 }

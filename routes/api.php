@@ -20,14 +20,14 @@ use App\Http\Controllers\Api\PasswordResetController;
 
 use App\Http\Controllers\Api\EmailVerificationController;
 
-Route::post('register', [AuthController::class,'register']);
-Route::post('login', [AuthController::class,'login']);
-Route::post('validate-referral-code', [AuthController::class, 'validateReferralCode']);
-Route::post('email/send-verification', [EmailVerificationController::class, 'sendVerificationEmail']);
-Route::post('email/verify', [EmailVerificationController::class, 'verifyEmail']);
-Route::post('email/resend-verification', [EmailVerificationController::class, 'resendVerificationEmail']);
-Route::post('password/forgot', [PasswordResetController::class, 'sendResetLink']);
-Route::post('password/reset', [PasswordResetController::class, 'reset']);
+Route::post('register', [AuthController::class,'register'])->middleware('throttle:10,1');
+Route::post('login', [AuthController::class,'login'])->middleware('throttle:10,1');
+Route::post('validate-referral-code', [AuthController::class, 'validateReferralCode'])->middleware('throttle:20,1');
+Route::post('email/send-verification', [EmailVerificationController::class, 'sendVerificationEmail'])->middleware('throttle:5,1');
+Route::match(['get', 'post'], 'email/verify', [EmailVerificationController::class, 'verifyEmail'])->middleware('throttle:30,1');
+Route::post('email/resend-verification', [EmailVerificationController::class, 'resendVerificationEmail'])->middleware('throttle:5,1');
+Route::post('password/forgot', [PasswordResetController::class, 'sendResetLink'])->middleware('throttle:5,1');
+Route::post('password/reset', [PasswordResetController::class, 'reset'])->middleware('throttle:10,1');
 
 // Google OAuth
 Route::post('auth/google/callback', [\App\Http\Controllers\Api\SocialAuthController::class, 'googleCallback']);
