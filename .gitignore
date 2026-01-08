@@ -40,7 +40,8 @@
 # IDE & OS files
 # =========================
 /.idea/
-/.vscode/
+# Allow .vscode workspace settings to be tracked for better developer experience
+# .vscode/
 *.swp
 *.swo
 *.log
