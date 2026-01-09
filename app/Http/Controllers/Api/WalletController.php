@@ -14,6 +14,10 @@ use App\Jobs\CheckPendingPaymentStatus;
 use App\Notifications\PaymentSuccessNotification;
 use App\Notifications\PaymentFailedNotification;
 use App\Notifications\PaymentPendingNotification;
+use App\Services\CoinPricingService;
+use App\Jobs\SendPaymentSuccessNotification;
+use App\Jobs\SendPaymentFailedNotification;
+use App\Jobs\SendPaymentPendingNotification;
 use Illuminate\Http\Request;
 use Razorpay\Api\Api as RazorpayApi;
 use Illuminate\Support\Facades\DB;
@@ -320,6 +324,27 @@ class WalletController extends Controller
     }
 
     /**
+     * Get all available coin packages with dynamic pricing based on user location
+     */
+    public function coinPackages(Request $request)
+    {
+        $user = $request->user();
+        
+        $packages = CoinPricingService::getPackagesWithPricing($user);
+        
+        return response()->json([
+            'success' => true,
+            'user' => [
+                'id' => $user->id,
+                'country' => $user->country,
+                'country_iso' => $user->country_iso,
+                'is_india' => CoinPricingService::isIndiaUser($user),
+            ],
+            'packages' => $packages,
+        ]);
+    }
+
+    /**
      * Get coin transactions with filters, search, and pagination
      * For CoinTransaction model only (wallet debits/credits, referrals, etc.)
      */
@@ -456,14 +481,37 @@ class WalletController extends Controller
     /**
      * Get all available coin packages
      */
-    public function packages()
+    public function packages(Request $request)
     {
+        $user = $request->user();
+        
+        // Return packages with location-based pricing if user is authenticated
+        if ($user) {
+            $packages = CoinPricingService::getPackagesWithPricing($user);
+            
+            return response()->json([
+                'success' => true,
+                'user' => [
+                    'id' => $user->id,
+                    'country' => $user->country,
+                    'country_iso' => $user->country_iso,
+                    'is_india' => CoinPricingService::isIndiaUser($user),
+                ],
+                'packages' => $packages,
+            ]);
+        }
+        
+        // For unauthenticated requests, return packages without pricing
         $packages = CoinPackage::active()
             ->orderBy('sort_order')
             ->orderBy('price')
             ->get();
 
-        return response()->json($packages);
+        return response()->json([
+            'success' => true,
+            'packages' => $packages,
+            'message' => 'Login to see location-based pricing',
+        ]);
     }
 
     /**
@@ -484,19 +532,24 @@ class WalletController extends Controller
         $package = CoinPackage::active()->findOrFail($request->package_id);
         $user = $request->user();
 
-        // Determine pricing: force INR and always apply GST so Razorpay total matches UI package display
-        $isIndia = true; // force GST inclusion
-        $gstRate = (float) (env('COIN_GST_RATE', 0.18));
-        $currency = 'INR';
+        // Get dynamic pricing based on user location
+        $pricingData = CoinPricingService::calculatePackagePrice($package, $user);
+        
+        $isIndia = $pricingData['is_india'];
+        $currency = $pricingData['currency'];
+        $subtotal = $pricingData['subtotal'];
+        $taxAmount = $pricingData['tax_amount'];
+        $totalAmount = $pricingData['total'];
+        $gstRate = $pricingData['gst_rate'];
 
-        $subtotal = (float) $package->price;
-        // Always apply GST
-        $taxAmount = round($subtotal * $gstRate, 2);
-        $totalAmount = round($subtotal + $taxAmount, 2);
         \Log::info('Coin purchase calculation', [
             'user_id' => $user->id,
+            'user_country' => $user->country,
+            'user_country_iso' => $user->country_iso,
             'package_id' => $package->id,
             'package_price' => $package->price,
+            'is_india' => $isIndia,
+            'currency' => $currency,
             'subtotal' => $subtotal,
             'gst_rate' => $gstRate,
             'tax_amount' => $taxAmount,
@@ -507,8 +560,6 @@ class WalletController extends Controller
 
         try {
             // IDEMPOTENT: Mark any previous INITIATED/PENDING orders as FAILED
-            // This ensures clean state before creating new order
-            // Safe to run multiple times - only affects non-final statuses
             $failedOrdersCount = Order::where('user_id', $user->id)
                 ->whereIn('status', ['INITIATED',  'initiated'])
                 ->update([
@@ -516,7 +567,6 @@ class WalletController extends Controller
                     'updated_at' => now(),
                 ]);
 
-            // Also mark corresponding payment transactions as FAILED
             if ($failedOrdersCount > 0) {
                 PaymentTransaction::where('user_id', $user->id)
                     ->whereIn('status', ['INITIATED', 'initiated'])
@@ -545,11 +595,13 @@ class WalletController extends Controller
                 'receipt' => $receipt,
                 'meta' => [
                     'package_name' => $package->name,
+                    'user_country' => $user->country,
+                    'user_country_iso' => $user->country_iso,
                     'pricing' => [
                         'is_india' => $isIndia,
-                        'gst_rate' => $isIndia ? $gstRate : 0,
-                        'subtotal_inr' => $subtotal,
-                        'tax_amount_inr' => $taxAmount,
+                        'gst_rate' => $gstRate,
+                        'subtotal' => $subtotal,
+                        'tax_amount' => $taxAmount,
                         'total_amount' => $totalAmount,
                         'currency' => $currency,
                     ],
@@ -562,9 +614,14 @@ class WalletController extends Controller
                 config('services.razorpay.secret')
             );
 
+            // For Razorpay: amount must be in smallest unit (paise for INR, cents for USD)
+            // INR: multiply by 100 (1 rupee = 100 paise)
+            // USD: multiply by 100 (1 dollar = 100 cents)
+            $razorpayAmount = (int) round($totalAmount * 100);
+            
             $razorpayOrder = $rzp->order->create([
-                'amount' => (int) ($totalAmount * 100),
-                'currency' => $currency,
+                'amount' => $razorpayAmount,
+                'currency' => $currency, // Use actual currency (INR or USD)
                 'receipt' => $receipt,
                 'payment_capture' => 1,
                 'notes' => [
@@ -572,6 +629,11 @@ class WalletController extends Controller
                     'user_id' => $user->id,
                     'package_id' => $package->id,
                     'type' => 'coin_purchase',
+                    'user_country' => $user->country,
+                    'user_country_iso' => $user->country_iso,
+                    'is_india' => $isIndia ? 'true' : 'false',
+                    'display_currency' => $currency,
+                    'display_amount' => $totalAmount,
                 ],
             ]);
 
@@ -595,17 +657,20 @@ class WalletController extends Controller
                 'meta' => [
                     'package_id' => $package->id,
                     'package_name' => $package->name,
+                    'user_country' => $user->country,
+                    'is_india' => $isIndia,
                     'pricing' => [
                         'is_india' => $isIndia,
                         'currency' => $currency,
-                        'subtotal_inr' => $subtotal,
-                        'tax_amount_inr' => $taxAmount,
+                        'subtotal' => $subtotal,
+                        'tax_amount' => $taxAmount,
                         'total_amount' => $totalAmount,
                     ],
                 ],
             ]);
 
             DB::commit();
+            
             // Schedule a status check job as a fallback in case payment remains pending
             CheckPendingPaymentStatus::dispatch($order->id, $transaction->id)
                 ->delay(now()->addMinutes(15));
@@ -616,10 +681,8 @@ class WalletController extends Controller
                     'id' => $razorpayOrder['id'],
                     'db_order_id' => $order->id,
                     'razorpay_order_id' => $razorpayOrder['id'],
-                    'amount' => intval($totalAmount * 100),
+                    'amount' => $razorpayAmount,
                     'currency' => $currency,
-                    'gst_amount' => $taxAmount,
-                    'gst_rate' => $isIndia ? $gstRate : 0,
                 ],
                 'transaction_id' => $transaction->id,
                 'package' => [
@@ -633,14 +696,20 @@ class WalletController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'phone' => $user->phone,
+                    'country' => $user->country,
+                    'country_iso' => $user->country_iso,
                 ],
                 'pricing' => [
                     'is_india' => $isIndia,
-                    'gst_rate' => $isIndia ? $gstRate : 0,
-                    'subtotal_inr' => $subtotal,
-                    'tax_amount_inr' => $taxAmount,
-                    'total' => $totalAmount,
                     'currency' => $currency,
+                    'currency_symbol' => $pricingData['currency_symbol'],
+                    'gst_rate' => $gstRate,
+                    'gst_percentage' => $pricingData['gst_percentage'],
+                    'subtotal' => $subtotal,
+                    'tax_amount' => $taxAmount,
+                    'total' => $totalAmount,
+                    'display_price' => $pricingData['display_price'],
+                    'description' => $pricingData['description'],
                 ],
             ]);
         } catch (\Throwable $e) {
@@ -650,11 +719,13 @@ class WalletController extends Controller
                 'user_id' => $user->id,
                 'package_id' => $package->id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Unable to create order',
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred',
             ], 500);
         }
     }
@@ -781,8 +852,8 @@ class WalletController extends Controller
                 ]);
             }
 
-            // Send failure notification + push
-            $user->notify(new PaymentFailedNotification($failedOrder ?? new Order(), $paymentTx, 'Invalid signature'));
+            // Send failure notification via job
+            SendPaymentFailedNotification::dispatch($user, $failedOrder ?? new Order(), $paymentTx, 'Invalid signature');
 
             \Log::warning('Payment signature verification failed', [
                 'user_id' => $user->id,
@@ -833,6 +904,11 @@ class WalletController extends Controller
             // Idempotency guard: if a success coin transaction already exists, skip crediting again
             // Idempotent coin credit and transaction create
             $lockedUser = User::where('id', $user->id)->lockForUpdate()->first();
+            
+            // Get currency from payment transaction or order
+            $transactionCurrency = $paymentTx->currency ?? $order->currency ?? 'INR';
+            $transactionAmount = $paymentTx->amount ?? $order->amount ?? 0;
+            
             $coinTx = CoinTransaction::firstOrCreate(
                 [
                     'user_id' => $lockedUser->id,
@@ -844,7 +920,11 @@ class WalletController extends Controller
                     'balance_after' => 0,
                     'payment_id' => $data['razorpay_payment_id'],
                     'description' => ($meta['package_name'] ?? 'Coin purchase') . ": {$coins} coins" . ($bonusCoins > 0 ? " + {$bonusCoins} bonus" : ''),
-                    'meta' => array_merge($meta, ['status' => 'completed']),
+                    'meta' => array_merge($meta, [
+                        'status' => 'completed',
+                        'currency' => $transactionCurrency,
+                        'paid_amount' => $transactionAmount,
+                    ]),
                 ]
             );
 
@@ -857,8 +937,8 @@ class WalletController extends Controller
                 // Step 6: Create invoice and generate PDF
                 $invoice = $this->createInvoice($order, $coinTx, $user);
 
-                // Step 7: Send success notification + push
-                $user->notify(new PaymentSuccessNotification($order, $coinTx, $invoice));
+                // Step 7: Send success notification via job (async)
+                SendPaymentSuccessNotification::dispatch($user, $order, $coinTx, $invoice);
 
             DB::commit();
 
@@ -873,6 +953,9 @@ class WalletController extends Controller
             ]);
 
                 // Step 7: Return response
+            // Refresh user to get latest coin balance
+            $user->refresh();
+            
             return response()->json([
                 'success' => true,
                 'message' => 'Payment successful! Coins credited to your wallet.',
@@ -882,6 +965,7 @@ class WalletController extends Controller
                     'bonus_coins' => $bonusCoins,
                 ],
                 'balance' => $user->coins,
+                'currency' => $transactionCurrency,
                 'transaction' => [
                     'id' => $coinTx->id,
                     'status' => 'completed',
@@ -893,6 +977,7 @@ class WalletController extends Controller
                     'razorpay_order_id' => $order->razorpay_order_id,
                     'razorpay_payment_id' => $order->razorpay_payment_id,
                     'amount' => $order->amount,
+                    'currency' => $order->currency,
                     'status' => $order->status,
                     'paid_at' => $order->paid_at,
                 ],
@@ -932,8 +1017,8 @@ class WalletController extends Controller
                         'failed_at' => now()->toIso8601String(),
                     ]),
                 ]);
-                // Send failure notification
-                $user->notify(new PaymentFailedNotification($order, $paymentTx, 'Server error'));
+                // Send failure notification via job
+                SendPaymentFailedNotification::dispatch($user, $order, $paymentTx, 'Server error');
             }
 
             return response()->json([
@@ -1271,8 +1356,8 @@ class WalletController extends Controller
 
                     $invoice = $this->createInvoice($order, $coinTx, $user);
 
-                    // Send notification
-                    $user->notify(new PaymentSuccessNotification($order, $coinTx, $invoice));
+                    // Send notification via job
+                    SendPaymentSuccessNotification::dispatch($user, $order, $coinTx, $invoice);
                 }
 
             DB::commit();
@@ -1324,7 +1409,7 @@ class WalletController extends Controller
                 $user = User::find($paymentTx->user_id);
                 if ($user) {
                     $reason = $payment['error_description'] ?? $payment['error_reason'] ?? 'Payment failed';
-                    $user->notify(new PaymentFailedNotification($order, $paymentTx, $reason));
+                    SendPaymentFailedNotification::dispatch($user, $order, $paymentTx, $reason);
                 }
             }
 
@@ -1757,18 +1842,23 @@ class WalletController extends Controller
             // Create new order (copy from failed order)
             $receipt = 'coin_retry_' . $user->id . '_' . time();
 
-            // Determine pricing: force INR and only apply GST for India users
-            $isIndia = $this->isIndianUser($user);
-            \Log::info('Retry payment - isIndianUser: ' . ($isIndia ? 'true' : 'false'), [
-                'user_id' => $user->id,
-                'country_code' => $user->country_code,
-            ]);
-            $gstRate = (float) (env('COIN_GST_RATE', 0.18));
-            $currency = 'INR';
+            // Use CoinPricingService for dynamic pricing
+            $pricingData = CoinPricingService::calculatePackagePrice($package, $user);
+            
+            $isIndia = $pricingData['is_india'];
+            $currency = $pricingData['currency'];
+            $subtotal = $pricingData['subtotal'];
+            $taxAmount = $pricingData['tax_amount'];
+            $totalAmount = $pricingData['total'];
+            $gstRate = $pricingData['gst_rate'];
 
-            $subtotal = (float) $package->price;
-            $taxAmount = $isIndia ? round($subtotal * $gstRate, 2) : 0.0;
-            $totalAmount = round($subtotal + $taxAmount, 2);
+            \Log::info('Retry payment pricing', [
+                'user_id' => $user->id,
+                'country_iso' => $user->country_iso,
+                'is_india' => $isIndia,
+                'currency' => $currency,
+                'total' => $totalAmount,
+            ]);
 
             // Create new order copying data from failed order
             $newOrder = Order::create([
@@ -1784,13 +1874,13 @@ class WalletController extends Controller
                     'retry_of_order' => $failedOrder->id,
                     'original_order_created_at' => $failedOrder->created_at->toIso8601String(),
                     'package_name' => $package->name,
-                    'coins' => $package->coins,
-                    'bonus_coins' => $package->bonus_coins,
+                    'user_country' => $user->country,
+                    'user_country_iso' => $user->country_iso,
                     'pricing' => [
                         'is_india' => $isIndia,
-                        'gst_rate' => $isIndia ? $gstRate : 0,
-                        'subtotal_inr' => $subtotal,
-                        'tax_amount_inr' => $taxAmount,
+                        'gst_rate' => $gstRate,
+                        'subtotal' => $subtotal,
+                        'tax_amount' => $taxAmount,
                         'total_amount' => $totalAmount,
                         'currency' => $currency,
                     ],
@@ -1804,7 +1894,7 @@ class WalletController extends Controller
             );
 
             $razorpayOrder = $rzp->order->create([
-                'amount' => (int) ($totalAmount * 100),
+                'amount' => (int) round($totalAmount * 100),
                 'currency' => $currency,
                 'receipt' => $receipt,
                 'payment_capture' => 1,
@@ -1814,6 +1904,9 @@ class WalletController extends Controller
                     'package_id' => $package->id,
                     'type' => 'coin_purchase_retry',
                     'original_order_id' => $failedOrder->id,
+                    'user_country_iso' => $user->country_iso,
+                    'display_currency' => $currency,
+                    'display_amount' => $totalAmount,
                 ],
             ]);
 
@@ -1837,17 +1930,17 @@ class WalletController extends Controller
                 'meta' => [
                     'package_id' => $package->id,
                     'package_name' => $package->name,
-                    'coins' => $package->coins,
-                    'bonus_coins' => $package->bonus_coins,
+                    'user_country' => $user->country,
+                    'is_india' => $isIndia,
                     'status' => 'INITIATED',
                     'retry_of_order' => $failedOrder->id,
                     'original_transaction_id' => PaymentTransaction::where('order_id', $failedOrder->id)->value('id'),
                     'pricing' => [
                         'is_india' => $isIndia,
                         'currency' => $currency,
-                        'subtotal_inr' => $subtotal,
-                        'tax_amount_inr' => $taxAmount,
-                        'gst_rate' => $isIndia ? $gstRate : 0,
+                        'subtotal' => $subtotal,
+                        'tax_amount' => $taxAmount,
+                        'gst_rate' => $gstRate,
                         'total_amount' => $totalAmount,
                     ],
                 ],
@@ -1975,8 +2068,8 @@ class WalletController extends Controller
             CheckPendingPaymentStatus::dispatch($order->id, $transaction->id)
                 ->delay(now()->addMinutes($delayMinutes));
 
-            // Send pending notification
-            $user->notify(new PaymentPendingNotification($order, $transaction));
+            // Send pending notification via job
+            SendPaymentPendingNotification::dispatch($user, $order, $transaction);
 
             return response()->json([
                 'success' => true,

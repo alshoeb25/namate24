@@ -14,6 +14,9 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use App\Notifications\LoginSuccessNotification;
+use App\Models\UserActivity;
+use App\Jobs\RecordLoginActivity;
+use App\Jobs\RecordLogoutActivity;
 
 class AuthController extends Controller
 {
@@ -37,6 +40,10 @@ class AuthController extends Controller
         // Generate unique referral code for new user
         $userReferralCode = $this->generateReferralCode();
 
+        // Get IP address and detect country
+        $ip = $request->ip();
+        $countryData = $this->detectCountry($ip);
+
         $user = User::create([
             'name'     => $data['name'],
             'email'    => $data['email'] ?? null,
@@ -46,6 +53,9 @@ class AuthController extends Controller
             'email_verification_token' => $emailVerificationToken,
             'email_verification_token_expires_at' => $data['email'] ? Carbon::now()->addHours(24) : null,
             'referral_code' => $userReferralCode,
+            'country_code' => $countryData['country_code'],
+            'country' => $countryData['country'],
+            'country_iso' => $countryData['country_iso'],
             'coins' => 0, // Initialize with 0 coins
         ]);
 
@@ -126,6 +136,9 @@ class AuthController extends Controller
                 'email_sent' => true,
             ], 403);
         }
+
+        // Dispatch job to record login activity asynchronously
+        dispatch(new RecordLoginActivity($user->id, $request->ip(), $request->userAgent()));
 
         $redirectUrl = $this->getRedirectUrl($user);
 
@@ -222,6 +235,13 @@ class AuthController extends Controller
 
     public function logout()
     {
+        $user = auth('api')->user();
+        
+        if ($user) {
+            // Dispatch job to record logout activity asynchronously
+            dispatch(new RecordLogoutActivity($user->id));
+        }
+        
         auth('api')->logout();
         return response()->json(['message' => 'Logged out']);
     }
@@ -411,6 +431,108 @@ class AuthController extends Controller
     {
         return in_array($ip, ['127.0.0.1', '::1', 'localhost']) 
             || filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
+    }
+
+    /**
+     * Detect country from IP address with full details
+     */
+    private function detectCountry(string $ip): array
+    {
+        $default = [
+            'country_code' => 'IN',
+            'country' => 'India',
+            'country_iso' => 'IN',
+        ];
+
+        // Skip local/private IPs
+        if ($this->isLocalIp($ip)) {
+            return $default;
+        }
+
+        try {
+            // Use ip-api.com for geolocation (free, no API key needed)
+            $response = @file_get_contents("http://ip-api.com/json/{$ip}?fields=status,country,countryCode");
+            
+            if ($response) {
+                $data = json_decode($response, true);
+                
+                if (isset($data['status']) && $data['status'] === 'success') {
+                    $countryCode = $data['countryCode'] ?? null;
+                    $country = $data['country'] ?? null;
+                    
+                    if ($countryCode && $country) {
+                        return [
+                            'country_code' => strtoupper($countryCode),
+                            'country' => $country,
+                            'country_iso' => strtoupper($countryCode),
+                        ];
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Country detection failed: ' . $e->getMessage());
+        }
+
+        return $default;
+    }
+
+    /**
+     * Record user login activity
+     */
+
+    /**
+     * Get user activities (login/logout history)
+     */
+    public function getUserActivities(Request $request)
+    {
+        $user = auth('api')->user();
+        
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $limit = $request->get('limit', 50);
+        $page = $request->get('page', 1);
+        $days = $request->get('days', 30);
+
+        $activities = UserActivity::forUser($user->id)
+            ->recent($days)
+            ->orderBy('login_time', 'desc')
+            ->paginate($limit);
+
+        return response()->json([
+            'success' => true,
+            'data' => $activities,
+        ]);
+    }
+
+    /**
+     * Get current active session
+     */
+    public function getCurrentActivity(Request $request)
+    {
+        $user = auth('api')->user();
+        
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $activity = UserActivity::forUser($user->id)
+            ->active()
+            ->latest('login_time')
+            ->first();
+
+        if (!$activity) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No active session',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $activity,
+        ]);
     }
 }
 

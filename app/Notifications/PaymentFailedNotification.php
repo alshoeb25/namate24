@@ -3,7 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Order;
-use App\Models\CoinTransaction;
+use App\Models\PaymentTransaction;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Messages\BroadcastMessage;
@@ -20,7 +20,7 @@ class PaymentFailedNotification extends Notification implements ShouldBroadcastN
     /**
      * Create a new notification instance.
      */
-    public function __construct(Order $order, CoinTransaction $transaction, $reason = null)
+    public function __construct(Order $order, PaymentTransaction $transaction, $reason = null)
     {
         $this->order = $order;
         $this->transaction = $transaction;
@@ -46,21 +46,28 @@ class PaymentFailedNotification extends Notification implements ShouldBroadcastN
      */
     public function toMail($notifiable): MailMessage
     {
-        $walletPath = method_exists($notifiable, 'hasRole') && $notifiable->hasRole('tutor')
-            ? '/tutor/wallet'
-            : '/student/wallet';
-
+        $currency = $this->order->currency ?? 'INR';
+        $currencySymbol = $currency === 'USD' ? '$' : '₹';
+        
         return (new MailMessage)
-            ->subject('Payment Failed')
-            ->greeting('Hello ' . $notifiable->name . ',')
-            ->line('We were unable to process your payment.')
-            ->line('**Transaction Details:**')
-            ->line('Amount: ₹' . number_format($this->order->amount, 2))
-            ->line('Order ID: ' . $this->order->razorpay_order_id)
-            ->line('Reason: ' . $this->reason)
-            ->line('Don\'t worry! You can retry the payment anytime.')
-            ->action('Retry Payment', url($walletPath . '?payment=failed&retry=' . $this->order->id))
-            ->line('If you continue to face issues, please contact our support team.');
+            ->subject('Payment Failed - ' . config('app.name'))
+            ->view('emails.payment-failed', [
+                'user' => $notifiable,
+                'userName' => $notifiable->name,
+                'amount' => $this->order->amount,
+                'currency' => $currency,
+                'currencySymbol' => $currencySymbol,
+                'coins' => $this->order->coins ?? 0,
+                'orderId' => $this->order->razorpay_order_id,
+                'transactionId' => $this->transaction->razorpay_payment_id ?? $this->order->razorpay_order_id,
+                'attemptDate' => $this->order->created_at->format('M d, Y h:i A'),
+                'reason' => $this->reason,
+                'errorMessage' => $this->reason,
+                'walletUrl' => url(method_exists($notifiable, 'hasRole') && $notifiable->hasRole('tutor')
+                    ? '/tutor/wallet'
+                    : '/student/wallet'),
+                'transactionDate' => $this->order->created_at,
+            ]);
     }
 
     /**
@@ -72,12 +79,16 @@ class PaymentFailedNotification extends Notification implements ShouldBroadcastN
             ? '/tutor/wallet'
             : '/student/wallet';
 
+        $currency = $this->order->currency ?? 'INR';
+        $currencySymbol = $currency === 'USD' ? '$' : '₹';
+
         return [
             'type' => 'payment_failed',
             'title' => 'Payment Failed',
-            'message' => "Payment of ₹{$this->order->amount} failed. {$this->reason}",
+            'message' => "Payment of {$currencySymbol}{$this->order->amount} failed. {$this->reason}",
             'order_id' => $this->order->id,
             'amount' => $this->order->amount,
+            'currency' => $currency,
             'reason' => $this->reason,
             'can_retry' => true,
             'url' => url($walletPath . '?payment=failed&order=' . $this->order->id),

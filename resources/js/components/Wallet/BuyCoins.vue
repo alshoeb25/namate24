@@ -43,14 +43,13 @@
             <div class="mt-3 pt-3 border-t border-gray-200">
               <div class="space-y-1">
                 <p class="text-3xl font-bold text-gray-800">
-                  <span v-if="displayPrice(pkg).symbol === '₹'">₹{{ displayPrice(pkg).total }}</span>
-                  <span v-else>
-                    ${{ displayPrice(pkg).total }}
-                    <span class="text-sm text-gray-500">({{ displayPrice(pkg).hint }})</span>
-                  </span>
+                  {{ pkg.display_price || displayPrice(pkg).symbol + displayPrice(pkg).total }}
                 </p>
-                <p v-if="displayPrice(pkg).symbol === '₹'" class="text-xs text-gray-500">
-                  Base: ₹{{ displayPrice(pkg).base }} · GST: ₹{{ displayPrice(pkg).tax }}
+                <p v-if="pkg.pricing && pkg.pricing.currency === 'INR'" class="text-xs text-gray-500">
+                  Base: ₹{{ Number(pkg.pricing.subtotal).toFixed(2) }} · GST ({{ pkg.pricing.gst_rate }}%): ₹{{ Number(pkg.pricing.tax_amount).toFixed(2) }}
+                </p>
+                <p v-else-if="pkg.pricing && pkg.pricing.currency === 'USD'" class="text-xs text-gray-500">
+                  {{ pkg.pricing.display_price }} (No GST)
                 </p>
               </div>
               <p v-if="pkg.description" class="text-xs text-gray-500 mt-2">{{ pkg.description }}</p>

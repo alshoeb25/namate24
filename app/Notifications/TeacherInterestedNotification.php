@@ -46,13 +46,20 @@ class TeacherInterestedNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('New Teacher Interest in Your Requirement')
-            ->greeting('Hello ' . $notifiable->name . '!')
-            ->line('A teacher is interested in your tuition requirement.')
-            ->line('Teacher: ' . $this->teacher->name)
-            ->line('Subject: ' . $this->enquiry->subject)
-            ->action('View Details', url('/student/requirements/' . $this->enquiry->id))
-            ->line('Thank you for using our platform!');
+            ->subject('New Tutor Interest in Your Requirement')
+            ->view('emails.new-enquiry', [
+                'studentName' => $notifiable->name,
+                'tutorName' => $this->teacher->name,
+                'tutorPhone' => $this->teacher->phone,
+                'tutorEmail' => $this->teacher->email,
+                'tutorRating' => $this->teacher->rating ?? 4.5,
+                'subject' => $this->enquiry->subject,
+                'description' => $this->enquiry->description,
+                'enquiryId' => $this->enquiry->id,
+                'currentLeads' => $this->enquiry->current_leads ?? 0,
+                'maxLeads' => $this->enquiry->max_leads ?? 5,
+                'requirementUrl' => url('/student/requirements/' . $this->enquiry->id),
+            ]);
     }
 
     /**

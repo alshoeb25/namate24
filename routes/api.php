@@ -72,6 +72,9 @@ Route::get('field-labels', function(Request $request) {
 // Public Tutor Endpoints
 Route::get('tutor/levels/all', [TutorProfileController::class, 'getAllLevels']);
 
+// Public Coin Package Endpoint (no auth required - shows base prices)
+Route::get('wallet/packages', [WalletController::class, 'packages']);
+
 // Razorpay Webhook and Callback (Public Routes)
 Route::post('wallet/webhook', [WalletController::class, 'webhook']); // Razorpay webhook
 Route::get('wallet/payment-callback', [WalletController::class, 'paymentCallback']); // Payment redirect callback
@@ -130,6 +133,10 @@ Route::middleware('auth:api')->group(function() {
     });
 
     Route::post('logout', [AuthController::class,'logout']);
+
+    // User Activities
+    Route::get('user/activities', [\App\Http\Controllers\Api\AuthController::class, 'getUserActivities']);
+    Route::get('user/activities/current', [\App\Http\Controllers\Api\AuthController::class, 'getCurrentActivity']);
 
     // User Management & Enrollment
     Route::post('user/enroll-teacher', [\App\Http\Controllers\Api\UserController::class, 'enrollAsTeacher']);
@@ -221,6 +228,7 @@ Route::middleware('auth:api')->group(function() {
         Route::get('payment-transactions', [WalletController::class, 'paymentTransactions']); // PaymentTransaction-only API
         Route::get('coin-transactions', [WalletController::class, 'coinTransactions']); // CoinTransaction-only API with filters
         Route::get('packages', [WalletController::class, 'packages']); // Get coin packages
+        Route::get('coin-packages', [WalletController::class, 'coinPackages']); // Get coin packages with dynamic pricing
         Route::post('purchase', [WalletController::class, 'purchaseCoins']); // Create Razorpay order
         Route::post('verify-payment', [WalletController::class, 'verifyPayment']); // Verify payment and credit coins
         Route::post('payment-failed', [WalletController::class, 'markPaymentFailed']); // Mark payment as failed from gateway

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verify Your Email</title>
+    <title>New Enquiry Notification</title>
     <style>
         /* Reset styles for email clients */
         * {
@@ -74,8 +74,8 @@
             border-radius: 0 8px 8px 0;
         }
 
-        /* Verify button */
-        .verify-button {
+        /* Action button */
+        .action-button {
             display: block;
             width: 280px;
             margin: 30px auto;
@@ -90,32 +90,31 @@
             transition: background-color 0.3s;
         }
 
-        .verify-button:hover {
+        .action-button:hover {
             background-color: #e0559c;
         }
 
-        /* Expiry warning */
-        .warning {
-            text-align: center;
-            padding: 15px;
-            background-color: #fff8e1;
-            border: 1px solid #ffecb3;
-            border-radius: 6px;
-            margin: 25px 0;
-            color: #5d4037;
-        }
-
-        .warning-icon {
-            color: #ff9800;
-            font-weight: bold;
-        }
-
-        /* Alternative link */
-        .alternative-link {
-            text-align: center;
+        /* Details table */
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
             margin: 20px 0;
-            font-size: 14px;
-            color: #777;
+            background-color: #fff;
+        }
+
+        .details-table td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .details-table td:first-child {
+            font-weight: bold;
+            color: #666;
+            width: 35%;
+        }
+
+        .details-table td:last-child {
+            color: #333;
         }
 
         /* Link styling */
@@ -156,20 +155,20 @@
             color: #999;
         }
 
-        /* Welcome box */
-        .welcome-box {
+        /* Notification badge */
+        .notification-badge {
             background: linear-gradient(135deg, #ff69b4 0%, #ff4081 100%);
             color: white;
-            padding: 25px;
+            padding: 20px;
             border-radius: 8px;
             margin: 25px 0;
             text-align: center;
         }
 
-        .welcome-box h2 {
+        .notification-badge h2 {
             color: white;
             margin-bottom: 10px;
-            font-size: 24px;
+            font-size: 22px;
         }
 
         /* Responsive adjustments */
@@ -182,7 +181,7 @@
                 font-size: 24px;
             }
 
-            .verify-button {
+            .action-button {
                 width: 90%;
                 padding: 14px 20px;
                 font-size: 16px;
@@ -209,60 +208,61 @@
 
         <!-- Main content -->
         <div class="content">
-            <h1>Verify Your Email Address</h1>
+            <h1>📩 New Enquiry Received!</h1>
 
-            <div class="welcome-box">
-                <h2>Welcome to Namate24! 🎉</h2>
-                <p style="margin: 0; color: white;">We're excited to have you join our learning community!</p>
+            <div class="notification-badge">
+                <h2>You Have a New Student Enquiry</h2>
+                <p style="margin: 0; color: white;">Someone is interested in your tutoring services!</p>
             </div>
 
-            <p>Hello <span class="highlight">{{ $user->name }}</span>,</p>
+            <p>Hello <span class="highlight">{{ $tutor->name }}</span>,</p>
 
-            <p>Thank you for creating an account with us! To get started and access all features, please verify your
-                email address by clicking the button below:</p>
+            <p>Great news! A student has sent you an enquiry about your tutoring services. Here are the details:</p>
 
-            <a href="{{ $verificationUrl }}" class="verify-button">Verify Email Address</a>
+            <table class="details-table">
+                <tr>
+                    <td>Student Name:</td>
+                    <td><strong>{{ $student->name }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Subject:</td>
+                    <td><strong>{{ $subject ?? 'Not specified' }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Level:</td>
+                    <td><strong>{{ $level ?? 'Not specified' }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Enquiry Date:</td>
+                    <td><strong>{{ $enquiryDate }}</strong></td>
+                </tr>
+            </table>
 
-            <div class="warning">
-                <span class="warning-icon">⚠</span> This verification link will expire in <span class="highlight">24
-                    hours</span> for security reasons.
+            @if(isset($message))
+            <div class="info-box">
+                <p><strong>Student's Message:</strong></p>
+                <p>{{ $message }}</p>
             </div>
+            @endif
 
-            <div class="alternative-link">
-                <p>If the button above doesn't work, copy and paste this link into your browser:</p>
-                <p><a href="{{ $verificationUrl }}">{{ $verificationUrl }}</a></p>
-            </div>
+            <a href="{{ $enquiryUrl }}" class="action-button">View Enquiry Details</a>
 
             <div class="info-box">
-                <p><strong>Why verify your email?</strong></p>
-                <ul style="margin: 10px 0; padding-left: 20px;">
-                    <li>Access all platform features</li>
-                    <li>Secure your account</li>
-                    <li>Receive important notifications</li>
-                    <li>Connect with tutors and students</li>
-                </ul>
+                <p><strong>💡 Quick Tip:</strong></p>
+                <p>Respond quickly to increase your chances of converting this enquiry into a booking! Students appreciate prompt responses.</p>
             </div>
 
-            <div class="info-box">
-                <p><strong>Didn't create an account?</strong></p>
-                <p>If you didn't sign up for {{ config('app.name') }}, you can safely ignore this email. No account has
-                    been created yet.</p>
-            </div>
-
-            <p>Once verified, you'll be ready to explore everything our platform has to offer!</p>
+            <p>Log in to your dashboard to view full details and respond to this enquiry.</p>
         </div>
 
         <!-- Footer -->
         <div class="footer">
-            <p>This email was sent to <span class="highlight">{{ $user->email }}</span>.</p>
-
-            <p>If you're having trouble with the button above, copy and paste the URL below into your web browser:</p>
-            <p><small>{{ $verificationUrl }}</small></p>
+            <p>This email was sent to <span class="highlight">{{ $tutor->email }}</span>.</p>
 
             <div class="support">
-                <p>Need help getting started? Contact our support team</p>
+                <p>Need help managing enquiries? <a href="{{ config('app.url') }}/support">Contact our support team</a></p>
                 <p>&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
-                <p style="margin-top: 10px;">Secure learning connections • Building better futures</p>
+                <p style="margin-top: 10px;">Connecting students with great tutors</p>
             </div>
         </div>
     </div>

@@ -45,14 +45,20 @@ class TeacherHiredNotification extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
+        $subjects = implode(', ', $this->enquiry->subjects?->pluck('name')->toArray() ?? []);
+        
         return (new MailMessage)
-            ->subject('You Have Been Hired! 🎉')
-            ->greeting('Congratulations, ' . $notifiable->name . '!')
-            ->line('A student has hired you to teach them.')
-            ->line('Student: ' . $this->student->name)
-            ->line('Subjects: ' . implode(', ', $this->enquiry->subjects?->pluck('name')->toArray() ?? []))
-            ->action('View Details', url('/tutor/dashboard/enquiries/' . $this->enquiry->id))
-            ->line('Good luck with your tutoring session!');
+            ->subject('🎉 You Have Been Hired!')
+            ->view('emails.tutor-hired-notification', [
+                'tutorName' => $notifiable->name,
+                'studentName' => $this->student->name,
+                'studentPhone' => $this->student->phone,
+                'studentEmail' => $this->student->email,
+                'subjects' => $subjects,
+                'requirementDescription' => $this->enquiry->description,
+                'enquiryId' => $this->enquiry->id,
+                'dashboardUrl' => url('/tutor/dashboard/enquiries/' . $this->enquiry->id),
+            ]);
     }
 
     /**

@@ -50,14 +50,14 @@ class RefundApprovedNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Refund Approved - ' . $this->refundRequest->refund_amount . ' Coins Credited')
-            ->greeting('Great news, ' . $notifiable->name . '!')
-            ->line('Your refund request has been approved by our team.')
-            ->line('**Amount:** ' . $this->refundRequest->refund_amount . ' coins')
-            ->line('**Reason:** ' . $this->refundRequest->getReasonLabel())
-            ->line('**Enquiry:** ' . ($this->refundRequest->enquiry?->student_name ?? 'N/A'))
-            ->line('The coins have been credited to your wallet and are ready to use.')
-            ->action('View Wallet', url('/teacher/wallet'))
-            ->line('Thank you for your understanding!');
+            ->subject('Refund Approved - ' . config('app.name'))
+            ->view('emails.refund-confirmation', [
+                'userName' => $notifiable->name,
+                'refundAmount' => $this->refundRequest->refund_amount,
+                'reason' => $this->refundRequest->getReasonLabel(),
+                'enquiryName' => $this->refundRequest->enquiry?->student_name ?? 'N/A',
+                'transactionDate' => $this->refundRequest->created_at,
+                'walletUrl' => url('/teacher/wallet'),
+            ]);
     }
 }

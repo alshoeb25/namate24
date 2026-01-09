@@ -44,22 +44,29 @@ class PaymentPendingNotification extends Notification implements ShouldBroadcast
      */
     public function toMail($notifiable): MailMessage
     {
-        $walletPath = method_exists($notifiable, 'hasRole') && $notifiable->hasRole('tutor')
-            ? '/tutor/wallet'
-            : '/student/wallet';
-
+        $meta = $this->transaction->meta ?? [];
+        $currency = $this->order->currency ?? 'INR';
+        $currencySymbol = $currency === 'USD' ? '$' : '₹';
+        
         return (new MailMessage)
-            ->subject('Payment Pending - We\'re Checking Status')
-            ->greeting('Hello ' . $notifiable->name . ',')
-            ->line('Your payment is currently pending.')
-            ->line('**Transaction Details:**')
-            ->line('Amount: ₹' . number_format($this->order->amount, 2))
-            ->line('Order ID: ' . $this->order->razorpay_order_id)
-            ->line('We are verifying your payment status with the payment gateway.')
-            ->line('This usually takes 10-15 minutes. We will notify you once the payment is confirmed.')
-            ->line('If your payment was successful, coins will be automatically credited to your wallet.')
-            ->action('Check Status', url($walletPath . '?payment=pending&order=' . $this->order->id))
-            ->line('If you have any concerns, please contact our support team.');
+            ->subject('Payment Pending - ' . config('app.name'))
+            ->view('emails.payment-pending', [
+                'user' => $notifiable,
+                'userName' => $notifiable->name,
+                'amount' => $this->order->amount,
+                'currency' => $currency,
+                'currencySymbol' => $currencySymbol,
+                'coins' => $this->order->coins ?? 0,
+                'orderId' => $this->order->razorpay_order_id,
+                'transactionId' => $this->order->razorpay_order_id,
+                'initiatedDate' => $this->order->created_at->format('M d, Y h:i A'),
+                'paymentMethod' => $meta['payment_method'] ?? 'Razorpay (Online)',
+                'estimatedTime' => $meta['estimated_time'] ?? '10-15 minutes',
+                'walletUrl' => url(method_exists($notifiable, 'hasRole') && $notifiable->hasRole('tutor')
+                    ? '/tutor/wallet'
+                    : '/student/wallet'),
+                'transactionDate' => $this->order->created_at,
+            ]);
     }
 
     /**
@@ -71,12 +78,16 @@ class PaymentPendingNotification extends Notification implements ShouldBroadcast
             ? '/tutor/wallet'
             : '/student/wallet';
 
+        $currency = $this->order->currency ?? 'INR';
+        $currencySymbol = $currency === 'USD' ? '$' : '₹';
+
         return [
             'type' => 'payment_pending',
             'title' => 'Payment Pending',
-            'message' => "Payment of ₹{$this->order->amount} is pending. We're verifying the status.",
+            'message' => "Payment of {$currencySymbol}{$this->order->amount} is pending. We're verifying the status.",
             'order_id' => $this->order->id,
             'amount' => $this->order->amount,
+            'currency' => $currency,
             'url' => url($walletPath . '?payment=pending&order=' . $this->order->id),
         ];
     }

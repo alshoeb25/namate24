@@ -179,6 +179,13 @@ export default {
       if (amount && amount > 1000) return amount / 100;
       return amount;
     },
+    currency() {
+      // Get currency from transaction details or default to INR
+      return this.details.currency || 'INR';
+    },
+    currencySymbol() {
+      return this.currency === 'USD' ? '$' : '₹';
+    },
     title() {
       if (this.status === 'failed') return 'Payment Failed';
       if (this.status === 'pending') return 'Payment Pending';
@@ -227,7 +234,12 @@ export default {
   methods: {
     formatAmount(value) {
       const num = Number(value ?? 0);
-      return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(num);
+      const currency = this.currency;
+      const locale = currency === 'USD' ? 'en-US' : 'en-IN';
+      return new Intl.NumberFormat(locale, { 
+        style: 'currency', 
+        currency: currency 
+      }).format(num);
     },
     viewInvoice() {
       const orderId = this.details?.orderId;
@@ -272,10 +284,10 @@ export default {
       
       // Determine user role from store or current route
       const currentPath = window.location.pathname;
-      let targetPath = '/student/wallet/payment-transactions';
+      let targetPath = '/student/wallet/payment-history';
       
       if (currentPath.includes('/tutor/')) {
-        targetPath = '/tutor/wallet/payment-transactions';
+        targetPath = '/tutor/wallet/payment-history';
       }
       
       // Navigate using router if available, otherwise use window.location
@@ -292,17 +304,8 @@ export default {
         return;
       }
 
-      // Check if user is authenticated by trying to fetch user endpoint
-      axios.get('/api/user')
-        .then(() => {
-          // User is authenticated, open receipt download
-          window.location.href = `/api/orders/${orderId}/receipt`;
-        })
-        .catch(() => {
-          // User is not authenticated, redirect to login with return URL
-          const returnUrl = encodeURIComponent(window.location.pathname + window.location.search + window.location.hash);
-          window.location.href = `/login?return_url=${returnUrl}`;
-        });
+      // Direct download without authentication check - backend will handle auth
+      window.location.href = `/api/orders/${orderId}/receipt`;
     }
   }
 };

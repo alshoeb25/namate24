@@ -110,11 +110,11 @@
             ref="buyCoinsComponent"
             :packages="packages"
             :loading="loading"
-            :userCountryCode="$store?.state?.user?.country_code || 'IN'"
+            :userCountryCode="user.country_iso || 'IN'"
             :prefill="{
-              name: $store?.state?.user?.name || '',
-              email: $store?.state?.user?.email || '',
-              contact: $store?.state?.user?.phone || ''
+              name: user.name || '',
+              email: user.email || '',
+              contact: user.phone || ''
             }"
             @order-created="handleOrderCreated"
             @payment-success="handlePaymentSuccess"
@@ -218,7 +218,7 @@
                     </div>
                   </div>
                   <div class="text-right">
-                    <p class="text-lg font-bold text-gray-800">₹{{ tx.amount }}</p>
+                    <p class="text-lg font-bold text-gray-800">{{ formatCurrency(tx.amount, tx.currency) }}</p>
                     <p class="text-xs">
                       <span
                         class="px-2 py-0.5 rounded-full font-medium"
@@ -275,6 +275,7 @@ export default {
   },
   setup() {
     const wallet = ref({});
+    const user = ref({});
     const packages = ref([]);
     const loading = ref(true);
     const activeTab = ref('buy');
@@ -292,11 +293,21 @@ export default {
       }
     };
 
+    const fetchUser = async () => {
+      try {
+        const { data } = await axios.get('/api/user');
+        user.value = data;
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+        user.value = { country_iso: 'IN' };
+      }
+    };
+
     const fetchPackages = async () => {
       try {
         loading.value = true;
         const { data } = await axios.get('/api/wallet/packages');
-        packages.value = data;
+        packages.value = data.packages || data;
       } catch (error) {
         console.error('Failed to fetch packages:', error);
       } finally {
@@ -345,12 +356,14 @@ export default {
           transactionId: result?.transaction?.id || response?.razorpay_payment_id || order?.razorpay_order_id,
           paymentId: response?.razorpay_payment_id,
           orderId: order?.razorpay_order_id || order?.id,
+          invoiceId: result?.invoice?.id,
           date: order?.paid_at || new Date().toISOString(),
           amount,
           totalAmount: amount,
           basePrice: normalizeAmount(pkg.price),
           discount: 0,
           tax: null,
+          currency: order?.currency || result?.currency || 'INR',
           plan: pkg.name,
           paymentMethod: 'Razorpay',
           baseCoins,
@@ -380,6 +393,7 @@ export default {
           plan: pkg?.name,
           amount: normalizeAmount(pkg?.price),
           totalAmount: normalizeAmount(pkg?.price),
+          currency: pkg?.currency || 'INR',
           baseCoins: pkg?.coins,
           bonusCoins: pkg?.bonus_coins || 0,
           errorMessage: errorMsg,
@@ -458,7 +472,17 @@ export default {
       });
     };
 
+    const formatCurrency = (amount, currency = 'INR') => {
+      const curr = currency || 'INR';
+      const locale = curr === 'USD' ? 'en-US' : 'en-IN';
+      return new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: curr
+      }).format(amount);
+    };
+
     onMounted(() => {
+      fetchUser();
       fetchWallet();
       fetchPackages();
       // Preload latest 5 payment transactions
@@ -487,6 +511,7 @@ export default {
 
     return {
       wallet,
+      user,
       packages,
       loading,
       toast,
@@ -499,6 +524,7 @@ export default {
       getTransactionIconClass,
       getTransactionIcon,
       formatDate,
+      formatCurrency,
       showToast,
       transactionModal,
       retryPayment,

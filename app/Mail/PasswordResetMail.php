@@ -20,7 +20,7 @@ class PasswordResetMail extends Mailable implements ShouldQueue
     {
         return $this
             ->subject('Reset Your Password')
-            ->markdown('emails.password-reset', [
+            ->view('emails.password-reset', [
                 'user' => $this->user,
                 'resetUrl' => $this->resetUrl,
             ]);

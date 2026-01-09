@@ -6,7 +6,6 @@ use App\Models\CoinTransaction;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class CoinSpentNotification extends Notification implements ShouldQueue
@@ -28,29 +27,26 @@ class CoinSpentNotification extends Notification implements ShouldQueue
         return $channels;
     }
 
-    public function toMail(object $notifiable): MailMessage
+    public function toMail(object $notifiable)
     {
         $amount = abs($this->transaction->amount);
-        $type = $this->transaction->type;
-        $description = $this->transaction->description;
         $balance = $this->transaction->balance_after;
-
-        $mail = (new MailMessage)
-            ->subject('Coins Spent')
-            ->greeting('Hello ' . $notifiable->name . '!')
-            ->line('You spent ' . $amount . ' coins.')
-            ->line('Type: ' . $type)
-            ->line('Description: ' . ($description ?: 'Coin debit'))
-            ->line('New Balance: ' . $balance . ' coins');
-
         $meta = $this->transaction->meta ?? [];
-        if (!empty($meta['enquiry_id'])) {
-            $mail->line('Enquiry ID: ' . $meta['enquiry_id']);
-        }
 
-        return $mail
-            ->action('View Wallet', url('/wallet'))
-            ->line('If this wasn\'t you, please contact support.');
+        return (new \Illuminate\Notifications\Messages\MailMessage)
+            ->subject('Coins Spent - ' . config('app.name'))
+            ->view('emails.coins-spent', [
+                'userName' => $notifiable->name,
+                'coinsSpent' => $amount,
+                'description' => $this->transaction->description,
+                'transactionType' => $this->transaction->type,
+                'currentBalance' => $balance,
+                'walletUrl' => url(method_exists($notifiable, 'hasRole') && $notifiable->hasRole('tutor') 
+                    ? '/tutor/wallet' 
+                    : '/student/wallet'),
+                'enquiryId' => $meta['enquiry_id'] ?? null,
+                'transactionDate' => $this->transaction->created_at,
+            ]);
     }
 
     public function toArray(object $notifiable): array

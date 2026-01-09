@@ -13,7 +13,7 @@ class User extends Authenticatable implements JWTSubject
 {
     use Notifiable, HasRoles;
 
-    protected $fillable = ['name','email','phone','country_code','password','avatar','role','phone_otp','phone_otp_expires_at','phone_verified_at','email_verified_at','email_verification_token','email_verification_token_expires_at','coins','referral_code','referred_by'];
+    protected $fillable = ['name','email','phone','country_code','country','country_iso','password','avatar','role','phone_otp','phone_otp_expires_at','phone_verified_at','email_verified_at','email_verification_token','email_verification_token_expires_at','coins','referral_code','referred_by'];
 
     protected $hidden = ['password'];
 
@@ -53,6 +53,11 @@ class User extends Authenticatable implements JWTSubject
     public function referrals(): HasMany
     {
         return $this->hasMany(Referral::class, 'referrer_id');
+    }
+
+    public function activities(): HasMany
+    {
+        return $this->hasMany(UserActivity::class);
     }
 
     public function referredBy()

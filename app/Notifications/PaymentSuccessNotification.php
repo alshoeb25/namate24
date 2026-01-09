@@ -51,25 +51,37 @@ class PaymentSuccessNotification extends Notification implements ShouldBroadcast
         $coins = $meta['coins'] ?? $this->order->coins ?? 0;
         $bonusCoins = $meta['bonus_coins'] ?? $this->order->bonus_coins ?? 0;
         $totalCoins = $coins + $bonusCoins;
-
-        $walletPath = method_exists($notifiable, 'hasRole') && $notifiable->hasRole('tutor')
-            ? '/tutor/wallet'
-            : '/student/wallet';
+        
+        $currency = $this->order->currency ?? 'INR';
+        $currencySymbol = $currency === 'USD' ? '$' : '₹';
 
         return (new MailMessage)
             ->subject('Payment Successful - Coins Credited!')
-            ->greeting('Hello ' . $notifiable->name . '!')
-            ->line('Your payment has been successfully processed.')
-            ->line('**Transaction Details:**')
-            ->line('Amount Paid: ₹' . number_format($this->order->amount, 2))
-            ->line('Coins Credited: ' . $coins . ($bonusCoins > 0 ? " + {$bonusCoins} bonus coins" : ''))
-            ->line('Total Coins: ' . $totalCoins)
-            ->line('New Balance: ' . $notifiable->coins . ' coins')
-            ->line('Invoice Number: ' . $this->invoice->invoice_number)
-            ->line('Order ID: ' . $this->order->razorpay_order_id)
-            ->line('Payment ID: ' . $this->order->razorpay_payment_id)
-            ->action('View Transaction', url($walletPath . '?payment=success&order=' . $this->order->id))
-            ->line('Thank you for your purchase!');
+            ->view('emails.payment-success', [
+                'user' => $notifiable,
+                'userName' => $notifiable->name,
+                'amount' => $this->order->amount,
+                'currency' => $currency,
+                'currencySymbol' => $currencySymbol,
+                'coins' => $coins,
+                'coinsCredit' => $coins,
+                'bonusCoins' => $bonusCoins,
+                'totalCoins' => $totalCoins,
+                'currentBalance' => $notifiable->coins,
+                'invoiceNumber' => $this->invoice->invoice_number,
+                'orderId' => $this->order->razorpay_order_id,
+                'paymentId' => $this->order->razorpay_payment_id,
+                'transactionId' => $this->order->razorpay_payment_id ?? $this->order->razorpay_order_id,
+                'paymentDate' => $this->order->created_at->format('M d, Y h:i A'),
+                'paymentMethod' => 'Razorpay (Online)',
+                'dashboardUrl' => url(method_exists($notifiable, 'hasRole') && $notifiable->hasRole('tutor')
+                    ? '/tutor/wallet'
+                    : '/student/wallet'),
+                'walletUrl' => url(method_exists($notifiable, 'hasRole') && $notifiable->hasRole('tutor')
+                    ? '/tutor/wallet'
+                    : '/student/wallet'),
+                'transactionDate' => $this->order->created_at,
+            ]);
     }
 
     /**
@@ -80,6 +92,9 @@ class PaymentSuccessNotification extends Notification implements ShouldBroadcast
         $meta = $this->transaction->meta ?? [];
         $coins = $meta['coins'] ?? $this->order->coins ?? 0;
         $bonusCoins = $meta['bonus_coins'] ?? $this->order->bonus_coins ?? 0;
+        
+        $currency = $this->order->currency ?? 'INR';
+        $currencySymbol = $currency === 'USD' ? '$' : '₹';
 
         $walletPath = method_exists($notifiable, 'hasRole') && $notifiable->hasRole('tutor')
             ? '/tutor/wallet'
@@ -88,11 +103,12 @@ class PaymentSuccessNotification extends Notification implements ShouldBroadcast
         return [
             'type' => 'payment_success',
             'title' => 'Payment Successful',
-            'message' => "₹{$this->order->amount} payment successful. {$coins}" . 
+            'message' => "{$currencySymbol}{$this->order->amount} payment successful. {$coins}" . 
                 ($bonusCoins > 0 ? " + {$bonusCoins} bonus" : '') . " coins credited.",
             'order_id' => $this->order->id,
             'invoice_id' => $this->invoice->id,
             'amount' => $this->order->amount,
+            'currency' => $currency,
             'coins' => $coins + $bonusCoins,
             'balance' => $notifiable->coins,
             'time' => now()->toDateTimeString(),

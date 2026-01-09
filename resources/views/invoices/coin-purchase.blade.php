@@ -166,7 +166,7 @@
                                 $currency = $invoice->currency ?? 'INR';
                                 $symbol = $currency === 'USD' ? '$' : '₹';
                             @endphp
-                            {{ $symbol }}{{ number_format($invoice->amount, 2) }}
+                            {{ $symbol }}{{ number_format($invoice->amount, 2) }} {{ $currency }}
                         </td>
                     </tr>
                 </tbody>
@@ -180,24 +180,31 @@
                         $symbol = $currency === 'USD' ? '$' : '₹';
                         $pricing = $order->meta['pricing'] ?? null;
                         $isIndia = $pricing['is_india'] ?? ($currency === 'INR');
-                        if ($currency === 'INR' && $isIndia && $pricing) {
-                            $subtotal = (float) ($pricing['subtotal_inr'] ?? $invoice->amount);
-                            $taxAmount = (float) ($pricing['tax_amount_inr'] ?? 0);
+                        
+                        // Get subtotal and tax from pricing meta or calculate
+                        if ($pricing) {
+                            $subtotal = (float) ($pricing['subtotal'] ?? $invoice->amount);
+                            $taxAmount = (float) ($pricing['tax_amount'] ?? 0);
+                            $gstRate = $pricing['gst_rate'] ?? 0;
                         } else {
+                            // Fallback: assume no tax for non-India
                             $subtotal = (float) $invoice->amount;
                             $taxAmount = 0.0;
+                            $gstRate = 0;
                         }
                     @endphp
                     <tr>
                         <td>Subtotal:</td>
                         <td style="text-align: right;">{{ $symbol }}{{ number_format($subtotal, 2) }}</td>
                     </tr>
+                    @if($taxAmount > 0)
                     <tr>
-                        <td>Tax{{ ($currency === 'INR' && $isIndia) ? ' (GST)' : '' }}:</td>
+                        <td>Tax{{ ($currency === 'INR' && $isIndia) ? ' (GST ' . ($gstRate * 100) . '%)' : '' }}:</td>
                         <td style="text-align: right;">{{ $symbol }}{{ number_format($taxAmount, 2) }}</td>
                     </tr>
+                    @endif
                     <tr class="total-row">
-                        <td>Total:</td>
+                        <td>Total ({{ $currency }}):</td>
                         <td style="text-align: right;">{{ $symbol }}{{ number_format($invoice->amount, 2) }}</td>
                     </tr>
                 </table>

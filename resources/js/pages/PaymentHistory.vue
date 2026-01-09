@@ -309,6 +309,7 @@ export default {
       return {
         transactionId: tx.id,
         orderId: tx.order_id || tx.razorpay_order_id,
+        invoiceId: tx.invoice_id,
         paymentId: tx.razorpay_payment_id,
         date: tx.created_at,
         plan: meta.package_name || 'Coin Package',
@@ -319,6 +320,7 @@ export default {
         gstRate: pricing.gst_rate || null,
         totalAmount: tx.amount,
         amount: tx.amount,
+        currency: tx.currency || 'INR',
         baseCoins: tx.coins || 0,
         bonusCoins: 0,
         status: tx.status

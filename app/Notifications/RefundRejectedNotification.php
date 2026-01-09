@@ -46,16 +46,18 @@ class RefundRejectedNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Refund Request Status - Denied')
-            ->greeting('Hello, ' . $notifiable->name . '!')
-            ->line('Your refund request has been reviewed.')
-            ->line('**Status:** Not Approved')
-            ->line('**Reason Requested:** ' . $this->refundRequest->getReasonLabel())
-            ->when($this->refundRequest->admin_notes, function ($message) {
-                return $message->line('**Admin Notes:** ' . $this->refundRequest->admin_notes);
-            })
-            ->line('If you believe this decision is incorrect, please contact our support team.')
-            ->action('View Request Details', url('/teacher/refunds/' . $this->refundRequest->id))
-            ->line('Thank you for using Namate24!');
+            ->subject('Refund Request Status - ' . config('app.name'))
+            ->view('emails.generic', [
+                'userName' => $notifiable->name,
+                'subject' => 'Refund Request Status',
+                'mainMessage' => 'Your refund request has been reviewed.',
+                'status' => 'Denied',
+                'reason' => $this->refundRequest->getReasonLabel(),
+                'adminNotes' => $this->refundRequest->admin_notes,
+                'callToAction' => 'Contact Support',
+                'actionUrl' => url('/support'),
+                'includeNote' => true,
+                'noteText' => 'If you believe this decision is incorrect, please contact our support team.',
+            ]);
     }
 }
