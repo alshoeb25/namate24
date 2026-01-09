@@ -64,8 +64,7 @@ class AdminPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->authMiddleware([
-                Authenticate::class,
-                \App\Http\Middleware\AdminRoleCheck::class,
+                Authenticate::class
             ])
             ->plugins([
                 // Add plugins here

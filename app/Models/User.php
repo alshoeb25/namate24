@@ -8,8 +8,10 @@ use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 
-class User extends Authenticatable implements JWTSubject
+class User extends Authenticatable implements JWTSubject, FilamentUser
 {
     use Notifiable, HasRoles;
 
@@ -98,6 +100,15 @@ class User extends Authenticatable implements JWTSubject
         
         // Default avatar - reliable placeholder
         return 'https://ui-avatars.com/api/?name=' . urlencode($this->name ?? 'User') . '&size=200&background=ec4899&color=ffffff';
+    }
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        if ($panel->getId() !== 'admin') {
+            return false;
+        }
+
+        return $this->hasRole('admin');
     }
 
 }
