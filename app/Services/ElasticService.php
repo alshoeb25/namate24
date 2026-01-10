@@ -2,16 +2,19 @@
 
 namespace App\Services;
 
+use Elastic\Elasticsearch\Client;
 use Elastic\Elasticsearch\ClientBuilder;
 use InvalidArgumentException;
 
 class ElasticService
 {
-    protected $client;
+    protected Client $client;
 
     public function __construct()
     {
-        // Prefer configured hosts, fall back to env URL, then default localhost:9200
+        // -----------------------------
+        // Resolve hosts
+        // -----------------------------
         $hostsConfig = config('elasticsearch.hosts');
 
         if (is_string($hostsConfig) && $hostsConfig !== '') {
@@ -19,41 +22,69 @@ class ElasticService
         } elseif (is_array($hostsConfig) && !empty($hostsConfig)) {
             $hosts = $hostsConfig;
         } else {
-            $hosts = [env('ELASTICSEARCH_URL', 'http://127.0.0.1:9200')];
+            $hosts = [env('ELASTICSEARCH_URL', 'https://127.0.0.1:9200')];
         }
 
-        // Validate hosts to avoid silent fallbacks (e.g., hitting Apache on port 80)
         $validatedHosts = [];
+
         foreach ($hosts as $host) {
             if (!is_string($host) || trim($host) === '') {
                 continue;
             }
 
             $parts = parse_url($host);
-            if (empty($parts['scheme']) || empty($parts['host'])) {
-                throw new InvalidArgumentException('Elasticsearch host must include scheme and host, e.g. http://127.0.0.1:9200');
-            }
 
-            if (!isset($parts['port'])) {
-                throw new InvalidArgumentException('Elasticsearch host must include port (usually 9200), e.g. http://127.0.0.1:9200');
+            if (empty($parts['scheme']) || empty($parts['host']) || empty($parts['port'])) {
+                throw new InvalidArgumentException(
+                    'Elasticsearch host must include scheme, host and port. Example: https://127.0.0.1:9200'
+                );
             }
 
             $validatedHosts[] = $host;
         }
 
         if (empty($validatedHosts)) {
-            throw new InvalidArgumentException('No valid Elasticsearch hosts configured. Set ELASTICSEARCH_URL or config/elasticsearch.php hosts.');
+            throw new InvalidArgumentException(
+                'No valid Elasticsearch hosts configured. Check config/elasticsearch.php or .env'
+            );
         }
 
-        $this->client = ClientBuilder::create()
+        // -----------------------------
+        // Build client
+        // -----------------------------
+        $builder = ClientBuilder::create()
             ->setHosts($validatedHosts)
-            ->build();
+            ->setRetries(config('elasticsearch.retries', 2));
+
+        // -----------------------------
+        // Authentication (REQUIRED)
+        // -----------------------------
+        $username = config('elasticsearch.username');
+        $password = config('elasticsearch.password');
+
+        if ($username && $password) {
+            $builder->setBasicAuthentication($username, $password);
+        }
+
+        // -----------------------------
+        // SSL handling (FIXES cURL 60)
+        // -----------------------------
+        if (config('elasticsearch.ssl_verification') === false) {
+            $builder->setSSLVerification(false);
+        }
+
+        // Optional: trusted CA bundle (production)
+        if ($ca = config('elasticsearch.ca_bundle')) {
+            $builder->setCABundle($ca);
+        }
+
+        $this->client = $builder->build();
     }
 
     /**
      * Get Elasticsearch client
      */
-    public function client()
+    public function client(): Client
     {
         return $this->client;
     }
@@ -65,8 +96,9 @@ class ElasticService
     {
         return $this->client->index([
             'index' => $index,
-            'id'    => $body['id'],
+            'id'    => $body['id'] ?? null,
             'body'  => $body,
+            'refresh' => true,
         ]);
     }
 
@@ -90,10 +122,17 @@ class ElasticService
             'index' => $index,
             'body'  => [
                 'query' => [
-                    'multi_match' => [
-                        'query'  => $query,
-                        'fields'=> ['name', 'subject', 'skills', 'city'],
-                        'fuzziness' => 'AUTO',
+                    'bool' => [
+                        'must' => [
+                            [
+                                'multi_match' => [
+                                    'query'     => $query,
+                                    'fields'    => ['name^2', 'subject', 'skills', 'city'],
+                                    'fuzziness' => 'AUTO',
+                                ],
+                            ],
+                        ],
+                        'filter' => $filters,
                     ],
                 ],
             ],
