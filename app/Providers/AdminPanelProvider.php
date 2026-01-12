@@ -41,6 +41,7 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->brandName('namate24')
             ->favicon(asset('/storage/fav_icon.png'))
+            ->authGuard('web')
             ->colors([
                 'primary' => Color::Cyan,
             ])
