@@ -81,10 +81,11 @@
               Partner with us and build a profitable future
             </p>
           </div>
-          <button class="mt-4 md:mt-0 bg-white text-gray-900 font-medium 
-                         px-5 py-2.5 rounded-lg shadow hover:bg-gray-100 transition">
+          <router-link to="/contact-us"
+                       class="mt-4 md:mt-0 bg-white text-gray-900 font-medium 
+                              px-5 py-2.5 rounded-lg shadow hover:bg-gray-100 transition inline-flex items-center justify-center">
             Apply for Franchise
-          </button>
+          </router-link>
         </div>
       </section>
 
@@ -99,9 +100,10 @@
               Here are the latest admission updates
             </h2>
             <div class="flex items-center justify-between flex-wrap gap-3">
-              <button class="bg-white text-black text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-200 transition w-full sm:w-auto text-center">
+              <router-link to="/contact-us"
+                           class="bg-white text-black text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-200 transition w-full sm:w-auto text-center inline-flex items-center justify-center">
                 Click to know more
-              </button>
+              </router-link>
             </div>
           </div>
         </div>
@@ -139,7 +141,7 @@ export default {
       'Math': { icon: 'https://img.icons8.com/ios-filled/50/FD7E14/calculator.png', bgColor: '#FEF3C7' },
       'Physics': { icon: 'https://img.icons8.com/ios-filled/50/1E90FF/test-tube.png', bgColor: '#DBEAFE' },
       'Chemistry': { icon: 'https://img.icons8.com/ios-filled/50/00BFA5/flask.png', bgColor: '#E0F2F1' },
-      'Biology': { icon: 'https://img.icons8.com/ios-filled/50/4CAF50/dna.png', bgColor: '#E8F5E9' },
+      'Biology': { icon: 'https://cdn-icons-png.flaticon.com/128/1548/1548285.png', bgColor: '#E8F5E9' },
       'Science': { icon: 'https://img.icons8.com/ios-filled/50/1E90FF/test-tube.png', bgColor: '#DBEAFE' },
       'English': { icon: 'https://img.icons8.com/ios-filled/50/9C27B0/book.png', bgColor: '#E9D5FF' },
       'Coding': { icon: 'https://img.icons8.com/ios-filled/50/4CAF50/code.png', bgColor: '#DCFCE7' },

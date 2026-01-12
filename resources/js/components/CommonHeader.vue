@@ -2,8 +2,7 @@
   <header class="w-full bg-white shadow-md relative z-60">
     <div class="max-w-7xl mx-auto flex items-center justify-between px-4 py-3">
       <router-link to="/" class="flex items-center gap-1">
-        <img src="https://image2url.com/images/1765179057005-967d0875-ac5d-4a43-b65f-a58abd9f651d.png" alt="Namate 24 Logo" class="w-10 h-10 object-contain">
-        <span class="text-pink-600 font-bold text-lg md:text-xl">Namate 24</span>
+        <img :src="'/storage/logo.png'" alt="Namate 24 Logo" class="h-10 sm:h-11 md:h-12 lg:h-14 w-auto object-contain">
       </router-link>
 
       <div class="hidden md:flex items-center gap-4">

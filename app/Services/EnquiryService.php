@@ -27,7 +27,13 @@ class EnquiryService
 
         return DB::transaction(function () use ($data, $student, $studentId, $subjectIds, $postFee, $unlockPrice, $maxLeads) {
 
-            if ($postFee > 0) {
+            // Check if this is a free post (first 3 requirements)
+            $requirementCount = StudentRequirement::where('student_id', $studentId)->count();
+            $freeCount = config('coins.free_requirements_count', 3);
+            $isFreePost = $requirementCount < $freeCount;
+            
+            // Only charge coins if NOT a free post
+            if (!$isFreePost && $postFee > 0) {
                 try {
                     $transaction = $this->walletService->debit(
                         $student,
@@ -45,7 +51,7 @@ class EnquiryService
 
             $enquiry = StudentRequirement::create(array_merge($data, [
                 'student_id' => $studentId,
-                'post_fee' => $postFee,
+                'post_fee' => $isFreePost ? 0 : $postFee,
                 'unlock_price' => $unlockPrice,
                 'max_leads' => $maxLeads,
                 'current_leads' => 0,

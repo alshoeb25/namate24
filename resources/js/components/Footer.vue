@@ -150,26 +150,13 @@
       <div class="flex gap-10 mb-6 lg:mb-0">
         <ul class="space-y-2 text-sm text-gray-300">
           <li class="font-semibold text-white">About</li>
-          <li>About us</li>
-          <li>Careers</li>
-          <li>Contact us</li>
-          <li>Blog</li>
-        </ul>
-
-        <ul class="space-y-2 text-sm text-gray-300">
-          <li class="font-semibold text-white">Discover</li>
-          <li>Get the app</li>
-          <li>Teach on Namate 24</li>
-          <li>Plans and Pricing</li>
-          <li>Affiliate</li>
+          <li><router-link to="/contact-us" class="hover:text-white transition">Contact us</router-link></li>
         </ul>
 
         <ul class="space-y-2 text-sm text-gray-300">
           <li class="font-semibold text-white">Legal & Accessibility</li>
-          <li>Accessibility</li>
-          <li>Privacy Policy</li>
-          <li>Sitemap</li>
-          <li>Terms</li>
+          <li><router-link to="/privacy-policy" class="hover:text-white transition">Privacy Policy</router-link></li>
+          <li><router-link to="/terms-and-conditions" class="hover:text-white transition">Terms &amp; Conditions</router-link></li>
         </ul>
       </div>
 

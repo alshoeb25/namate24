@@ -18,6 +18,9 @@ import BookingCalendar from '../pages/BookingCalendar.vue';
 import TutorDashboard from '../pages/TutorDashboard.vue';
 import TutorProfileLayout from '../pages/TutorProfileLayout.vue';
 import UploadDocuments from '../pages/tutor/UploadDocuments.vue';
+import TermsAndConditions from '../pages/TermsAndConditions.vue';
+import PrivacyPolicy from '../pages/PrivacyPolicy.vue';
+import ContactUs from '../pages/ContactUs.vue';
 
 // Tutor Profile Components
 import PersonalDetails from '../components/tutor/profile/PersonalDetails.vue';
@@ -52,6 +55,9 @@ const routes = [
   { path: '/search', name: 'search', component: SearchResults },
   { path: '/tutors', name: 'tutors', component: SearchResults },
   { path: '/tutor-jobs', name: 'tutor-jobs', component: TutorJobs },
+  { path: '/terms-and-conditions', name: 'terms', component: TermsAndConditions },
+  { path: '/privacy-policy', name: 'privacy', component: PrivacyPolicy },
+  { path: '/contact-us', name: 'contact', component: ContactUs },
   
   // Dynamic SEO-friendly routes: /{subject}-tutors-in-{city}
   { path: '/:subject-tutors-in-:city', name: 'tutors.subject.city', component: SearchResults },

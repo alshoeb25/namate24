@@ -256,7 +256,7 @@
     <div class="email-container">
         <!-- Header with pink logo -->
         <div class="header">
-            <img src="https://image2url.com/r2/bucket1/images/1767939315186-298731db-06a8-40da-b138-85c649ceec9c.png"
+            <img src="{{ asset('storage/logo.png') }}"
                 alt="Namate24 Logo" class="logo">
         </div>
 

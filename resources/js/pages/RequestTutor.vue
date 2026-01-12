@@ -77,8 +77,12 @@
           <div class="mb-6 bg-blue-50 border border-blue-100 text-blue-800 px-4 py-3 rounded-lg text-sm flex items-start gap-2">
             <i class="fas fa-info-circle mt-0.5"></i>
             <div>
-              <div class="font-semibold">Coin info</div>
-              <div>Posting an enquiry costs <strong>{{ enquiryConfig.post_fee }}</strong> coins. Tutors spend <strong>{{ enquiryConfig.unlock_fee }}</strong> coins to unlock your contact. Each enquiry is shown to a maximum of <strong>{{ enquiryConfig.max_leads }}</strong> tutors.</div>
+              <div class="font-semibold">Posting Info</div>
+              <div v-if="!isEditMode">
+                <span v-if="postingIsFree" class="text-green-700 font-medium">✓ FREE post ({{ requirementsPosted }}/3 used)</span>
+                <span v-else class="text-orange-700 font-medium">💰 {{ postingCost }} coins required ({{ requirementsPosted }}/3 free posts used)</span>
+              </div>
+              <div class="mt-1 text-xs text-gray-600">First 3 posts free • {{ enquiryConfig.unlock_fee }} coins to unlock • Max {{ enquiryConfig.max_leads }} tutors</div>
             </div>
           </div>
       </div>
@@ -120,8 +124,12 @@
         <div class="mt-4 bg-blue-50 border border-blue-100 text-blue-800 px-3 py-2 rounded-lg text-xs flex items-start gap-2">
           <i class="fas fa-info-circle mt-0.5 text-sm"></i>
           <div>
-            <div class="font-semibold">Coin Info</div>
-            <div>Posting an enquiry costs <strong>{{ enquiryConfig.post_fee }}</strong> coins. Tutors spend <strong>{{ enquiryConfig.unlock_fee }}</strong> coins to unlock your contact. Each enquiry is shown to a maximum of <strong>{{ enquiryConfig.max_leads }}</strong> tutors.</div>
+            <div class="font-semibold">Posting Info</div>
+            <div v-if="!isEditMode">
+              <span v-if="postingIsFree" class="text-green-700 font-medium">✓ FREE ({{ requirementsPosted }}/3)</span>
+              <span v-else class="text-orange-700 font-medium">💰 {{ postingCost }} coins</span>
+            </div>
+            <div class="mt-1 text-[10px] text-gray-600">First 3 free • {{ enquiryConfig.unlock_fee }} coins unlock • Max {{ enquiryConfig.max_leads }} tutors</div>
           </div>
         </div>
       </div>
@@ -591,6 +599,15 @@
                 <p class="text-gray-500 text-sm">You can communicate in</p>
               </div>
               <div class="md:col-span-3">
+                <div class="flex flex-wrap gap-2">
+                  <span v-for="lang in form.languages" :key="lang"
+                        class="bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full text-sm flex items-center gap-2">
+                    {{ lang }}
+                    <button @click="removeLanguage(lang)" type="button" class="text-gray-500 hover:text-gray-700">
+                      <i class="fas fa-times text-xs"></i>
+                    </button>
+                  </span>
+                </div>
                 <div class="relative mb-3">
                   <input v-model="languageSearch" @focus="showLanguageDropdown = true"
                          type="text" placeholder="Search languages..."
@@ -607,15 +624,7 @@
                   </div>
                 </div>
                 
-                <div class="flex flex-wrap gap-2">
-                  <span v-for="lang in form.languages" :key="lang"
-                        class="bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full text-sm flex items-center gap-2">
-                    {{ lang }}
-                    <button @click="removeLanguage(lang)" type="button" class="text-gray-500 hover:text-gray-700">
-                      <i class="fas fa-times text-xs"></i>
-                    </button>
-                  </span>
-                </div>
+                
               </div>
             </div>
           </div>
@@ -657,6 +666,16 @@
 
         <!-- Navigation Buttons -->
         <div class="flex items-center justify-between pt-6 border-t mt-8">
+          <!-- Posting Status Info -->
+          <div v-if="!isEditMode" class="text-sm text-gray-600">
+            <span v-if="postingIsFree" class="text-green-600 font-medium">
+              ✓ Free post ({{ requirementsPosted }}/3)
+            </span>
+            <span v-else class="text-blue-600 font-medium">
+              💰 Paid post - {{ postingCost }} coins
+            </span>
+          </div>
+
           <button v-if="currentSection > 1"
                   @click="currentSection--" 
                   type="button"
@@ -683,7 +702,7 @@
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   ]">
             <i class="fas fa-check mr-2"></i>
-            {{ submitting ? 'Submitting...' : (isEditMode ? 'Update Request' : `Submit Request (-${enquiryConfig.post_fee} coins)`) }}
+            {{ submitting ? 'Submitting...' : (isEditMode ? 'Update Request' : `Submit Request${postingIsFree ? ' (FREE)' : ` (-${postingCost} coins)`}`) }}
           </button>
         </div>
 
@@ -707,7 +726,7 @@
           <!-- Message -->
           <h2 class="text-2xl font-bold text-gray-800 text-center mb-2">Insufficient Coins</h2>
           <p class="text-gray-600 text-center mb-2">
-            You need <strong>{{ enquiryConfig.post_fee }} coins</strong> to post an enquiry.
+            You need <strong>{{ postingCost }} coins</strong> to post this requirement.
           </p>
           <p class="text-gray-500 text-center text-sm mb-6">
             Your current balance: <strong class="text-blue-600">{{ userBalance }} coins</strong>
@@ -754,6 +773,10 @@ export default {
     const requirementId = ref(null);
     const userBalance = ref(0);
     const toast = ref({ show: false, message: '', type: 'success' });
+    const postingIsFree = ref(false);
+    const postingCost = ref(0);
+    const requirementsPosted = ref(0);
+    const postingEligibilityMsg = ref('');
 
     // Phone handling
     const phoneNumber = ref('');
@@ -994,6 +1017,32 @@ export default {
       }
     };
 
+    // Check if requirement posting is free or paid
+    const checkPostingEligibility = async () => {
+      try {
+        const { data } = await axios.get('/api/requirements/posting-eligibility');
+        console.log('Raw eligibility data:', data);
+        
+        // Ensure we're setting the correct values
+        postingIsFree.value = Boolean(data.is_free);
+        postingCost.value = Number(data.post_fee) || 0;
+        requirementsPosted.value = Number(data.requirements_posted) || 0;
+        postingEligibilityMsg.value = data.message || '';
+        
+        console.log('Processed eligibility values:', {
+          postingIsFree: postingIsFree.value,
+          postingCost: postingCost.value,
+          requirementsPosted: requirementsPosted.value,
+          message: postingEligibilityMsg.value
+        });
+      } catch (error) {
+        console.error('Failed to check posting eligibility:', error);
+        // Default to paid if API fails
+        postingIsFree.value = false;
+        postingCost.value = 10;
+      }
+    };
+
     // Load existing requirement for edit mode
     const loadRequirement = async (id) => {
       try {
@@ -1147,6 +1196,11 @@ export default {
       fetchFormData();
       fetchWalletBalance();
       
+      // Check posting eligibility for new posts
+      if (!route.params.id) {
+        checkPostingEligibility();
+      }
+      
       // Initialize Google Maps Autocomplete
       if (locationInput.value && window.google?.maps?.places) {
         const autocomplete = new google.maps.places.Autocomplete(locationInput.value, {
@@ -1223,8 +1277,8 @@ export default {
     const submitRequest = async () => {
       if (!validateStep()) return;
 
-      // Check coin balance before submission
-      if (!isEditMode.value && userBalance.value < enquiryConfig.value.post_fee) {
+      // Check coin balance before submission (only if posting is NOT free)
+      if (!isEditMode.value && !postingIsFree.value && userBalance.value < postingCost.value) {
         showInsufficientCoinsModal.value = true;
         return;
       }
@@ -1244,13 +1298,18 @@ export default {
           response = await axios.post('/api/student/request-tutor', form);
           
           // Optimistically update balance (subtract coins immediately for better UX)
-          userBalance.value = oldBalance - enquiryConfig.value.post_fee;
-          if (userStore.user) {
-            userStore.user.coins = userBalance.value;
+          if (!postingIsFree.value) {
+            userBalance.value = oldBalance - postingCost.value;
+            if (userStore.user) {
+              userStore.user.coins = userBalance.value;
+            }
+            
+            // Show coin deduction notification
+            showToast(`${postingCost.value} coins debited for posting requirement`, 'success');
+          } else {
+            // Show free post notification
+            showToast('Your requirement posted successfully for FREE!', 'success');
           }
-          
-          // Show coin deduction notification
-          showToast(`${enquiryConfig.value.post_fee} coins debited for posting requirement`, 'success');
         }
         
         // Refresh wallet balance from server to get accurate balance after coin deduction
@@ -1330,7 +1389,12 @@ export default {
       selectedLocation,
       locationError,
       toast,
-      showToast
+      showToast,
+      postingIsFree,
+      postingCost,
+      requirementsPosted,
+      postingEligibilityMsg,
+      checkPostingEligibility
     };
   }
 };

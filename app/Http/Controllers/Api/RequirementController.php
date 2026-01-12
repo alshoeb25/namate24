@@ -28,8 +28,53 @@ class RequirementController extends Controller
             'desired_start'=>'nullable|date'
         ]);
 
-        $requirement = StudentRequirement::create(array_merge($data, ['student_id'=>$request->user()->id]));
-        return response()->json($requirement, 201);
+        $user = $request->user();
+        
+        // Get the student_id from the user's student relationship
+        $studentId = $user->student ? $user->student->id : null;
+        
+        if (!$studentId) {
+            return response()->json(['error' => 'Student profile not found'], 404);
+        }
+        
+        // Count existing requirements for this student
+        $requirementCount = StudentRequirement::where('student_id', $studentId)->count();
+        
+        // First 3 requirements are free, then payment required
+        if ($requirementCount >= 3) {
+            // Check if user has sufficient coins
+            $requiredCoins = config('coins.requirement_post_fee', 10); // Default 10 coins
+            
+            if ($user->coins < $requiredCoins) {
+                return response()->json([
+                    'error' => 'Insufficient coins',
+                    'message' => "You need {$requiredCoins} coins to post a new requirement. Your first 3 requirements were free.",
+                    'required_coins' => $requiredCoins,
+                    'current_coins' => $user->coins,
+                ], 402); // 402 Payment Required
+            }
+            
+            // Deduct coins
+            $user->decrement('coins', $requiredCoins);
+            
+            // Create transaction record
+            \App\Models\CoinTransaction::create([
+                'user_id' => $user->id,
+                'amount' => -$requiredCoins,
+                'type' => 'debit',
+                'description' => 'Post requirement fee',
+                'balance_after' => $user->fresh()->coins,
+            ]);
+        }
+
+        $requirement = StudentRequirement::create(array_merge($data, ['student_id'=>$studentId]));
+        
+        return response()->json([
+            'requirement' => $requirement,
+            'coins_deducted' => $requirementCount >= 3 ? config('coins.requirement_post_fee', 10) : 0,
+            'remaining_coins' => $user->fresh()->coins,
+            'message' => $requirementCount >= 3 ? 'Requirement posted successfully. Coins deducted.' : 'Requirement posted successfully (Free).',
+        ], 201);
     }
 
     /**
@@ -229,6 +274,48 @@ class RequirementController extends Controller
     public function show($id)
     {
         return response()->json(StudentRequirement::with('subject','student')->findOrFail($id));
+    }
+
+    /**
+     * Check if student can post a requirement and get pricing info
+     * GET /api/requirements/posting-eligibility
+     */
+    public function postingEligibility(Request $request)
+    {
+        $user = $request->user();
+        
+        if (!$user->hasRole('student')) {
+            return response()->json(['error' => 'Only students can post requirements'], 403);
+        }
+        
+        // Get the student_id from the user's student relationship
+        $studentId = $user->student ? $user->student->id : null;
+        
+        if (!$studentId) {
+            return response()->json(['error' => 'Student profile not found'], 404);
+        }
+        
+        $requirementCount = StudentRequirement::where('student_id', $studentId)->count();
+        $freeCount = config('coins.free_requirements_count', 3);
+        $postFee = config('coins.requirement_post_fee', 10);
+        
+        $isFree = $requirementCount < $freeCount;
+        $remainingFree = max(0, $freeCount - $requirementCount);
+        $canPost = $isFree || $user->coins >= $postFee;
+        
+        return response()->json([
+            'can_post' => $canPost,
+            'is_free' => $isFree,
+            'requirements_posted' => $requirementCount,
+            'free_requirements_remaining' => $remainingFree,
+            'post_fee' => $isFree ? 0 : $postFee,
+            'current_coins' => $user->coins,
+            'message' => $isFree 
+                ? "You have {$remainingFree} free requirement(s) remaining." 
+                : ($canPost 
+                    ? "Posting will cost {$postFee} coins." 
+                    : "Insufficient coins. You need {$postFee} coins to post a requirement."),
+        ]);
     }
 
     /**

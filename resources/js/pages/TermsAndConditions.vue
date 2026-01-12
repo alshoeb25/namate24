@@ -1,0 +1,109 @@
+<template>
+  <div class="bg-rose-50 min-h-screen py-6 sm:py-8 md:py-12 px-3 sm:px-4 md:px-6 lg:px-8">
+    <div class="max-w-5xl mx-auto">
+      <header class="text-center mb-6 sm:mb-8 md:mb-10">
+        <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-rose-600">Terms and Conditions</h1>
+        <div class="mt-2 sm:mt-3 h-1 w-20 sm:w-24 mx-auto rounded-full bg-gradient-to-r from-pink-400 to-rose-600"></div>
+      </header>
+
+      <section class="space-y-4 sm:space-y-6 md:space-y-8">
+        <article class="bg-white rounded-xl sm:rounded-2xl shadow-lg border-t-4 border-rose-500 p-4 sm:p-6 md:p-8">
+          <div class="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <span class="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-rose-50 text-rose-500 text-sm sm:text-base">
+              <i class="fas fa-gavel"></i>
+            </span>
+            <h2 class="text-lg sm:text-xl font-semibold text-rose-600">General</h2>
+          </div>
+          <ul class="list-disc list-inside space-y-2 text-sm sm:text-base text-gray-700">
+            <li>Users are permitted to maintain only one account. Creating or operating multiple accounts may result in suspension or permanent termination.</li>
+            <li>Users are responsible for personal safety, financial transactions, and interactions. Namate24 is not responsible for user conduct.</li>
+            <li>We reserve the right to suspend or terminate accounts without notice, including forfeiture of coin balances.</li>
+            <li>Users involved in fraudulent activity may be listed on internal or public scammer lists.</li>
+          </ul>
+        </article>
+
+        <article class="bg-white rounded-xl sm:rounded-2xl shadow-lg border-t-4 border-rose-500 p-4 sm:p-6 md:p-8">
+          <div class="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <span class="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-rose-50 text-rose-500 text-sm sm:text-base">
+              <i class="fas fa-user-graduate"></i>
+            </span>
+            <h2 class="text-lg sm:text-xl font-semibold text-rose-600">For Students</h2>
+          </div>
+          <ul class="list-disc list-inside space-y-2 text-sm sm:text-base text-gray-700">
+            <li>Students must not share personal contact details in job postings.</li>
+            <li>Sharing contact details outside the platform is at the student's own risk.</li>
+            <li>Payments and refunds are conducted at users' own risk.</li>
+            <li>Phone numbers may be used only for verification or account-related communication.</li>
+          </ul>
+        </article>
+
+        <article class="bg-white rounded-xl sm:rounded-2xl shadow-lg border-t-4 border-rose-500 p-4 sm:p-6 md:p-8">
+          <div class="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <span class="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-rose-50 text-rose-500 text-sm sm:text-base">
+              <i class="fas fa-chalkboard-teacher"></i>
+            </span>
+            <h2 class="text-lg sm:text-xl font-semibold text-rose-600">For Tutors</h2>
+          </div>
+          <ul class="list-disc list-inside space-y-2 text-sm sm:text-base text-gray-700">
+            <li>Namate24 does not verify students' payment reliability.</li>
+            <li>Sharing contact details outside approved channels may lead to suspension.</li>
+            <li>Phone numbers are used only for verification or support.</li>
+          </ul>
+        </article>
+
+        <article class="bg-white rounded-xl sm:rounded-2xl shadow-lg border-t-4 border-rose-500 p-4 sm:p-6 md:p-8">
+          <div class="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <span class="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-rose-50 text-rose-500 text-sm sm:text-base">
+              <i class="fas fa-question-circle"></i>
+            </span>
+            <h2 class="text-lg sm:text-xl font-semibold text-rose-600">Why Namate24</h2>
+          </div>
+          <p class="text-sm sm:text-base text-gray-700 leading-relaxed">Namate24 is a global tutoring marketplace with a freemium model, offering free access to students and paid lead generation for tutors.</p>
+        </article>
+
+        <article class="bg-white rounded-xl sm:rounded-2xl shadow-lg border-t-4 border-rose-500 p-4 sm:p-6 md:p-8">
+          <div class="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <span class="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-rose-50 text-rose-500 text-sm sm:text-base">
+              <i class="fas fa-cogs"></i>
+            </span>
+            <h2 class="text-lg sm:text-xl font-semibold text-rose-600">Core Mechanics</h2>
+          </div>
+          <ul class="list-disc list-inside space-y-2 text-sm sm:text-base text-gray-700">
+            <li>Tutors purchase coins to contact students.</li>
+            <li>Students can post up to three requirements and connect with three tutors.</li>
+            <li>Tutors and students negotiate pricing and schedules directly.</li>
+          </ul>
+        </article>
+
+        <article class="bg-white rounded-xl sm:rounded-2xl shadow-lg border-t-4 border-rose-500 p-4 sm:p-6 md:p-8">
+          <div class="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <span class="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-rose-50 text-rose-500 text-sm sm:text-base">
+              <i class="fas fa-medal"></i>
+            </span>
+            <h2 class="text-lg sm:text-xl font-semibold text-rose-600">Key Value Propositions</h2>
+          </div>
+          <ul class="list-disc list-inside space-y-2 text-sm sm:text-base text-gray-700">
+            <li>Tutors retain full earnings with no commission.</li>
+            <li>Students enjoy free access and secure payment options.</li>
+          </ul>
+        </article>
+
+        <article class="bg-white rounded-xl sm:rounded-2xl shadow-lg border-t-4 border-rose-500 p-4 sm:p-6 md:p-8">
+          <div class="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <span class="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-rose-50 text-rose-500 text-sm sm:text-base">
+              <i class="fas fa-shield-alt"></i>
+            </span>
+            <h2 class="text-lg sm:text-xl font-semibold text-rose-600">Trust and Transparency</h2>
+          </div>
+          <p class="text-sm sm:text-base text-gray-700 leading-relaxed">Namate24 Pay and coin refunds help ensure fair interactions.</p>
+        </article>
+      </section>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'TermsAndConditions'
+};
+</script>

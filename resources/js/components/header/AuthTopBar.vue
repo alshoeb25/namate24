@@ -12,7 +12,7 @@
           <img src="https://image2url.com/images/1765179057005-967d0875-ac5d-4a43-b65f-a58abd9f651d.png" 
                alt="Logo" 
                class="w-8 h-8 object-contain">
-          <span class="text-pink-600 font-bold text-sm">Namate 24</span>
+          <span class="text-pink-600 font-bold text-sm">Namate <span class="text-blue-600">24</span></span>
         </router-link>
       </div>
 

@@ -46,6 +46,9 @@ Route::get('subjects', [SubjectController::class,'index']);
 
 Route::get('/search-subjects', [SubjectController::class, 'search']);
 
+// Contact submissions (public)
+Route::post('contact-submissions', [\App\Http\Controllers\Api\ContactSubmissionController::class, 'store'])->middleware('throttle:5,1');
+
 // Field Labels API (Public - for form dropdowns)
 Route::get('field-labels', function(Request $request) {
     $fieldName = $request->query('field');
@@ -193,14 +196,14 @@ Route::middleware('auth:api')->group(function() {
 
     Route::post('tutors', [TutorController::class,'store']);
 
-    Route::post('requirements', [RequirementController::class,'store']);
-    Route::get('requirements', [RequirementController::class,'index']);
-    Route::get('requirements/{id}', [RequirementController::class,'show']);
-    
-    // Advanced search endpoints for requirements
+    // Student requirements - specific routes MUST come before {id} route
+    Route::get('requirements/posting-eligibility', [RequirementController::class,'postingEligibility']);
     Route::get('requirements/nearby', [RequirementController::class,'nearby']);
     Route::get('requirements/by-location', [RequirementController::class,'byLocation']);
     Route::get('requirements/for-me', [RequirementController::class,'forMe']);
+    Route::get('requirements', [RequirementController::class,'index']);
+    Route::post('requirements', [RequirementController::class,'store']);
+    Route::get('requirements/{id}', [RequirementController::class,'show']);
 
     // Enquiry (lead-based) routes
     Route::get('enquiries/config', [EnquiryController::class, 'config']);

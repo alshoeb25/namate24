@@ -155,32 +155,10 @@
               </div>
             </div>
 
-            <!-- Newsletter -->
-            <div class="mt-8 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-              <h4 class="text-sm font-semibold text-gray-900 mb-2">Get Updates</h4>
-              <p class="text-gray-600 text-xs mb-3">Get notified about new tutors</p>
-              <div class="flex gap-2">
-                <input v-model="newsletterEmail" 
-                       type="email" 
-                       placeholder="Your email"
-                       class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded">
-                <button @click="subscribeNewsletter"
-                        class="px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-                  <i class="fas fa-bell"></i>
-                </button>
-              </div>
-            </div>
+            
           </div>
 
-          <!-- Ad Banner -->
-          <div class="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl p-6 text-white">
-            <h4 class="font-semibold mb-2">Become a Tutor</h4>
-            <p class="text-sm text-purple-100 mb-4">Share your knowledge and earn</p>
-            <router-link to="/register"
-                         class="block w-full py-2 bg-white text-purple-600 rounded-lg font-medium hover:bg-purple-50 transition-colors text-center">
-              Apply Now
-            </router-link>
-          </div>
+          
         </aside>
       </div>
     </main>

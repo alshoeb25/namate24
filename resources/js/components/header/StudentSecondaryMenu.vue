@@ -5,14 +5,13 @@
       <div class="hidden md:flex items-center justify-between px-4 py-3">
         <!-- Logo -->
         <router-link to="/" class="flex items-center gap-1">
-          <img src="https://image2url.com/images/1765179057005-967d0875-ac5d-4a43-b65f-a58abd9f651d.png" 
-               alt="Namate 24 Logo" 
-               class="w-10 h-10 object-contain">
-          <span class="text-pink-600 font-bold text-xl">Namate 24</span>
+          <img :src="'/storage/logo.png'" 
+            alt="Namate 24 Logo" 
+            class="h-10 sm:h-11 md:h-12 lg:h-14 w-auto object-contain">
         </router-link>
 
         <!-- Menu Items -->
-        <nav class="flex items-center gap-6">
+        <nav class="flex items-center lg:gap-6">
           <router-link to="/student/dashboard" 
                        class="text-gray-700 hover:text-blue-600 font-medium transition"
                        active-class="text-blue-600 font-semibold">
