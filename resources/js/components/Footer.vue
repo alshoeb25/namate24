@@ -157,6 +157,7 @@
           <li class="font-semibold text-white">Legal & Accessibility</li>
           <li><router-link to="/privacy-policy" class="hover:text-white transition">Privacy Policy</router-link></li>
           <li><router-link to="/terms-and-conditions" class="hover:text-white transition">Terms &amp; Conditions</router-link></li>
+          <li><router-link to="/refund-policy" class="hover:text-white transition">Refund Policy</router-link></li>
         </ul>
       </div>
 

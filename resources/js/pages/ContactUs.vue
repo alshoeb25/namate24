@@ -247,7 +247,7 @@
           We typically respond within 24 hours during business days.
         </p>
         <p class="text-gray-500 text-xs sm:text-sm mt-2">
-          © 2023 Namate24. All rights reserved.
+          © 2026 Namate24. All rights reserved.
         </p>
       </div>
     </div>

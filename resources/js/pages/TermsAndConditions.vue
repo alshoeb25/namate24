@@ -97,6 +97,72 @@
           </div>
           <p class="text-sm sm:text-base text-gray-700 leading-relaxed">Namate24 Pay and coin refunds help ensure fair interactions.</p>
         </article>
+
+        <article class="bg-white rounded-xl sm:rounded-2xl shadow-lg border-t-4 border-rose-500 p-4 sm:p-6 md:p-8">
+          <div class="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <span class="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-rose-50 text-rose-500 text-sm sm:text-base">
+              <i class="fas fa-undo-alt"></i>
+            </span>
+            <h2 class="text-lg sm:text-xl font-semibold text-rose-600">Refund Policy</h2>
+          </div>
+          <div class="space-y-4">
+            <p class="text-sm sm:text-base text-gray-700 leading-relaxed">
+              For detailed refund terms, please visit our <router-link to="/refund-policy" class="text-rose-600 font-semibold hover:underline">Refund Policy</router-link> page. Key highlights include:
+            </p>
+            
+            <div class="space-y-3">
+              <div class="bg-rose-50 rounded-lg p-3 sm:p-4 border-l-4 border-rose-500">
+                <h3 class="font-semibold text-rose-600 mb-2 text-sm sm:text-base">Coin Purchases</h3>
+                <p class="text-sm text-gray-700">Purchased coins are non-refundable. However, if payment is deducted but coins are not received, the amount will be refunded within 14 days or coins will be credited once payment is confirmed.</p>
+              </div>
+
+              <div class="bg-rose-50 rounded-lg p-3 sm:p-4 border-l-4 border-rose-500">
+                <h3 class="font-semibold text-rose-600 mb-2 text-sm sm:text-base">Trainer-Student Contacts</h3>
+                <ul class="space-y-1 text-sm text-gray-700">
+                  <li class="flex gap-2">
+                    <span class="text-rose-600 font-bold">•</span>
+                    <span>Coins are refunded if a trainer contacts an unverified trainee and receives no response within 15 days.</span>
+                  </li>
+                  <li class="flex gap-2">
+                    <span class="text-rose-600 font-bold">•</span>
+                    <span>Coins spent on fake, spam, or scam listings are automatically refunded.</span>
+                  </li>
+                  <li class="flex gap-2">
+                    <span class="text-rose-600 font-bold">•</span>
+                    <span>Coins used by trainees to contact trainers are non-refundable.</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="bg-rose-50 rounded-lg p-3 sm:p-4 border-l-4 border-rose-500">
+                <h3 class="font-semibold text-rose-600 mb-2 text-sm sm:text-base">Payments via Namate24.com</h3>
+                <ul class="space-y-1 text-sm text-gray-700">
+                  <li class="flex gap-2">
+                    <span class="text-rose-600 font-bold">•</span>
+                    <span>If "Release Payment After Work is Complete" is selected, trainees may dispute before releasing funds.</span>
+                  </li>
+                  <li class="flex gap-2">
+                    <span class="text-rose-600 font-bold">•</span>
+                    <span>Once payment is released, refunds cannot be processed.</span>
+                  </li>
+                  <li class="flex gap-2">
+                    <span class="text-rose-600 font-bold">•</span>
+                    <span>Namate24.com charges a 15% service fee (5% fixed, 10% variable).</span>
+                  </li>
+                  <li class="flex gap-2">
+                    <span class="text-rose-600 font-bold">•</span>
+                    <span>For full refunds, 95% is returned; for partial refunds, the amount is adjusted proportionally.</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="bg-rose-50 rounded-lg p-3 sm:p-4 border-l-4 border-rose-500">
+                <h3 class="font-semibold text-rose-600 mb-2 text-sm sm:text-base">Off-Platform Payments</h3>
+                <p class="text-sm text-gray-700">Namate24.com is not responsible for payments made outside the platform. While users may contact support, refunds cannot be guaranteed for off-platform transactions.</p>
+              </div>
+            </div>
+          </div>
+        </article>
       </section>
     </div>
   </div>

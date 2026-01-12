@@ -20,6 +20,7 @@ import TutorProfileLayout from '../pages/TutorProfileLayout.vue';
 import UploadDocuments from '../pages/tutor/UploadDocuments.vue';
 import TermsAndConditions from '../pages/TermsAndConditions.vue';
 import PrivacyPolicy from '../pages/PrivacyPolicy.vue';
+import RefundPolicy from '../pages/RefundPolicy.vue';
 import ContactUs from '../pages/ContactUs.vue';
 
 // Tutor Profile Components
@@ -57,6 +58,7 @@ const routes = [
   { path: '/tutor-jobs', name: 'tutor-jobs', component: TutorJobs },
   { path: '/terms-and-conditions', name: 'terms', component: TermsAndConditions },
   { path: '/privacy-policy', name: 'privacy', component: PrivacyPolicy },
+  { path: '/refund-policy', name: 'refund', component: RefundPolicy },
   { path: '/contact-us', name: 'contact', component: ContactUs },
   
   // Dynamic SEO-friendly routes: /{subject}-tutors-in-{city}
