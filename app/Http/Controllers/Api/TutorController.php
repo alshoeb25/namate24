@@ -72,8 +72,25 @@ class TutorController extends Controller
             // Use Elasticsearch via TutorSearchService
             $results = $this->searchService->search($filters, $perPage, $page);
             
+            // Load user relationship for each tutor to get the name
+            $tutorIds = collect($results->items())->pluck('id')->toArray();
+            $tutors = Tutor::with('user', 'subjects')
+                ->whereIn('id', $tutorIds)
+                ->get()
+                ->keyBy('id');
+            
+            // Merge user data into results
+            $items = collect($results->items())->map(function($item) use ($tutors) {
+                $tutor = $tutors[$item['id']] ?? null;
+                if ($tutor && $tutor->user) {
+                    $item['name'] = $tutor->user->name;
+                    $item['user'] = $tutor->user->only(['id', 'name', 'email']);
+                }
+                return $item;
+            })->all();
+            
             return response()->json([
-                'data' => $results->items(),
+                'data' => $items,
                 'total' => $results->total(),
                 'per_page' => $results->perPage(),
                 'current_page' => $results->currentPage(),
@@ -146,8 +163,25 @@ class TutorController extends Controller
         try {
             $results = $this->searchService->searchNearby($latitude, $longitude, $filters, $radius, $perPage, $page);
 
+            // Load user relationship for each tutor to get the name
+            $tutorIds = collect($results->items())->pluck('id')->toArray();
+            $tutors = Tutor::with('user', 'subjects')
+                ->whereIn('id', $tutorIds)
+                ->get()
+                ->keyBy('id');
+            
+            // Merge user data into results
+            $items = collect($results->items())->map(function($item) use ($tutors) {
+                $tutor = $tutors[$item['id']] ?? null;
+                if ($tutor && $tutor->user) {
+                    $item['name'] = $tutor->user->name;
+                    $item['user'] = $tutor->user->only(['id', 'name', 'email']);
+                }
+                return $item;
+            })->all();
+
             return response()->json([
-                'data' => $results->items(),
+                'data' => $items,
                 'total' => $results->total(),
                 'per_page' => $results->perPage(),
                 'current_page' => $results->currentPage(),
@@ -195,8 +229,25 @@ class TutorController extends Controller
         try {
             $results = $this->searchService->searchByLocation($location, $filters, $perPage, $page);
 
+            // Load user relationship for each tutor to get the name
+            $tutorIds = collect($results->items())->pluck('id')->toArray();
+            $tutors = Tutor::with('user', 'subjects')
+                ->whereIn('id', $tutorIds)
+                ->get()
+                ->keyBy('id');
+            
+            // Merge user data into results
+            $items = collect($results->items())->map(function($item) use ($tutors) {
+                $tutor = $tutors[$item['id']] ?? null;
+                if ($tutor && $tutor->user) {
+                    $item['name'] = $tutor->user->name;
+                    $item['user'] = $tutor->user->only(['id', 'name', 'email']);
+                }
+                return $item;
+            })->all();
+
             return response()->json([
-                'data' => $results->items(),
+                'data' => $items,
                 'total' => $results->total(),
                 'per_page' => $results->perPage(),
                 'current_page' => $results->currentPage(),
