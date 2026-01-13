@@ -106,37 +106,10 @@
                    placeholder="9876543210"
                    class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                    :class="{'border-red-500': errors.phone}">
-            <button v-if="form.phone !== user?.phone && !showOtpInput" 
-                    @click="sendOtp" 
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition whitespace-nowrap">
-              <i class="fas fa-sms mr-2"></i>Send OTP
-            </button>
           </div>
           <p v-if="errors.phone" class="text-red-500 text-sm mt-1">{{ errors.phone }}</p>
           <p v-if="user?.phone_verified_at" class="text-green-600 text-sm mt-1">
             <i class="fas fa-check-circle mr-1"></i>Phone verified
-          </p>
-        </div>
-
-        <!-- OTP Verification -->
-        <div v-if="showOtpInput" class="mb-4 p-4 bg-blue-50 rounded-lg">
-          <label class="block text-gray-700 font-medium mb-2">
-            Enter OTP<span class="text-red-500">*</span>
-          </label>
-          <div class="flex gap-2">
-            <input v-model="otpCode" 
-                   type="text" 
-                   placeholder="Enter 6-digit OTP"
-                   maxlength="6"
-                   class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-            <button @click="verifyOtp" 
-                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition whitespace-nowrap">
-              <i class="fas fa-check mr-2"></i>Verify
-            </button>
-          </div>
-          <p class="text-sm text-gray-600 mt-2">
-            OTP sent to {{ form.phone }}. 
-            <button @click="sendOtp" class="text-blue-600 hover:underline">Resend OTP</button>
           </p>
         </div>
 
@@ -313,8 +286,6 @@ export default {
     const profilePhotoPreview = ref(null);
     const profilePhotoFile = ref(null);
     const uploadingPhoto = ref(false);
-    const showOtpInput = ref(false);
-    const otpCode = ref('');
     const saving = ref(false);
     const savingLocation = ref(false);
     const emailVerificationSent = ref(false);
@@ -404,40 +375,6 @@ export default {
         setTimeout(() => emailVerificationSent.value = false, 5000);
       } catch (error) {
         errors.email = error.response?.data?.message || 'Error sending verification email';
-      }
-    };
-
-    const sendOtp = async () => {
-      if (!form.phone) {
-        errors.phone = 'Phone number is required';
-        return;
-      }
-      try {
-        await axios.post('/api/profile/phone/otp', { phone: form.phone });
-        showOtpInput.value = true;
-        errors.phone = '';
-      } catch (error) {
-        errors.phone = error.response?.data?.message || 'Error sending OTP';
-      }
-    };
-
-    const verifyOtp = async () => {
-      if (!otpCode.value || otpCode.value.length !== 6) {
-        alert('Please enter a valid 6-digit OTP');
-        return;
-      }
-      try {
-        await axios.post('/api/profile/phone/verify', { 
-          phone: form.phone, 
-          otp: otpCode.value 
-        });
-        await userStore.fetchUser();
-        showOtpInput.value = false;
-        otpCode.value = '';
-        successMessage.value = 'Phone number verified successfully!';
-        setTimeout(() => successMessage.value = '', 3000);
-      } catch (error) {
-        alert(error.response?.data?.message || 'Invalid OTP. Please try again.');
       }
     };
 
@@ -581,8 +518,6 @@ export default {
       errors,
       profilePhotoPreview,
       uploadingPhoto,
-      showOtpInput,
-      otpCode,
       saving,
       savingLocation,
       emailVerificationSent,
@@ -594,8 +529,6 @@ export default {
       handlePhotoUpload,
       saveProfilePhoto,
       sendEmailVerification,
-      sendOtp,
-      verifyOtp,
       saveProfile,
       saveLocation,
     };

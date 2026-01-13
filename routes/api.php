@@ -271,7 +271,8 @@ Route::middleware('auth:api')->group(function() {
         Route::get('personal-details', [TutorProfileController::class, 'getPersonalDetails'])->name('personal-details');
         Route::post('personal-details', [TutorProfileController::class, 'updatePersonalDetails'])->name('update-personal-details');
 
-        // Phone OTP
+        // Phone
+        Route::post('phone/save', [TutorProfileController::class, 'savePhone'])->name('phone.save');
         Route::post('phone/send-otp', [TutorProfileController::class, 'sendPhoneOtp'])->name('phone.send-otp');
         Route::post('phone/verify-otp', [TutorProfileController::class, 'verifyPhoneOtp'])->name('phone.verify-otp');
 

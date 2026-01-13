@@ -80,11 +80,13 @@ class TutorProfileController extends Controller
     {
         $validated = $request->validate([
             'phone' => 'required|string|regex:/^[0-9+\-\s()]+$/',
+            'country_code' => 'nullable|string|regex:/^\+[0-9]{1,3}$/',
             'method' => 'nullable|in:whatsapp,sms', // Default: whatsapp
         ]);
 
         $method = $validated['method'] ?? 'whatsapp';
         $phone = WhatsAppService::formatPhone($validated['phone']);
+        $countryCode = $validated['country_code'] ?? '+91';
 
         // Generate OTP (6 digits)
         $otp = random_int(100000, 999999);
@@ -92,6 +94,7 @@ class TutorProfileController extends Controller
 
         Auth::user()->update([
             'phone' => $phone,
+            'country_code' => $countryCode,
             'phone_otp' => $otp,
             'phone_otp_expires_at' => $expiresAt,
         ]);
@@ -111,6 +114,7 @@ class TutorProfileController extends Controller
             return response()->json([
                 'message' => 'OTP sent to WhatsApp',
                 'phone' => $phone,
+                'country_code' => $countryCode,
                 'method' => 'whatsapp',
             ]);
         }
@@ -121,7 +125,36 @@ class TutorProfileController extends Controller
         return response()->json([
             'message' => 'OTP sent via SMS',
             'phone' => $phone,
+            'country_code' => $countryCode,
             'method' => 'sms',
+        ]);
+    }
+
+    /**
+     * Save Phone Number (without OTP)
+     */
+    public function savePhone(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'phone' => 'required|string|regex:/^[0-9+\-\s()]+$/',
+            'country_code' => 'nullable|string|regex:/^\+[0-9]{1,3}$/',
+        ]);
+
+        $phone = WhatsAppService::formatPhone($validated['phone']);
+        $countryCode = $validated['country_code'] ?? '+91';
+
+        Auth::user()->update([
+            'phone' => $phone,
+            'country_code' => $countryCode,
+            'phone_verified' => true,
+            'phone_otp' => null,
+            'phone_otp_expires_at' => null,
+        ]);
+
+        return response()->json([
+            'message' => 'Phone number saved successfully',
+            'phone' => $phone,
+            'country_code' => $countryCode,
         ]);
     }
 
