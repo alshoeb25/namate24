@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\TutorResource\Pages;
+use App\Filament\Traits\RoleBasedAccess;
 use App\Models\Tutor;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -13,6 +14,8 @@ use Filament\Tables\Actions\Action;
 
 class TutorResource extends Resource
 {
+    use RoleBasedAccess;
+
     protected static ?string $model = Tutor::class;
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
     protected static ?string $navigationLabel = 'Tutors';
@@ -116,6 +119,36 @@ class TutorResource extends Resource
         return [
             TutorResource\RelationManagers\DocumentsRelationManager::class,
         ];
+    }
+
+    protected static function getResourcePermissionName(): string
+    {
+        return 'tutors';
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->can('view-tutors') ?? false;
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->can('create-tutors') ?? false;
+    }
+
+    public static function canEdit($record = null): bool
+    {
+        return auth()->user()?->can('edit-tutors') ?? false;
+    }
+
+    public static function canDelete($record = null): bool
+    {
+        return auth()->user()?->can('delete-tutors') ?? false;
     }
 
     public static function getPages(): array

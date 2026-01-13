@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Models\Referral;
+use App\Filament\Traits\RoleBasedAccess;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -12,6 +13,8 @@ use App\Filament\Resources\ReferralResource\Pages;
 
 class ReferralResource extends Resource
 {
+    use RoleBasedAccess;
+
     protected static ?string $model = Referral::class;
     protected static ?string $navigationIcon = 'heroicon-o-user-plus';
     protected static ?string $navigationGroup = 'Wallet Management';
@@ -57,6 +60,36 @@ class ReferralResource extends Resource
                     ->dateTime(),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    protected static function getResourcePermissionName(): string
+    {
+        return 'wallet';
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->can('view-wallet') ?? false;
+    }
+
+    public static function canCreate(): bool
+    {
+        return false; // Referrals are created automatically
+    }
+
+    public static function canEdit($record = null): bool
+    {
+        return false; // Referrals should not be edited
+    }
+
+    public static function canDelete($record = null): bool
+    {
+        return false; // Referrals should not be deleted
     }
 
     public static function getPages(): array

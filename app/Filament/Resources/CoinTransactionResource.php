@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Models\CoinTransaction;
+use App\Filament\Traits\RoleBasedAccess;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,6 +14,8 @@ use App\Filament\Resources\CoinTransactionResource\Pages;
 
 class CoinTransactionResource extends Resource
 {
+    use RoleBasedAccess;
+
     protected static ?string $model = CoinTransaction::class;
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
     protected static ?string $navigationGroup = 'Wallet Management';
@@ -77,6 +80,36 @@ class CoinTransactionResource extends Resource
                     ]),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    protected static function getResourcePermissionName(): string
+    {
+        return 'coins';
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->can('view-transactions') ?? false;
+    }
+
+    public static function canCreate(): bool
+    {
+        return false; // Transactions are created programmatically
+    }
+
+    public static function canEdit($record = null): bool
+    {
+        return false; // Transactions should not be edited
+    }
+
+    public static function canDelete($record = null): bool
+    {
+        return false; // Transactions should not be deleted
     }
 
     public static function getPages(): array

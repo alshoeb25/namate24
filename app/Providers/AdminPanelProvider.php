@@ -29,6 +29,7 @@ use App\Filament\Resources\ReferralResource;
 use App\Filament\Resources\ReviewResource;
 use App\Filament\Resources\SubjectResource;
 use App\Filament\Resources\OrderResource;
+use Filament\Http\Middleware\AuthorizeAccess;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -65,6 +66,8 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                \App\Http\Middleware\AdminSessionIsolation::class,
+                \App\Http\Middleware\FilamentRoleAccess::class,
             ])
             ->authMiddleware([
                 Authenticate::class
@@ -74,9 +77,13 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->navigationGroups([
                 NavigationGroup::make()
-                    ->label('Management'),
+                    ->label('Dashboard'),
                 NavigationGroup::make()
                     ->label('Wallet Management'),
+                NavigationGroup::make()
+                    ->label('User Management'),
+                NavigationGroup::make()
+                    ->label('Service Management'),
                 NavigationGroup::make()
                     ->label('Content Management'),
                 NavigationGroup::make()
@@ -84,3 +91,4 @@ class AdminPanelProvider extends PanelProvider
             ]);
     }
 }
+

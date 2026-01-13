@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Models\Order;
+use App\Filament\Traits\RoleBasedAccess;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,6 +14,8 @@ use App\Filament\Resources\OrderResource\Pages;
 
 class OrderResource extends Resource
 {
+    use RoleBasedAccess;
+
     protected static ?string $model = Order::class;
     protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
     protected static ?string $navigationGroup = 'Wallet Management';
@@ -69,6 +72,36 @@ class OrderResource extends Resource
                     ]),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    protected static function getResourcePermissionName(): string
+    {
+        return 'orders';
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->can('view-orders') ?? false;
+    }
+
+    public static function canCreate(): bool
+    {
+        return false; // Orders are created programmatically
+    }
+
+    public static function canEdit($record = null): bool
+    {
+        return false; // Orders should not be edited
+    }
+
+    public static function canDelete($record = null): bool
+    {
+        return false; // Orders should not be deleted
     }
 
     public static function getPages(): array

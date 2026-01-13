@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Models\StudentRequirement;
+use App\Filament\Traits\RoleBasedAccess;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -17,6 +18,8 @@ use App\Filament\Resources\StudentRequirementResource\Pages;
 
 class StudentRequirementResource extends Resource
 {
+    use RoleBasedAccess;
+
     protected static ?string $model = StudentRequirement::class;
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
     protected static ?string $navigationGroup = 'Management';
@@ -92,6 +95,36 @@ class StudentRequirementResource extends Resource
                 ViewAction::make(),
                 EditAction::make(),
             ]);
+    }
+
+    protected static function getResourcePermissionName(): string
+    {
+        return 'enquiries';
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->can('view-enquiries') ?? false;
+    }
+
+    public static function canCreate(): bool
+    {
+        return false; // Enquiries are created by students
+    }
+
+    public static function canEdit($record = null): bool
+    {
+        return auth()->user()?->can('manage-enquiries') ?? false;
+    }
+
+    public static function canDelete($record = null): bool
+    {
+        return false; // Enquiries should not be deleted
     }
 
     public static function getPages(): array

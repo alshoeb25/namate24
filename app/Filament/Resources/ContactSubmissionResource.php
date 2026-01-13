@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ContactSubmissionResource\Pages;
 use App\Models\ContactSubmission;
+use App\Filament\Traits\RoleBasedAccess;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Textarea;
@@ -20,6 +21,8 @@ use Filament\Tables\Table;
 
 class ContactSubmissionResource extends Resource
 {
+    use RoleBasedAccess;
+
     protected static ?string $model = ContactSubmission::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-envelope';
@@ -96,6 +99,36 @@ class ContactSubmissionResource extends Resource
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    protected static function getResourcePermissionName(): string
+    {
+        return 'services';
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->can('view-services') ?? false;
+    }
+
+    public static function canCreate(): bool
+    {
+        return false; // Submissions are created by users
+    }
+
+    public static function canEdit($record = null): bool
+    {
+        return false; // Submissions should not be edited
+    }
+
+    public static function canDelete($record = null): bool
+    {
+        return auth()->user()?->can('delete-services') ?? false;
     }
 
     public static function getPages(): array

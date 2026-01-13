@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Models\Review;
+use App\Filament\Traits\RoleBasedAccess;
 use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
@@ -21,6 +22,8 @@ use App\Filament\Resources\ReviewResource\Pages;
 
 class ReviewResource extends Resource
 {
+    use RoleBasedAccess;
+
     protected static ?string $model = Review::class;
     protected static ?string $navigationIcon = 'heroicon-o-star';
     protected static ?string $navigationGroup = 'Management';
@@ -130,6 +133,36 @@ class ReviewResource extends Resource
                 ViewAction::make(),
                 EditAction::make(),
             ]);
+    }
+
+    protected static function getResourcePermissionName(): string
+    {
+        return 'reviews';
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->can('view-reviews') ?? false;
+    }
+
+    public static function canCreate(): bool
+    {
+        return false; // Reviews cannot be created in admin panel
+    }
+
+    public static function canEdit($record = null): bool
+    {
+        return auth()->user()?->can('edit-reviews') ?? false;
+    }
+
+    public static function canDelete($record = null): bool
+    {
+        return auth()->user()?->can('delete-reviews') ?? false;
     }
 
     public static function getPages(): array

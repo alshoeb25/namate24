@@ -108,7 +108,16 @@ class User extends Authenticatable implements JWTSubject, FilamentUser
             return false;
         }
 
-        return $this->hasRole('admin');
+        return $this->hasAnyRole([
+            'super_admin',
+            'coin_wallet_admin',
+            'student_admin',
+            'tutor_admin',
+            'enquiries_admin',
+            'reviews_admin',
+            'service_admin',
+            'admin', // Keep backward compatibility
+        ]);
     }
 
 }

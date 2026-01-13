@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Models\Student;
+use App\Filament\Traits\RoleBasedAccess;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
@@ -16,6 +17,8 @@ use App\Filament\Resources\StudentResource\Pages;
 
 class StudentResource extends Resource
 {
+    use RoleBasedAccess;
+
     protected static ?string $model = Student::class;
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
     protected static ?string $navigationGroup = 'Management';
@@ -85,6 +88,36 @@ class StudentResource extends Resource
                 ViewAction::make(),
                 EditAction::make(),
             ]);
+    }
+
+    protected static function getResourcePermissionName(): string
+    {
+        return 'students';
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->can('view-students') ?? false;
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->can('create-students') ?? false;
+    }
+
+    public static function canEdit($record = null): bool
+    {
+        return auth()->user()?->can('edit-students') ?? false;
+    }
+
+    public static function canDelete($record = null): bool
+    {
+        return auth()->user()?->can('delete-students') ?? false;
     }
 
     public static function getPages(): array

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\TutorRefundRequestResource\Pages;
+use App\Filament\Traits\RoleBasedAccess;
 use App\Models\TutorRefundRequest;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -16,6 +17,8 @@ use Filament\Tables\Actions\Action;
 
 class TutorRefundRequestResource extends Resource
 {
+    use RoleBasedAccess;
+
     protected static ?string $model = TutorRefundRequest::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-arrow-path';
@@ -188,6 +191,36 @@ class TutorRefundRequestResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    protected static function getResourcePermissionName(): string
+    {
+        return 'coins';
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->can('view-coins') ?? false;
+    }
+
+    public static function canCreate(): bool
+    {
+        return false; // Refund requests are created by tutors
+    }
+
+    public static function canEdit($record = null): bool
+    {
+        return false; // Refund requests should not be edited
+    }
+
+    public static function canDelete($record = null): bool
+    {
+        return false; // Refund requests should not be deleted
     }
 
     public static function getPages(): array
