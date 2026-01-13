@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\StudentRequirement;
 use App\Jobs\IndexRequirementJob;
 use App\Jobs\RemoveRequirementFromIndexJob;
+use Illuminate\Support\Facades\Log;
 
 class RequirementObserver
 {
@@ -13,6 +14,7 @@ class RequirementObserver
      */
     public function created(StudentRequirement $requirement): void
     {
+        Log::info("RequirementObserver: created event for requirement ID {$requirement->id}, status: {$requirement->status}");
         // When a new requirement is created and status is open, index immediately
         if (in_array($requirement->status, ['open', 'active'])) {
             dispatch(new IndexRequirementJob($requirement->id));
@@ -24,6 +26,7 @@ class RequirementObserver
      */
     public function updated(StudentRequirement $requirement): void
     {
+        Log::info("RequirementObserver: updated event for requirement ID {$requirement->id}, status: {$requirement->status}");
         // Only react to status changes
         if ($requirement->isDirty('status')) {
             // If open/active, add/update in Elasticsearch
@@ -46,6 +49,7 @@ class RequirementObserver
      */
     public function deleted(StudentRequirement $requirement): void
     {
+        Log::info("RequirementObserver: deleted event for requirement ID {$requirement->id}");
         // Always remove from Elasticsearch when deleted
         dispatch(new RemoveRequirementFromIndexJob($requirement->id));
     }
@@ -55,6 +59,7 @@ class RequirementObserver
      */
     public function restored(StudentRequirement $requirement): void
     {
+        Log::info("RequirementObserver: restored event for requirement ID {$requirement->id}, status: {$requirement->status}");
         // If restored and status is open/active, re-index
         if (in_array($requirement->status, ['open', 'active'])) {
             dispatch(new IndexRequirementJob($requirement->id));
