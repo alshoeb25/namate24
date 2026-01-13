@@ -40,9 +40,21 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            ->brandName('namate24')
+            ->brandName('Namate24')
+            ->brandLogo(asset('/images/logo.png'))
+            ->brandLogoHeight('3rem')
             ->favicon(asset('/storage/fav_icon.png'))
             ->authGuard('web')
+            ->userMenuItems([
+                'profile' => \Filament\Navigation\MenuItem::make()
+                    ->label(fn () => auth()->user()->name)
+                    ->url(fn () => '#')
+                    ->icon('heroicon-o-user-circle'),
+                'roles' => \Filament\Navigation\MenuItem::make()
+                    ->label(fn () => 'Roles: ' . auth()->user()->roles->pluck('name')->join(', '))
+                    ->url(fn () => '#')
+                    ->icon('heroicon-o-shield-check'),
+            ])
             ->colors([
                 'primary' => Color::Cyan,
             ])

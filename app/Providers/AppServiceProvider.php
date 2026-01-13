@@ -3,6 +3,10 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use App\Models\Tutor;
+use App\Models\StudentRequirement;
+use App\Observers\TutorObserver;
+use App\Observers\RequirementObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -49,5 +53,9 @@ class AppServiceProvider extends ServiceProvider
         \Illuminate\Support\Facades\Gate::define('access-admin-panel', function (\App\Models\User $user) {
             return $user->hasRole('admin');
         });
+
+        // Register Elasticsearch observers for automatic sync
+        Tutor::observe(TutorObserver::class);
+        StudentRequirement::observe(RequirementObserver::class);
     }
 }

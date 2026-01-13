@@ -41,7 +41,7 @@
                 <path d="M10 12a5 5 0 100-10 5 5 0 000 10zm-7 7a7 7 0 1114 0H3z" />
                 </svg>
                 <input name="identifier" v-model="payload.identifier" type="text" class="ml-3 flex-1 outline-none text-gray-700 placeholder-gray-400 bg-transparent"
-                  placeholder="email or phone" aria-label="email or phone" />
+                  placeholder="email" aria-label="email" />
               </div>
             </div>
 

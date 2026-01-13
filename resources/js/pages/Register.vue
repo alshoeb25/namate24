@@ -48,7 +48,7 @@
             <!-- Email or Phone -->
             <div class="mt-4 relative">
                 <div class="flex items-center rounded-full border border-gray-300 px-4 py-3">
-                    <input name="identifier" v-model="payload.identifier" type="text" placeholder="Email or Phone"
+                    <input name="identifier" v-model="payload.identifier" type="text" placeholder="Email"
                       class="ml-3 flex-1 outline-none text-gray-700 placeholder-gray-400 bg-transparent" />
                 </div>
             </div>
