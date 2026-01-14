@@ -32,9 +32,9 @@
                 </div>
                 <div>
                   <h3 class="font-semibold text-gray-800 mb-1 text-sm sm:text-base">Email Address</h3>
-                  <a href="mailto:training@namate24academy.com"
+                  <a href="mailto:support@namate24.com"
                      class="text-pink-600 hover:text-pink-800 text-sm sm:text-base md:text-lg font-medium transition duration-300 break-all">
-                    training@namate24academy.com
+                    support@namate24.com
                   </a>
                 </div>
               </div>

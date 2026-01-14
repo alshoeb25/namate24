@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Mail\ContactSubmissionNotification;
+use App\Jobs\SendContactSubmissionEmail;
 use App\Models\ContactSubmission;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class ContactSubmissionController extends Controller
@@ -37,16 +37,28 @@ class ContactSubmissionController extends Controller
 
         $data = $request->validate($rules);
 
+        Log::info('Creating contact submission', [
+            'user_type' => $userType,
+            'ip_address' => $request->ip(),
+        ]);
+
         $submission = ContactSubmission::create([
             ...$data,
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
         ]);
 
-        $adminEmail = config('mail.admin_address', env('ADMIN_EMAIL', config('mail.from.address')));
-        if ($adminEmail) {
-            Mail::to($adminEmail)->send(new ContactSubmissionNotification($submission));
-        }
+        Log::info('Contact submission created successfully', [
+            'submission_id' => $submission->id,
+            'user_type' => $userType,
+        ]);
+
+        // Dispatch email sending job
+        SendContactSubmissionEmail::dispatch($submission);
+
+        Log::info('Contact submission email job dispatched', [
+            'submission_id' => $submission->id,
+        ]);
 
         return response()->json([
             'message' => 'Thanks! Your message has been received.',
