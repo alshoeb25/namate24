@@ -8,7 +8,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class TutorSearchService
 {
-    protected $elastic;
+    protected ElasticService $elastic;
 
     public function __construct(ElasticService $elastic)
     {
@@ -16,8 +16,8 @@ class TutorSearchService
     }
 
     /**
-     * Search Tutors via Elasticsearch with filters.
-     * Returns LengthAwarePaginator
+     * Search Tutors via Elasticsearch (IDs only),
+     * then hydrate from DB to keep LOCAL & PROD identical.
      */
     public function search(array $filters = [], int $perPage = 20, int $page = 1): LengthAwarePaginator
     {
@@ -29,23 +29,23 @@ class TutorSearchService
         $must = [];
         $should = [];
 
-        // ✅ Filter by approved moderation status (ALWAYS)
+        // ✅ Always approved tutors
         $must[] = ['term' => ['moderation_status.keyword' => 'approved']];
 
-        // 🔍 Main full-text search (replaces Scout::search)
+        // 🔍 Full-text search
         if (!empty($query)) {
             $must[] = [
                 'multi_match' => [
-                    'query' => $query,
+                    'query'  => $query,
                     'fields' => ['name', 'subjects', 'skills', 'city', 'area', 'headline'],
-                    'type' => 'best_fields'
+                    'type'   => 'best_fields',
                 ]
             ];
         }
 
-        // 🎯 Exact filters (replaces Scout attribute filters)
+        // 🎯 Filters
         if (!empty($filters['subject_id'])) {
-            $must[] = ['term' => ['subject_ids' => intval($filters['subject_id'])]];
+            $must[] = ['term' => ['subject_ids' => (int) $filters['subject_id']]];
         }
 
         if (!empty($filters['subject'])) {
@@ -61,14 +61,11 @@ class TutorSearchService
         }
 
         if (!empty($filters['min_price']) || !empty($filters['max_price'])) {
-            $min = $filters['min_price'] ?? 0;
-            $max = $filters['max_price'] ?? 999999;
-
             $must[] = [
                 'range' => [
                     'price_per_hour' => [
-                        'gte' => floatval($min),
-                        'lte' => floatval($max),
+                        'gte' => (float) ($filters['min_price'] ?? 0),
+                        'lte' => (float) ($filters['max_price'] ?? 999999),
                     ]
                 ]
             ];
@@ -77,7 +74,7 @@ class TutorSearchService
         if (!empty($filters['rating_min'])) {
             $must[] = [
                 'range' => [
-                    'rating_avg' => ['gte' => floatval($filters['rating_min'])]
+                    'rating_avg' => ['gte' => (float) $filters['rating_min']]
                 ]
             ];
         }
@@ -90,88 +87,71 @@ class TutorSearchService
             $must[] = ['term' => ['online_available' => true]];
         }
 
-        // 🌟 Featured filter (high-rated, verified tutors)
-        if (!empty($filters['featured']) && $filters['featured'] === 'true') {
-            $must[] = ['term' => ['verified' => true]];
-            $must[] = [
-                'range' => [
-                    'rating_avg' => ['gte' => 4.5]
-                ]
-            ];
-        }
-
-        // 📍 Location-based search with distance
+        // 📍 Location filters
         if (!empty($filters['location']) || ($lat !== null && $lng !== null)) {
             $this->addLocationFilter($must, $filters);
         }
 
-        // 📍 Nearby tutors search (within radius)
         if (!empty($filters['nearby']) && $lat !== null && $lng !== null) {
-            $radius = $filters['radius'] ?? '5km'; // Default 5km
             $must[] = [
                 'geo_distance' => [
-                    'distance' => $radius,
-                    'location' => [
-                        'lat' => $lat,
-                        'lon' => $lng,
-                    ]
+                    'distance' => ($filters['radius'] ?? '5km'),
+                    'location' => ['lat' => $lat, 'lon' => $lng],
                 ]
             ];
         }
 
-        // Pagination parameters for Elastic
+        // Pagination
         $from = ($page - 1) * $perPage;
-        $size = $perPage;
 
-        // Build query body
+        // ES Query
         $queryBody = [
             'query' => [
                 'bool' => [
-                    'must' => !empty($must) ? $must : [['match_all' => new \stdClass()]],
-                ]
+                    'must' => $must ?: [['match_all' => new \stdClass()]],
+                ],
             ],
             'from' => $from,
-            'size' => $size,
+            'size' => $perPage,
+            'sort' => $this->getSortOptions($filters['sort_by'] ?? null, $filters, $lat, $lng),
         ];
 
-        // Add should conditions if any
         if (!empty($should)) {
             $queryBody['query']['bool']['should'] = $should;
             $queryBody['query']['bool']['minimum_should_match'] = 1;
         }
 
-        // Add sorting
-        if (!empty($filters['sort_by'])) {
-            $queryBody['sort'] = $this->getSortOptions($filters['sort_by'], $filters, $lat, $lng);
-        } elseif (!empty($filters['featured']) && $filters['featured'] === 'true') {
-            // Featured sorting: by rating and rating count
-            $queryBody['sort'] = [
-                ['rating_avg' => ['order' => 'desc']],
-                ['rating_count' => ['order' => 'desc']],
-            ];
-        } else {
-            // Default: Sort by verified status and rating
-            $queryBody['sort'] = [
-                ['verified' => ['order' => 'desc']],
-                ['rating_avg' => ['order' => 'desc']],
-            ];
-        }
-
-        // 🔥 Elasticsearch Query
         $results = $this->elastic->client()->search([
             'index' => 'tutors',
-            'body' => $queryBody
+            'body'  => $queryBody,
         ]);
 
-        // Extract hits
-        $hits = collect($results['hits']['hits'])->map(fn($hit) => $hit['_source']);
+        // 🔑 Extract tutor IDs ONLY
+        $ids = collect($results['hits']['hits'])
+            ->pluck('_source.id')
+            ->toArray();
 
-        // Total hits
         $total = $results['hits']['total']['value'] ?? 0;
 
-        // Same format as Scout::paginate()
+        if (empty($ids)) {
+            return new LengthAwarePaginator([], 0, $perPage, $page);
+        }
+
+        // 🧠 Hydrate full Tutor models (same as LOCAL)
+        $tutors = Tutor::with([
+                'subjects',
+                'educations',
+                'experiences',
+                'languages',
+                'user',
+            ])
+            ->whereIn('id', $ids)
+            ->get()
+            ->sortBy(fn ($tutor) => array_search($tutor->id, $ids))
+            ->values();
+
         return new LengthAwarePaginator(
-            $hits,
+            $tutors,
             $total,
             $perPage,
             $page,
@@ -179,91 +159,52 @@ class TutorSearchService
         );
     }
 
-    /**
-     * Search for nearby tutors within a radius of given coordinates
-     */
-    public function searchNearby(float $latitude, float $longitude, array $filters = [], int $radius = 5, int $perPage = 20, int $page = 1): LengthAwarePaginator
-    {
-        $filters['lat'] = $latitude;
-        $filters['lng'] = $longitude;
-        $filters['nearby'] = true;
-        $filters['radius'] = $radius . 'km';
-
-        return $this->search($filters, $perPage, $page);
-    }
-
-    /**
-     * Search for tutors by city name or area
-     */
-    public function searchByLocation(string $location, array $filters = [], int $perPage = 20, int $page = 1): LengthAwarePaginator
-    {
-        $filters['location'] = $location;
-        return $this->search($filters, $perPage, $page);
-    }
-
-    /**
-     * Advanced location filter supporting city, state, and nearby searches
-     */
-    protected function addLocationFilter(&$must, array $filters): void
+    protected function addLocationFilter(array &$must, array $filters): void
     {
         if (!empty($filters['city'])) {
-            $must[] = ['match' => ['city.keyword' => $filters['city']]];
+            $must[] = ['term' => ['city.keyword' => $filters['city']]];
         } elseif (!empty($filters['location'])) {
-            // Match either city, area, or state
             $must[] = [
                 'bool' => [
                     'should' => [
                         ['match' => ['city' => $filters['location']]],
                         ['match' => ['area' => $filters['location']]],
                         ['match' => ['state' => $filters['location']]],
-                    ]
+                    ],
                 ]
             ];
         }
 
-        // Filter by state if provided
         if (!empty($filters['state'])) {
-            $must[] = ['match' => ['state.keyword' => $filters['state']]];
+            $must[] = ['term' => ['state.keyword' => $filters['state']]];
         }
     }
 
-    /**
-     * Get sort options based on sort_by parameter
-     */
-    protected function getSortOptions(string $sortBy, array $filters, ?float $lat = null, ?float $lng = null): array
+    protected function getSortOptions(?string $sortBy, array $filters, ?float $lat, ?float $lng): array
     {
         $sort = [];
 
-        // If nearby search, add distance sorting
         if (!empty($filters['nearby']) && $lat !== null && $lng !== null) {
             $sort[] = [
                 '_geo_distance' => [
-                    'location' => [
-                        'lat' => $lat,
-                        'lon' => $lng,
-                    ],
+                    'location' => ['lat' => $lat, 'lon' => $lng],
                     'order' => 'asc',
-                    'unit' => 'km'
+                    'unit'  => 'km',
                 ]
             ];
         }
 
-        // Add requested sort
-        switch ($sortBy) {
-            case 'price_low_to_high':
-                $sort[] = ['price_per_hour' => ['order' => 'asc']];
-                break;
-            case 'price_high_to_low':
-                $sort[] = ['price_per_hour' => ['order' => 'desc']];
-                break;
-            case 'rating':
-                $sort[] = ['rating_avg' => ['order' => 'desc']];
-                break;
-            case 'experience':
-                $sort[] = ['experience_total_years' => ['order' => 'desc']];
-                break;
-        }
+        match ($sortBy) {
+            'price_low_to_high' => $sort[] = ['price_per_hour' => ['order' => 'asc']],
+            'price_high_to_low' => $sort[] = ['price_per_hour' => ['order' => 'desc']],
+            'rating'            => $sort[] = ['rating_avg' => ['order' => 'desc']],
+            'experience'        => $sort[] = ['experience_total_years' => ['order' => 'desc']],
+            default             => null,
+        };
 
-        return !empty($sort) ? $sort : [['verified' => ['order' => 'desc']], ['rating_avg' => ['order' => 'desc']]];
+        return $sort ?: [
+            ['verified' => ['order' => 'desc']],
+            ['rating_avg' => ['order' => 'desc']],
+        ];
     }
 }
