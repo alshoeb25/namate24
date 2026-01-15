@@ -282,7 +282,16 @@ class UserController extends Controller
             'lng' => 'nullable|numeric',
         ]);
 
-        // Update tutor profile if exists
+        // Update user's location
+        $user->update([
+            'city' => $data['city'],
+            'area' => $data['area'],
+            'address' => $data['address'] ?? null,
+            'lat' => $data['lat'] ?? null,
+            'lng' => $data['lng'] ?? null,
+        ]);
+
+        // Also update tutor profile if exists (for backward compatibility)
         if ($user->tutor) {
             $user->tutor->update([
                 'city' => $data['city'],
@@ -293,7 +302,7 @@ class UserController extends Controller
             ]);
         }
 
-        // Update student profile if exists
+        // Also update student profile if exists (for backward compatibility)
         if ($user->student) {
             $user->student->update([
                 'city' => $data['city'],

@@ -1,7 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     
-    
     <div class="max-w-4xl mx-auto px-4 py-8">
       <!-- Header -->
       <div class="bg-white rounded-2xl shadow-md p-6 mb-6">
@@ -127,45 +126,22 @@
           <i class="fas fa-map-marker-alt mr-2 text-pink-600"></i>Location
         </h2>
 
-        <!-- Toggle between Map and Manual -->
-        <div class="mb-4 flex gap-2">
-          <button @click="locationMode = 'map'" 
-                  :class="locationMode === 'map' ? 'bg-pink-600 text-white' : 'bg-gray-200 text-gray-700'"
-                  class="flex-1 px-4 py-2 rounded-lg font-medium transition hover:opacity-90">
-            <i class="fas fa-map mr-2"></i>Use Google Maps
-          </button>
-          <button @click="locationMode = 'manual'" 
-                  :class="locationMode === 'manual' ? 'bg-pink-600 text-white' : 'bg-gray-200 text-gray-700'"
-                  class="flex-1 px-4 py-2 rounded-lg font-medium transition hover:opacity-90">
-            <i class="fas fa-keyboard mr-2"></i>Enter Manually
-          </button>
-        </div>
-
         <!-- Google Maps Autocomplete -->
-        <div v-if="locationMode === 'map'" class="mb-4">
+        <div class="mb-4">
           <label class="block text-gray-700 font-medium mb-2">
-            Search Location
+            <i class="fas fa-search mr-1"></i>Search Location via Google Maps
           </label>
           <input ref="locationInput"
                  type="text" 
                  placeholder="Search for your location..."
                  class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-pink-500 focus:border-transparent">
           <p class="text-sm text-gray-500 mt-2">
-            <i class="fas fa-info-circle mr-1"></i>Start typing to search for your address
+            <i class="fas fa-info-circle mr-1"></i>Search and select from Google Maps to auto-fill fields below, or enter manually
           </p>
-          
-          <!-- Selected Location Display -->
-          <div v-if="form.location.address" class="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-            <p class="text-sm font-medium text-gray-700 mb-1">
-              <i class="fas fa-check-circle text-green-600 mr-1"></i>Selected Location:
-            </p>
-            <p class="text-gray-600">{{ form.location.address }}</p>
-            <p class="text-xs text-gray-500 mt-1">{{ form.location.city }}, {{ form.location.area }}</p>
-          </div>
         </div>
 
-        <!-- Manual Entry -->
-        <div v-if="locationMode === 'manual'" class="space-y-4">
+        <!-- Manual Entry Fields (also auto-filled by Google Maps) -->
+        <div class="space-y-4">
           <div>
             <label class="block text-gray-700 font-medium mb-2">
               City<span class="text-red-500">*</span>
@@ -290,7 +266,6 @@ export default {
     const savingLocation = ref(false);
     const emailVerificationSent = ref(false);
     const successMessage = ref('');
-    const locationMode = ref('map');
     const locationInput = ref(null);
     let autocomplete = null;
 
@@ -301,15 +276,12 @@ export default {
         form.phone = user.value.phone || '';
         form.country_code = user.value.country_code || '+91';
         
-        // Load location data from tutor or student profile
-        const profile = user.value.tutor || user.value.student;
-        if (profile) {
-          form.location.city = profile.city || '';
-          form.location.area = profile.area || '';
-          form.location.address = profile.address || '';
-          form.location.lat = profile.lat || null;
-          form.location.lng = profile.lng || null;
-        }
+        // Load location data from user first, fallback to tutor/student profile
+        form.location.city = user.value.city || user.value.tutor?.city || user.value.student?.city || '';
+        form.location.area = user.value.area || user.value.tutor?.area || user.value.student?.area || '';
+        form.location.address = user.value.address || user.value.tutor?.address || user.value.student?.address || '';
+        form.location.lat = user.value.lat || user.value.tutor?.lat || user.value.student?.lat || null;
+        form.location.lng = user.value.lng || user.value.tutor?.lng || user.value.student?.lng || null;
       }
       
       try {
@@ -522,7 +494,6 @@ export default {
       savingLocation,
       emailVerificationSent,
       successMessage,
-      locationMode,
       locationInput,
       countryCodes,
       getProfilePhoto,

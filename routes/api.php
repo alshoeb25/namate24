@@ -123,6 +123,13 @@ Route::middleware('auth:api')->group(function() {
             'phone' => $user->phone,
             'avatar' => $user->avatar,
             'avatar_url' => $user->avatar_url,
+            'country' => $user->country,
+            'country_code' => $user->country_code,
+            'city' => $user->city,
+            'area' => $user->area,
+            'address' => $user->address,
+            'lat' => $user->lat,
+            'lng' => $user->lng,
             'role' => $user->role,
             'email_verified_at' => $user->email_verified_at,
             'coins' => $user->coins,
@@ -247,6 +254,7 @@ Route::middleware('auth:api')->group(function() {
             // Invoice routes
             Route::get('invoices', [WalletController::class, 'getInvoices'])->name('invoices'); // Get all invoices
             Route::get('invoice/{invoiceId}', [WalletController::class, 'getInvoice'])->name('invoice'); // Get invoice details
+            Route::get('invoice/{invoiceId}/view', [WalletController::class, 'viewInvoice'])->name('invoice.view'); // View invoice HTML
             Route::get('invoice/{invoiceId}/download', [WalletController::class, 'downloadInvoice'])->name('invoice.download'); // Download invoice PDF
     });
 

@@ -50,7 +50,8 @@ export default {
         currentPath === '/' || 
         currentPath === '/search' || 
         currentPath === '/tutors' ||
-        currentPath === '/tutor-jobs';
+        currentPath === '/tutor-jobs' ||
+        currentPath === '/profile';
       
       // If user has both roles
       if (hasBothRoles.value) {
@@ -82,7 +83,8 @@ export default {
         currentPath === '/' || 
         currentPath === '/search' || 
         currentPath === '/tutors' ||
-        currentPath === '/tutor-jobs';
+        currentPath === '/tutor-jobs' ||
+        currentPath === '/profile';
       
       // If user has both roles
       if (hasBothRoles.value) {

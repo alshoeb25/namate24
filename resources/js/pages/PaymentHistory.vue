@@ -248,6 +248,14 @@
       @download="downloadInvoice"
       @support="contactSupport"
     />
+
+    <!-- Invoice Modal -->
+    <InvoiceModal
+      :visible="showInvoiceModal"
+      :invoiceId="selectedInvoiceId"
+      :invoiceNumber="selectedInvoiceNumber"
+      @close="closeInvoiceModal"
+    />
   </div>
 </template>
 
@@ -255,11 +263,13 @@
 import { ref, computed, onMounted, reactive, watch } from 'vue';
 import axios from 'axios';
 import TransactionDetailsModal from '@/components/Wallet/TransactionDetailsModal.vue';
+import InvoiceModal from '@/components/Wallet/InvoiceModal.vue';
 
 export default {
   name: 'PaymentHistory',
   components: {
-    TransactionDetailsModal
+    TransactionDetailsModal,
+    InvoiceModal
   },
   setup() {
     const transactions = ref([]);
@@ -269,6 +279,9 @@ export default {
     const perPage = ref(20);
     const showDetailsModal = ref(false);
     const selectedTransaction = ref(null);
+    const showInvoiceModal = ref(false);
+    const selectedInvoiceId = ref(null);
+    const selectedInvoiceNumber = ref('');
     const paginationInfo = reactive({
       current_page: 1,
       per_page: 20,
@@ -468,13 +481,26 @@ export default {
     };
 
     const viewTransactionDetails = (transaction) => {
-      selectedTransaction.value = transaction;
-      showDetailsModal.value = true;
+      // Check if should show invoice instead
+      if (shouldShowInvoice(transaction)) {
+        selectedInvoiceId.value = transaction.invoice_id;
+        selectedInvoiceNumber.value = transaction.invoice_number || 'Invoice';
+        showInvoiceModal.value = true;
+      } else {
+        selectedTransaction.value = transaction;
+        showDetailsModal.value = true;
+      }
     };
 
     const closeDetailsModal = () => {
       showDetailsModal.value = false;
       selectedTransaction.value = null;
+    };
+
+    const closeInvoiceModal = () => {
+      showInvoiceModal.value = false;
+      selectedInvoiceId.value = null;
+      selectedInvoiceNumber.value = '';
     };
 
     const downloadInvoice = () => {
@@ -572,6 +598,10 @@ export default {
       transactionDetails,
       viewTransactionDetails,
       closeDetailsModal,
+      closeInvoiceModal,
+      showInvoiceModal,
+      selectedInvoiceId,
+      selectedInvoiceNumber,
       downloadInvoice,
       contactSupport,
       shouldShowInvoice,

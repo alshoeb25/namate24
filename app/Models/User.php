@@ -15,7 +15,9 @@ class User extends Authenticatable implements JWTSubject, FilamentUser
 {
     use Notifiable, HasRoles;
 
-    protected $fillable = ['name','email','phone','country_code','country','country_iso','password','avatar','role','phone_otp','phone_otp_expires_at','phone_verified_at','email_verified_at','email_verification_token','email_verification_token_expires_at','coins','referral_code','referred_by'];
+    protected $fillable = ['name','email','phone','country_code','city','area','address','lat','lng','country','country_iso','password',
+    'avatar','role','phone_otp','phone_otp_expires_at','phone_verified_at','email_verified_at',
+    'email_verification_token','email_verification_token_expires_at','coins','referral_code','referred_by'];
 
     protected $hidden = ['password'];
 

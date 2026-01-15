@@ -21,7 +21,14 @@
           <div class="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3">
             <div>
               <p class="text-xs uppercase tracking-wide text-gray-500">Transaction ID</p>
-              <p class="font-mono font-semibold text-gray-900">{{ encryptedTransactionId }}</p>
+              <button 
+                @click="copyTransactionId" 
+                class="font-mono font-semibold text-gray-900 hover:text-pink-600 transition flex items-center gap-2 group"
+                :title="showFullTransactionId ? 'Click to copy' : 'Click to show full ID'"
+              >
+                <span>{{ displayTransactionId }}</span>
+                <i :class="copied ? 'fas fa-check text-green-600' : 'fas fa-copy text-gray-400 group-hover:text-pink-600'" class="text-sm"></i>
+              </button>
             </div>
             <span :class="statusBadgeClass">{{ statusLabel }}</span>
           </div>
@@ -100,13 +107,6 @@
 
         <div class="flex flex-wrap gap-3 border-t border-gray-100 px-6 py-4">
           <button
-            v-if="status === 'success'"
-            @click="viewInvoice"
-            class="flex-1 rounded-xl bg-pink-500 px-4 py-3 font-semibold text-white transition hover:bg-pink-600"
-          >
-            <i class="fas fa-file-invoice mr-2"></i>View Invoice
-          </button>
-          <button
             v-if="status === 'failed'"
             @click="retryPayment"
             class="flex-1 rounded-xl bg-pink-500 px-4 py-3 font-semibold text-white transition hover:bg-pink-600"
@@ -145,6 +145,12 @@ export default {
     }
   },
   emits: ['close', 'download', 'support', 'retry'],
+  data() {
+    return {
+      showFullTransactionId: false,
+      copied: false
+    };
+  },
   computed: {
     statusLabel() {
       if (this.status === 'failed') return 'Failed';
@@ -229,6 +235,17 @@ export default {
         return rate.toFixed(0);
       }
       return '18'; // default GST rate
+    },
+    displayTransactionId() {
+      const id = String(this.details.transactionId || '');
+      if (!id || id === '—') return '—';
+      if (this.showFullTransactionId) return id;
+      // Show masked version
+      if (id.length <= 8) return id;
+      const start = id.substring(0, 4);
+      const end = id.substring(id.length - 4);
+      const middle = '*'.repeat(Math.min(id.length - 8, 8));
+      return `${start}${middle}${end}`;
     }
   },
   methods: {
@@ -306,6 +323,36 @@ export default {
 
       // Direct download without authentication check - backend will handle auth
       window.location.href = `/api/orders/${orderId}/receipt`;
+    },
+    downloadPDF() {
+      // The InvoiceViewer component handles PDF download
+      // This method is kept for backward compatibility
+      const invoiceId = this.details?.invoiceId;
+      if (invoiceId) {
+        window.open(`/api/wallet/invoice/${invoiceId}/view?download=true`, '_blank');
+      } else {
+        this.$emit('download');
+      }
+    },
+    copyTransactionId() {
+      const id = String(this.details.transactionId || '');
+      if (!id || id === '—') return;
+      
+      // Toggle full display first
+      if (!this.showFullTransactionId) {
+        this.showFullTransactionId = true;
+        return;
+      }
+      
+      // Copy to clipboard
+      navigator.clipboard.writeText(id).then(() => {
+        this.copied = true;
+        setTimeout(() => {
+          this.copied = false;
+        }, 2000);
+      }).catch(err => {
+        console.error('Failed to copy:', err);
+      });
     }
   }
 };

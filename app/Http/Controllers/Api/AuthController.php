@@ -17,6 +17,7 @@ use App\Notifications\LoginSuccessNotification;
 use App\Models\UserActivity;
 use App\Jobs\RecordLoginActivity;
 use App\Jobs\RecordLogoutActivity;
+use App\Helpers\CountryHelper;
 
 class AuthController extends Controller
 {
@@ -370,58 +371,65 @@ class AuthController extends Controller
      */
     private function autoDetectCountry(User $user, Request $request): void
     {
-        // Check if user already has country information
-        if (!empty($user->country_code)) {
+        // If value already set to a dial code, keep it
+        if (!empty($user->country_code) && str_starts_with($user->country_code, '+')) {
             return;
         }
 
-        // Check tutor/student tables for existing country info
+        // If value is alpha or blank, convert using ISO or default to +91
+        if (!empty($user->country_code) && !str_starts_with($user->country_code, '+')) {
+            $iso = strtoupper((string) $user->country_iso ?: 'IN');
+            $dial = \App\Helpers\CountryHelper::isoToDialCode($iso);
+            $user->update(['country_code' => $dial]);
+            return;
+        }
+
+        // Check tutor/student tables for existing country info; cannot infer dial code reliably from names here
         if ($user->tutor && !empty($user->tutor->country)) {
+            $iso = strtoupper((string) $user->country_iso ?: 'IN');
+            $dial = \App\Helpers\CountryHelper::isoToDialCode($iso);
+            $user->update(['country_code' => $dial]);
             return;
         }
         if ($user->student && !empty($user->student->country_code)) {
+            // If student already stores dial code, use it
+            $studentCode = $user->student->country_code;
+            $user->update(['country_code' => str_starts_with($studentCode, '+') ? $studentCode : '+91']);
             return;
         }
 
         // Get IP address
         $ip = $request->ip();
-        
-        // Skip local/private IPs
+
+        // Skip local/private IPs: default to +91 for local dev
         if ($this->isLocalIp($ip)) {
-            // Default to India for local development
-            $user->update(['country_code' => 'IN']);
+            $user->update(['country_code' => '+91', 'country_iso' => $user->country_iso ?: 'IN']);
             return;
         }
 
         try {
-            // Use ip-api.com for geolocation (free, no API key needed)
-            $response = @file_get_contents("http://ip-api.com/json/{$ip}?fields=status,countryCode");
-            
-            if ($response) {
-                $data = json_decode($response, true);
-                
-                if (isset($data['status']) && $data['status'] === 'success') {
-                    $countryCode = $data['countryCode'] ?? null;
-                    
-                    // Set country code if detected
-                    if ($countryCode) {
-                        $user->update(['country_code' => $countryCode]);
-                        \Log::info('Auto-detected country for user', [
-                            'user_id' => $user->id,
-                            'country_code' => $countryCode,
-                            'ip' => $ip
-                        ]);
-                        return;
-                    }
-                }
+            // Detect using helper that returns dial code
+            $detected = $this->detectCountry($ip); // returns ['country_code' => '+..', 'country_iso' => 'ISO', 'country' => 'Name']
+            if (!empty($detected['country_code'])) {
+                $user->update([
+                    'country_code' => $detected['country_code'],
+                    'country_iso' => $user->country_iso ?: ($detected['country_iso'] ?? 'IN'),
+                    'country' => $user->country ?: ($detected['country'] ?? 'India'),
+                ]);
+                \Log::info('Auto-detected country for user', [
+                    'user_id' => $user->id,
+                    'country_code' => $detected['country_code'],
+                    'ip' => $ip
+                ]);
+                return;
             }
         } catch (\Throwable $e) {
             \Log::warning('Country detection failed: ' . $e->getMessage());
         }
 
-        // Fallback: Default to India if detection fails
-        $user->update(['country_code' => 'IN']);
-        \Log::info('Defaulted to India for user', ['user_id' => $user->id]);
+        // Fallback: Default to India dial code if detection fails
+        $user->update(['country_code' => '+91', 'country_iso' => $user->country_iso ?: 'IN', 'country' => $user->country ?: 'India']);
+        \Log::info('Defaulted country_code to +91 for user', ['user_id' => $user->id]);
     }
 
     /**
@@ -438,11 +446,7 @@ class AuthController extends Controller
      */
     private function detectCountry(string $ip): array
     {
-        $default = [
-            'country_code' => 'IN',
-            'country' => 'India',
-            'country_iso' => 'IN',
-        ];
+        $default = CountryHelper::getCountryData('IN', 'India');
 
         // Skip local/private IPs
         if ($this->isLocalIp($ip)) {
@@ -457,15 +461,11 @@ class AuthController extends Controller
                 $data = json_decode($response, true);
                 
                 if (isset($data['status']) && $data['status'] === 'success') {
-                    $countryCode = $data['countryCode'] ?? null;
+                    $isoCode = $data['countryCode'] ?? null;
                     $country = $data['country'] ?? null;
                     
-                    if ($countryCode && $country) {
-                        return [
-                            'country_code' => strtoupper($countryCode),
-                            'country' => $country,
-                            'country_iso' => strtoupper($countryCode),
-                        ];
+                    if ($isoCode && $country) {
+                        return CountryHelper::getCountryData($isoCode, $country);
                     }
                 }
             }

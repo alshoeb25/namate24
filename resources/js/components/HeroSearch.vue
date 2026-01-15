@@ -361,16 +361,68 @@ function populateFromRoute() {
   }
 }
 
+// Parse route path to detect subject-slug pattern and auto-fill
+async function parseRouteAndAutoFill() {
+  const path = route.path;
+
+  // Match patterns like: /web-development or /web-development-tutors or /mathematics-tutors-in-delhi
+  const tutorsPattern = /^\/([a-z0-9-]+)(?:-tutors)?(?:-in-([a-z0-9-]+))?$/i;
+  const match = path.match(tutorsPattern);
+
+  if (!match) return;
+
+  const firstSegment = match[1].toLowerCase();
+  if (firstSegment === 'tutors') return; // Exclude plain /tutors route
+
+  // Extract subject word: remove "-tutors" suffix if present, then convert to title case
+  const subjectSlug = firstSegment.replace(/-tutors$/, ''); // e.g., "web-development-tutors" → "web-development"
+  const subjectWord = subjectSlug
+    .replace(/-/g, ' ') // Replace hyphens with spaces
+    .replace(/\b\w/g, c => c.toUpperCase()); // Title case each word: "web development" → "Web Development"
+
+  try {
+    // Search for the subject by name (title-cased words)
+    const response = await axios.get('/api/search-subjects', {
+      params: { search: subjectWord, limit: 10 }
+    });
+
+    const subjects = response.data.data || response.data || [];
+    if (subjects.length) {
+      // Prefer exact slug match, fallback to name match, else first
+      const subject =
+        subjects.find(s => (s.slug || '').toLowerCase() === subjectSlug) ||
+        subjects.find(s => (s.name || '').toLowerCase() === subjectWord.toLowerCase()) ||
+        subjects[0];
+
+      // Fill search input (human-friendly) and hidden fields
+      searchSubject.value = subject.name || subjectWord;
+      subjectId.value = subject.id || '';
+      subjectUrl.value = subject.slug || subjectSlug;
+
+      // Trigger search with filters populated
+      performSearch();
+    }
+  } catch (error) {
+    console.error('Error parsing route for subject:', error);
+  }
+}
+
 // Populate fields on mount
 onMounted(async () => {
   populateFromRoute();
   await initGooglePlaces();
+  await parseRouteAndAutoFill();
 });
 
 // Watch for route changes to update fields
 watch(() => route.query, () => {
   populateFromRoute();
 }, { deep: true });
+
+// Also react to path changes (e.g., navigating between /{subject}-tutors routes)
+watch(() => route.path, () => {
+  parseRouteAndAutoFill();
+});
 
 async function initGooglePlaces() {
   try {

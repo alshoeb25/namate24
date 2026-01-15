@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invoice - {{ $invoice->invoice_number }}</title>
+    
+    <!-- html2pdf.js for client-side PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -15,6 +19,43 @@
             color: #333;
             line-height: 1.6;
             padding: 20px;
+            background: #f5f5f5;
+        }
+        .invoice-wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .action-buttons {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .action-buttons button {
+            padding: 12px 30px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-download {
+            background: #4F46E5;
+            color: white;
+        }
+        .btn-download:hover {
+            background: #4338CA;
+        }
+        .btn-print {
+            background: #10B981;
+            color: white;
+        }
+        .btn-print:hover {
+            background: #059669;
         }
         .invoice-container {
             max-width: 800px;
@@ -22,6 +63,7 @@
             background: #fff;
             padding: 40px;
             border: 1px solid #ddd;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         .header {
             text-align: center;
@@ -37,6 +79,25 @@
         .header p {
             color: #666;
             font-size: 14px;
+        }
+        .company-details {
+            margin-top: 15px;
+            color: #666;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+        .bank-details {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 13px;
+        }
+        .bank-details h3 {
+            color: #4F46E5;
+            font-size: 14px;
+            margin-bottom: 8px;
         }
         .invoice-info {
             display: flex;
@@ -60,6 +121,10 @@
             padding: 20px;
             border-radius: 8px;
             margin-bottom: 30px;
+        }
+        .invoice-details h3 {
+            margin-bottom: 15px;
+            color: #4F46E5;
         }
         .invoice-details table {
             width: 100%;
@@ -110,15 +175,52 @@
             background: #10B981;
             color: white;
         }
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .action-buttons {
+                display: none;
+            }
+            .invoice-container {
+                box-shadow: none;
+                border: none;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="invoice-container">
+    <div class="invoice-wrapper">
+        <!-- Action Buttons (Hidden in PDF) -->
+        <div class="action-buttons no-print">
+            <button class="btn-download" onclick="downloadPDF()">
+                <i class="fa fa-download"></i> Download PDF
+            </button>
+            <button class="btn-print" onclick="window.print()">
+                <i class="fa fa-print"></i> Print
+            </button>
+        </div>
+
+        <!-- Invoice Content -->
+        <div class="invoice-container" id="invoice-content">
         <!-- Header -->
         <div class="header">
             <h1>INVOICE</h1>
             <p>Namate24 - Your Learning Platform</p>
+             <div class="company-details">
+                <strong>Namate24 Training Services OPC Pvt Ltd</strong><br>
+                Building 154, 3rd Cross, Golahalli Main,<br>
+                Electronic City Phase 1,<br>
+                Bengaluru, Karnataka, India – 560100<br>
+                Email: trainhireh@gmail.com
+            </div>
         </div>
+        <div class="bank-details">
+        <h3>Company Registration Details</h3>
+        GST No: 29AAICN7245B1ZE<br>
+        CIN: U70200KA20230PC17076
+    </div>
 
         <!-- Invoice Info -->
         <div class="invoice-info">
@@ -241,5 +343,27 @@
             <p>For any queries, please contact support@namate24.com</p>
         </div>
     </div>
+    </div>
+
+    <script>
+        function downloadPDF() {
+            const element = document.getElementById('invoice-content');
+            const opt = {
+                margin: 10,
+                filename: 'Invoice-{{ $invoice->invoice_number }}.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            
+            // Generate PDF on client side
+            html2pdf().set(opt).from(element).save();
+        }
+
+        // Optional: Auto-download on load if URL parameter is present
+        if (window.location.search.includes('download=true')) {
+            setTimeout(downloadPDF, 500);
+        }
+    </script>
 </body>
 </html>

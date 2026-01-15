@@ -2132,6 +2132,34 @@ class WalletController extends Controller
     }
 
     /**
+     * View invoice in browser (HTML)
+     */
+    public function viewInvoice(Request $request, $invoiceId)
+    {
+        $user = $request->user();
+
+        $invoice = Invoice::where('id', $invoiceId)
+            ->orWhere('invoice_number', $invoiceId)
+            ->where('user_id', $user->id)
+            ->with(['order', 'user'])
+            ->first();
+
+        if (!$invoice) {
+            abort(404, 'Invoice not found');
+        }
+
+        $order = $invoice->order;
+        $transaction = CoinTransaction::where('order_id', $order->id)->first();
+
+        return view('invoices.coin-purchase', [
+            'invoice' => $invoice,
+            'order' => $order,
+            'user' => $user,
+            'transaction' => $transaction,
+        ]);
+    }
+
+    /**
      * Get invoice details
      */
     public function getInvoice(Request $request, $invoiceId)
@@ -2141,7 +2169,10 @@ class WalletController extends Controller
         $invoice = Invoice::where('id', $invoiceId)
             ->orWhere('invoice_number', $invoiceId)
             ->where('user_id', $user->id)
-            ->with(['order'])
+            ->with([
+                'order', 
+                'user:id,name,email,phone,address,city,area,country,country_code'
+            ])
             ->first();
 
         if (!$invoice) {

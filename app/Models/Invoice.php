@@ -60,7 +60,7 @@ class Invoice extends Model
             ->whereMonth('created_at', $month)
             ->count() + 1;
         
-        return sprintf('INV-%s-%s-%04d', $year, $month, $count);
+        return sprintf('NMINV-%s-%s-%04d', $year, $month, $count);
     }
 
     /**

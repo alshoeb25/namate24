@@ -39,6 +39,18 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Google Analytics (Production Only) -->
+    @if(app()->environment('production'))
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZTZPT0K015"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-ZTZPT0K015');
+    </script>
+    @endif
+    
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>

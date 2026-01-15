@@ -23,45 +23,45 @@
       <div>
         <h3 class="font-semibold mb-3">In-demand Careers</h3>
         <ul class="space-y-2 text-gray-300 text-sm">
-          <li>Data Scientist</li>
-          <li>Full Stack Web Developer</li>
-          <li>Cloud Engineer</li>
-          <li>Project Manager</li>
-          <li>Game Developer</li>
-          <li>All Career Accelerators</li>
+          <li><router-link :to="`/data-scientist-tutors`" class="hover:text-blue-400 transition">Data Scientist</router-link></li>
+          <li><router-link :to="`/full-stack-web-developer-tutors`" class="hover:text-blue-400 transition">Full Stack Web Developer</router-link></li>
+          <li><router-link :to="`/cloud-engineer-tutors`" class="hover:text-blue-400 transition">Cloud Engineer</router-link></li>
+          <li><router-link :to="`/project-manager-tutors`" class="hover:text-blue-400 transition">Project Manager</router-link></li>
+          <li><router-link :to="`/game-developer-tutors`" class="hover:text-blue-400 transition">Game Developer</router-link></li>
+          <li><router-link to="/tutors" class="hover:text-blue-400 transition">All Career Accelerators</router-link></li>
         </ul>
       </div>
 
       <div>
         <h3 class="font-semibold mb-3">Web Development</h3>
         <ul class="space-y-2 text-gray-300 text-sm">
-          <li>Web Development</li>
-          <li>JavaScript</li>
-          <li>React JS</li>
-          <li>Angular</li>
-          <li>Java</li>
+          <li><router-link :to="`/web-development-tutors`" class="hover:text-blue-400 transition">Web Development</router-link></li>
+          <li><router-link :to="`/javascript-tutors`" class="hover:text-blue-400 transition">JavaScript</router-link></li>
+          <li><router-link :to="`/react-js-tutors`" class="hover:text-blue-400 transition">React JS</router-link></li>
+          <li><router-link :to="`/angular-tutors`" class="hover:text-blue-400 transition">Angular</router-link></li>
+          <li><router-link :to="`/java-tutors`" class="hover:text-blue-400 transition">Java</router-link></li>
         </ul>
       </div>
 
       <div>
         <h3 class="font-semibold mb-3">IT Certifications</h3>
         <ul class="space-y-2 text-gray-300 text-sm">
-          <li>Amazon AWS</li>
-          <li>AWS Cloud Practitioner</li>
-          <li>Azure Fundamentals</li>
-          <li>AWS Solutions Architect</li>
-          <li>Kubernetes</li>
+          <li><router-link :to="`/amazon-aws-tutors`" class="hover:text-blue-400 transition">Amazon AWS</router-link></li>
+          <li><router-link :to="`/aws-cloud-practitioner-tutors`" class="hover:text-blue-400 transition">AWS Cloud Practitioner</router-link></li>
+          <li><router-link :to="`/azure-fundamentals-tutors`" class="hover:text-blue-400 transition">Azure Fundamentals</router-link></li>
+          <li><router-link :to="`/aws-solutions-architect-tutors`" class="hover:text-blue-400 transition">AWS Solutions Architect</router-link></li>
+          <li><router-link :to="`/kubernetes-tutors`" class="hover:text-blue-400 transition">Kubernetes</router-link></li>
         </ul>
       </div>
 
       <div>
         <h3 class="font-semibold mb-3">Leadership</h3>
         <ul class="space-y-2 text-gray-300 text-sm">
-          <li>Leadership</li>
-          <li>Management Skills</li>
-          <li>Project Management</li>
-          <li>Personal Productivity</li>
-          <li>Emotional Intelligence</li>
+          <li><router-link :to="`/leadership-tutors`" class="hover:text-blue-400 transition">Leadership</router-link></li>
+          <li><router-link :to="`/management-skills-tutors`" class="hover:text-blue-400 transition">Management Skills</router-link></li>
+          <li><router-link :to="`/project-management-tutors`" class="hover:text-blue-400 transition">Project Management</router-link></li>
+          <li><router-link :to="`/personal-productivity-tutors`" class="hover:text-blue-400 transition">Personal Productivity</router-link></li>
+          <li><router-link :to="`/emotional-intelligence-tutors`" class="hover:text-blue-400 transition">Emotional Intelligence</router-link></li>
         </ul>
       </div>
 
@@ -69,12 +69,12 @@
       <div>
         <h3 class="font-semibold mb-3">Schooling</h3>
         <ul class="space-y-2 text-gray-300 text-sm">
-          <li>Mathematics</li>
-          <li>Science (Physics / Chemistry / Biology)</li>
-          <li>English</li>
-          <li>Social Studies</li>
-          <li>Computer Science</li>
-          <li>General Knowledge</li>
+          <li><router-link :to="`/mathematics-tutors`" class="hover:text-blue-400 transition">Mathematics</router-link></li>
+          <li><router-link :to="`/science-physics-chemistry-biology-tutors`" class="hover:text-blue-400 transition">Science (Physics / Chemistry / Biology)</router-link></li>
+          <li><router-link :to="`/english-tutors`" class="hover:text-blue-400 transition">English</router-link></li>
+          <li><router-link :to="`/social-studies-tutors`" class="hover:text-blue-400 transition">Social Studies</router-link></li>
+          <li><router-link :to="`/computer-science-tutors`" class="hover:text-blue-400 transition">Computer Science</router-link></li>
+          <li><router-link :to="`/general-knowledge-tutors`" class="hover:text-blue-400 transition">General Knowledge</router-link></li>
         </ul>
       </div>
 
@@ -86,63 +86,60 @@
       <details class="py-3">
         <summary class="cursor-pointer font-semibold">In-demand Careers</summary>
         <ul class="mt-3 text-gray-300 text-sm space-y-2 pl-3">
-          <li>Data Scientist</li>
-          <li>Full Stack Web Developer</li>
-          <li>Cloud Engineer</li>
-          <li>Project Manager</li>
-          <li>Game Developer</li>
-        </ul>
-      </details>
-
-      <details class="py-3">
-        <summary class="cursor-pointer font-semibold">Certifications by Skill</summary>
-        <ul class="mt-3 text-gray-300 text-sm space-y-2 pl-3">
-          <li>Cybersecurity Certification</li>
-          <li>Project Management</li>
-          <li>Cloud Certification</li>
-          <li>Data Analytics</li>
+          <li><router-link :to="`/data-scientist-tutors`" class="hover:text-blue-400 transition">Data Scientist</router-link></li>
+          <li><router-link :to="`/full-stack-web-developer-tutors`" class="hover:text-blue-400 transition">Full Stack Web Developer</router-link></li>
+          <li><router-link :to="`/cloud-engineer-tutors`" class="hover:text-blue-400 transition">Cloud Engineer</router-link></li>
+          <li><router-link :to="`/project-manager-tutors`" class="hover:text-blue-400 transition">Project Manager</router-link></li>
+          <li><router-link :to="`/game-developer-tutors`" class="hover:text-blue-400 transition">Game Developer</router-link></li>
         </ul>
       </details>
 
       <details class="py-3">
         <summary class="cursor-pointer font-semibold">Web Development</summary>
         <ul class="mt-3 text-gray-300 text-sm space-y-2 pl-3">
-          <li>JavaScript</li>
-          <li>React</li>
-          <li>Angular</li>
+          <li><router-link :to="`/web-development-tutors`" class="hover:text-blue-400 transition">Web Development</router-link></li>
+          <li><router-link :to="`/javascript-tutors`" class="hover:text-blue-400 transition">JavaScript</router-link></li>
+          <li><router-link :to="`/react-js-tutors`" class="hover:text-blue-400 transition">React JS</router-link></li>
+          <li><router-link :to="`/angular-tutors`" class="hover:text-blue-400 transition">Angular</router-link></li>
+          <li><router-link :to="`/java-tutors`" class="hover:text-blue-400 transition">Java</router-link></li>
         </ul>
       </details>
 
       <details class="py-3">
         <summary class="cursor-pointer font-semibold">IT Certifications</summary>
         <ul class="mt-3 text-gray-300 text-sm space-y-2 pl-3">
-          <li>AWS</li>
-          <li>Azure</li>
-          <li>Kubernetes</li>
+          <li><router-link :to="`/amazon-aws-tutors`" class="hover:text-blue-400 transition">Amazon AWS</router-link></li>
+          <li><router-link :to="`/aws-cloud-practitioner-tutors`" class="hover:text-blue-400 transition">AWS Cloud Practitioner</router-link></li>
+          <li><router-link :to="`/azure-fundamentals-tutors`" class="hover:text-blue-400 transition">Azure Fundamentals</router-link></li>
+          <li><router-link :to="`/aws-solutions-architect-tutors`" class="hover:text-blue-400 transition">AWS Solutions Architect</router-link></li>
+          <li><router-link :to="`/kubernetes-tutors`" class="hover:text-blue-400 transition">Kubernetes</router-link></li>
         </ul>
       </details>
-
 
       <details class="py-3">
         <summary class="cursor-pointer font-semibold">Leadership</summary>
         <ul class="mt-3 text-gray-300 text-sm space-y-2 pl-3">
-          <li>Management Skills</li>
-          <li>Productivity</li>
+          <li><router-link :to="`/leadership-tutors`" class="hover:text-blue-400 transition">Leadership</router-link></li>
+          <li><router-link :to="`/management-skills-tutors`" class="hover:text-blue-400 transition">Management Skills</router-link></li>
+          <li><router-link :to="`/project-management-tutors`" class="hover:text-blue-400 transition">Project Management</router-link></li>
+          <li><router-link :to="`/personal-productivity-tutors`" class="hover:text-blue-400 transition">Personal Productivity</router-link></li>
+          <li><router-link :to="`/emotional-intelligence-tutors`" class="hover:text-blue-400 transition">Emotional Intelligence</router-link></li>
         </ul>
       </details>
 
       <details class="py-3">
         <summary class="cursor-pointer font-semibold">Schooling</summary>
         <ul class="mt-3 text-gray-300 text-sm space-y-2 pl-3">
-          <li>Mathematics</li>
-          <li>Science (Physics / Chemistry / Biology)</li>
-          <li>English</li>
-          <li>Social Studies</li>
-          <li>Computer Science</li>
-          <li>General Knowledge</li>
+          <li><router-link :to="`/mathematics-tutors`" class="hover:text-blue-400 transition">Mathematics</router-link></li>
+          <li><router-link :to="`/science-physics-chemistry-biology-tutors`" class="hover:text-blue-400 transition">Science (Physics / Chemistry / Biology)</router-link></li>
+          <li><router-link :to="`/english-tutors`" class="hover:text-blue-400 transition">English</router-link></li>
+          <li><router-link :to="`/social-studies-tutors`" class="hover:text-blue-400 transition">Social Studies</router-link></li>
+          <li><router-link :to="`/computer-science-tutors`" class="hover:text-blue-400 transition">Computer Science</router-link></li>
+          <li><router-link :to="`/general-knowledge-tutors`" class="hover:text-blue-400 transition">General Knowledge</router-link></li>
         </ul>
       </details>
     </div>
+
 
     <!-- BOTTOM AREA (SINGLE LINE TOP) -->
     <div class="border-t border-gray-700 mt-10 pt-6 flex flex-col lg:flex-row justify-between items-start lg:items-center">
@@ -170,7 +167,29 @@
 </template>
 
 <script>
+import { useRouter } from 'vue-router';
+
 export default {
-  name: 'Footer'
+  name: 'Footer',
+  setup() {
+    const router = useRouter();
+
+    const scrollToTop = () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const navigateToTutors = (subject) => {
+      const slug = subject.toLowerCase().replace(/\s+/g, '-').replace(/[()\/&]/g, '');
+      scrollToTop();
+      router.push(`/${slug}-tutors`);
+    };
+
+    // Listen to route changes and scroll to top
+    router.afterEach(() => {
+      scrollToTop();
+    });
+
+    return { navigateToTutors, scrollToTop };
+  }
 };
 </script>

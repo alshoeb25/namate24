@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
+use App\Helpers\CountryHelper;
 
 class SocialAuthController extends Controller
 {
@@ -50,9 +51,19 @@ class SocialAuthController extends Controller
                     $user->update(['email_verified_at' => now()]);
                 }
 
+                // Ensure country_code is in dial code format (e.g., +91)
+                if (empty($user->country_code) || !str_starts_with($user->country_code, '+')) {
+                    $dial = CountryHelper::isoToDialCode(strtoupper((string)($user->country_iso ?? 'IN')));
+                    $user->update(['country_code' => $dial]);
+                }
+
             } else {
                 // User doesn't exist - create new user
                 $role = $validated['role'] ?? 'student';
+                
+                // Detect country from IP
+                $ip = $request->ip();
+                $countryData = $this->detectCountry($ip);
                 
                 $user = User::create([
                     'name' => $googleUser['name'] ?? $googleUser['email'],
@@ -61,6 +72,9 @@ class SocialAuthController extends Controller
                     'role' => $role,
                     'email_verified_at' => now(), // Auto-verify for Google users
                     'password' => null, // No password for OAuth users
+                    'country_code' => $countryData['country_code'],
+                    'country' => $countryData['country'],
+                    'country_iso' => $countryData['country_iso'],
                 ]);
 
                 // Sync role with Spatie
@@ -130,5 +144,50 @@ class SocialAuthController extends Controller
         }
 
         return '/';
+    }
+
+    /**
+     * Detect country from IP address
+     */
+    private function detectCountry(string $ip): array
+    {
+        $default = CountryHelper::getCountryData('IN', 'India');
+
+        // Skip local/private IPs
+        if ($this->isLocalIp($ip)) {
+            return $default;
+        }
+
+        try {
+            $response = @file_get_contents("http://ip-api.com/json/{$ip}?fields=status,country,countryCode");
+            
+            if ($response) {
+                $data = json_decode($response, true);
+                
+                if (isset($data['status']) && $data['status'] === 'success') {
+                    $isoCode = $data['countryCode'] ?? null;
+                    $country = $data['country'] ?? null;
+                    
+                    if ($isoCode && $country) {
+                        return CountryHelper::getCountryData($isoCode, $country);
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Country detection failed: ' . $e->getMessage());
+        }
+
+        return $default;
+    }
+
+    /**
+     * Check if IP is local/private
+     */
+    private function isLocalIp(string $ip): bool
+    {
+        return in_array($ip, ['127.0.0.1', '::1']) || 
+               str_starts_with($ip, '192.168.') || 
+               str_starts_with($ip, '10.') || 
+               preg_match('/^172\.(1[6-9]|2[0-9]|3[0-1])\./', $ip);
     }
 }
