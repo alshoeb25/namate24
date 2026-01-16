@@ -21,12 +21,18 @@ class Student extends Model
         'address',
         'lat',
         'lng',
+        'is_disabled',
+        'disabled_reason',
+        'disabled_by',
+        'disabled_at',
     ];
 
     protected $casts = [
         'preferred_subjects' => 'array',
         'lat' => 'float',
         'lng' => 'float',
+        'is_disabled' => 'boolean',
+        'disabled_at' => 'datetime',
     ];
 
     /**
@@ -35,6 +41,11 @@ class Student extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function disabledBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'disabled_by');
     }
 
     /**

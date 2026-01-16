@@ -138,6 +138,46 @@ class AuthController extends Controller
             ], 403);
         }
 
+        // Block if user-level disabled
+        if ($user->is_disabled) {
+            return $this->blockedResponse('Your account is disabled.', $user->disabled_reason);
+        }
+
+        // Check role-specific blocks
+        $tutorBlocked = $user->tutor && $user->tutor->is_disabled;
+        $studentBlocked = $user->student && $user->student->is_disabled;
+        $hasBothRoles = $user->tutor && $user->student;
+
+        // If single role user and that profile is blocked → full block
+        if (!$hasBothRoles) {
+            if ($tutorBlocked) {
+                return $this->blockedResponse('Your tutor profile is disabled.', $user->tutor->disabled_reason);
+            }
+            if ($studentBlocked) {
+                return $this->blockedResponse('Your student profile is disabled.', $user->student->disabled_reason);
+            }
+        }
+
+        // If both roles and BOTH blocked → full block
+        if ($hasBothRoles && $tutorBlocked && $studentBlocked) {
+            return $this->blockedResponse('Both your tutor and student profiles are disabled.', null);
+        }
+
+        // If dual role and only one blocked → allow login but flag in response
+        $blockedProfiles = [];
+        if ($tutorBlocked) {
+            $blockedProfiles[] = [
+                'role' => 'tutor',
+                'message' => 'Your tutor profile is disabled. ' . ($user->tutor->disabled_reason ? 'Reason: ' . $user->tutor->disabled_reason : ''),
+            ];
+        }
+        if ($studentBlocked) {
+            $blockedProfiles[] = [
+                'role' => 'student',
+                'message' => 'Your student profile is disabled. ' . ($user->student->disabled_reason ? 'Reason: ' . $user->student->disabled_reason : ''),
+            ];
+        }
+
         // Dispatch job to record login activity asynchronously
         dispatch(new RecordLoginActivity($user->id, $request->ip(), $request->userAgent()));
 
@@ -146,7 +186,7 @@ class AuthController extends Controller
         // Save notification in DB/mail
         $user->notify(new LoginSuccessNotification());
 
-        return response()->json([
+        $response = [
             'user'        => $user,
             'roles'       => $user->getRoleNames(),
             'token'       => $token,
@@ -154,7 +194,22 @@ class AuthController extends Controller
             'expires_in'  => auth('api')->factory()->getTTL() * 60,
             'redirect_url' => $redirectUrl,
             'email_verified' => true,
-        ]);
+        ];
+
+        // Add blocked profiles info for dual-role users
+        if (!empty($blockedProfiles)) {
+            $contactEmail = config('mail.from.address') ?? 'support@namate24.com';
+            $contactPhone = config('app.support_phone') ?? '+91-9876543210';
+            
+            $response['blocked_profiles'] = $blockedProfiles;
+            $response['contact_info'] = [
+                'email' => $contactEmail,
+                'phone' => $contactPhone,
+                'message' => 'Please contact admin to enable your profile.',
+            ];
+        }
+
+        return response()->json($response);
     }
 
     /**
@@ -187,6 +242,24 @@ class AuthController extends Controller
         } catch (\Throwable $e) {
             \Log::error('Email sending failed: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Standard blocked response with contact info
+     */
+    private function blockedResponse(string $title, ?string $reason = null)
+    {
+        $contactEmail = config('mail.from.address') ?? 'support@example.com';
+        $contactPhone = config('app.support_phone') ?? '+91-00000-00000';
+
+        return response()->json([
+            'message' => $title,
+            'reason' => $reason,
+            'contact_email' => $contactEmail,
+            'contact_phone' => $contactPhone,
+            'email_verified' => true,
+            'user' => auth('api')->user(),
+        ], 403);
     }
 
     /**

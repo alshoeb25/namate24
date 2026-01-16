@@ -5,6 +5,9 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\TutorResource\Pages;
 use App\Filament\Traits\RoleBasedAccess;
 use App\Models\Tutor;
+use App\Models\TutorModerationAction;
+use App\Notifications\TutorApprovalNotification;
+use App\Notifications\TutorRejectionNotification;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -54,8 +57,16 @@ class TutorResource extends Resource
                     'danger'  => 'rejected',
                 ])->sortable(),
                 Tables\Columns\TextColumn::make('rating_avg')->label('Rating')->sortable(),
+                Tables\Columns\BadgeColumn::make('is_disabled')
+                    ->label('Account')
+                    ->formatStateUsing(fn (bool $state) => $state ? 'Disabled' : 'Active')
+                    ->colors([
+                        'danger' => true,
+                        'success' => false,
+                    ]),
+                Tables\Columns\TextColumn::make('created_at')->label('Created')->dateTime('M d, Y')->sortable(),
             ])
-            ->defaultSort('id', 'desc')
+            ->defaultSort('created_at', 'desc')
             ->defaultPaginationPageOption(25)
             ->filters([
                 Tables\Filters\SelectFilter::make('moderation_status')
@@ -67,46 +78,9 @@ class TutorResource extends Resource
                     ->label('Status'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-
-                Action::make('approve')
-                    ->label('Approve')
-                    ->color('success')
-                    ->icon('heroicon-o-check')
-                    ->requiresConfirmation()
-                    ->visible(fn ($record) => $record->moderation_status !== 'approved')
-                    ->action(function (Tutor $record, array $data = []) {
-                        $record->update(['moderation_status' => 'approved']);
-                        // TODO: Notify tutor of approval (Notification)
-                    }),
-
-                Action::make('reject')
-                    ->label('Reject')
-                    ->color('danger')
-                    ->icon('heroicon-o-x-circle')
-                    ->requiresConfirmation()
-                    ->visible(fn ($record) => $record->moderation_status !== 'rejected')
-                    ->action(function (Tutor $record, array $data = []) {
-                        $record->update(['moderation_status' => 'rejected']);
-                        // TODO: capture rejection reason & notify tutor
-                    }),
-
-                Action::make('export_pdf')
-                    ->label('Export PDF')
-                    ->icon('heroicon-o-document-text')
-                    ->url(fn (Tutor $record) => route('admin.tutors.pdf', ['tutor' => $record->id]))
-                    ->openUrlInNewTab(),
+                Tables\Actions\ViewAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkAction::make('approveSelected')
-                    ->label('Approve selected')
-                    ->action(function (array $records) {
-                        foreach ($records as $r) {
-                            $r->update(['moderation_status' => 'approved']);
-                        }
-                    })
-                    ->requiresConfirmation(),
-            ]);
+            ->bulkActions([]);
     }
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder

@@ -15,7 +15,7 @@ class Tutor extends Model
     protected $fillable = [
         'user_id','headline','about','experience_years','price_per_hour',
         'teaching_mode','city','area','phone','whatsapp_number','country_code','lat','lng','verified','rating_avg','rating_count',
-        'gender','badges','moderation_status','address','state','country','postal_code',
+        'gender','badges','moderation_status','is_disabled','disabled_reason','disabled_by','disabled_at','address','state','country','postal_code',
         'introductory_video','video_title','youtube_intro_url','teaching_methodology','educations','experiences',
         'speciality','strength','current_role',
         'courses','availability','settings',
@@ -45,6 +45,8 @@ class Tutor extends Model
         'has_digital_pen' => 'boolean',
         'helps_homework' => 'boolean',
         'employed_full_time' => 'boolean',
+        'is_disabled' => 'boolean',
+        'disabled_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
@@ -74,6 +76,22 @@ class Tutor extends Model
         return $this->hasMany(Review::class, 'tutor_id')
             ->where('moderation_status', 'approved')
             ->orderByDesc('created_at');
+    }
+
+    public function moderationActions(): HasMany
+    {
+        return $this->hasMany(TutorModerationAction::class)
+            ->orderByDesc('created_at');
+    }
+
+    public function reviewedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    public function disabledBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'disabled_by');
     }
 
     public function getPhotoUrlAttribute()

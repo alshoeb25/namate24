@@ -5,12 +5,15 @@ namespace App\Filament\Resources;
 use App\Models\Student;
 use App\Filament\Traits\RoleBasedAccess;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\ViewAction;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use App\Filament\Resources\StudentResource\Pages;
@@ -70,6 +73,13 @@ class StudentResource extends Resource
                 TextColumn::make('user.created_at')
                     ->label('Joined')
                     ->dateTime(),
+                BadgeColumn::make('is_disabled')
+                    ->label('Status')
+                    ->formatStateUsing(fn (bool $state) => $state ? 'Disabled' : 'Active')
+                    ->colors([
+                        'danger' => true,
+                        'success' => false,
+                    ]),
             ])
             ->filters([
                 SelectFilter::make('grade_level')
@@ -87,7 +97,45 @@ class StudentResource extends Resource
             ->actions([
                 ViewAction::make(),
                 EditAction::make(),
+                Action::make('disableUser')
+                    ->label('Disable')
+                    ->icon('heroicon-o-no-symbol')
+                    ->color('danger')
+                    ->visible(fn ($record) => !$record->is_disabled)
+                    ->form([
+                        Textarea::make('reason')
+                            ->label('Disable Reason')
+                            ->required()
+                            ->rows(3),
+                    ])
+                    ->action(function ($record, array $data) {
+                        $record->update([
+                            'is_disabled' => true,
+                            'disabled_reason' => $data['reason'],
+                            'disabled_by' => auth()->id(),
+                            'disabled_at' => now(),
+                        ]);
+                    }),
+                Action::make('enableUser')
+                    ->label('Enable')
+                    ->icon('heroicon-o-check')
+                    ->color('success')
+                    ->visible(fn ($record) => $record->is_disabled)
+                    ->requiresConfirmation()
+                    ->action(function ($record) {
+                        $record->update([
+                            'is_disabled' => false,
+                            'disabled_reason' => null,
+                            'disabled_by' => null,
+                            'disabled_at' => null,
+                        ]);
+                    }),
             ]);
+    }
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->with('user');
     }
 
     protected static function getResourcePermissionName(): string

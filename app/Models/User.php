@@ -8,6 +8,7 @@ use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 
@@ -17,7 +18,8 @@ class User extends Authenticatable implements JWTSubject, FilamentUser
 
     protected $fillable = ['name','email','phone','country_code','city','area','address','lat','lng','country','country_iso','password',
     'avatar','role','phone_otp','phone_otp_expires_at','phone_verified_at','email_verified_at',
-    'email_verification_token','email_verification_token_expires_at','coins','referral_code','referred_by'];
+    'email_verification_token','email_verification_token_expires_at','coins','referral_code','referred_by',
+    'is_disabled','disabled_reason','disabled_by','disabled_at'];
 
     protected $hidden = ['password'];
 
@@ -27,6 +29,8 @@ class User extends Authenticatable implements JWTSubject, FilamentUser
         'email_verified_at' => 'datetime',
         'email_verification_token_expires_at' => 'datetime',
         'coins' => 'integer',
+        'is_disabled' => 'boolean',
+        'disabled_at' => 'datetime',
     ];
 
     public function tutor(): HasOne
@@ -47,6 +51,11 @@ class User extends Authenticatable implements JWTSubject, FilamentUser
     public function requirements(): HasMany
     {
         return $this->hasMany(StudentRequirement::class, 'student_id');
+    }
+
+    public function disabledBy()
+    {
+        return $this->belongsTo(User::class, 'disabled_by');
     }
 
     public function coinTransactions(): HasMany

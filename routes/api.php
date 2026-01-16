@@ -164,8 +164,8 @@ Route::middleware('auth:api')->group(function() {
     Route::post('profile/email/verification', [\App\Http\Controllers\Api\UserController::class, 'sendEmailVerification']);
     Route::put('profile/location', [\App\Http\Controllers\Api\UserController::class, 'updateLocation']);
 
-    // Student Routes
-    Route::prefix('student')->group(function () {
+    // Student Routes - Protected by student profile check
+    Route::prefix('student')->middleware('check.student.profile')->group(function () {
         Route::post('request-tutor', [\App\Http\Controllers\Api\StudentController::class, 'requestTutor']);
         Route::get('requirements', [\App\Http\Controllers\Api\StudentController::class, 'getRequirements']);
         Route::get('requirements/{id}', [\App\Http\Controllers\Api\StudentController::class, 'getRequirement']);
@@ -185,13 +185,13 @@ Route::middleware('auth:api')->group(function() {
         Route::patch('reviews/{review}', [ReviewController::class, 'updateMine']);
     });
 
-    // Teacher Refund Requests Routes
-    Route::prefix('tutor')->group(function () {
+    // Teacher Refund Requests Routes - Protected by tutor profile check
+    Route::prefix('tutor')->middleware('check.tutor.profile')->group(function () {
         Route::get('refunds', [\App\Http\Controllers\Api\TutorRefundController::class, 'myRefunds']);
         Route::get('refunds/{id}', [\App\Http\Controllers\Api\TutorRefundController::class, 'getRefund']);
     });
 
-    Route::post('enquiry/{id}/request-refund', [\App\Http\Controllers\Api\TutorRefundController::class, 'requestRefund']);
+    Route::post('enquiry/{id}/request-refund', [\App\Http\Controllers\Api\TutorRefundController::class, 'requestRefund'])->middleware('check.tutor.profile');
 
     // Admin Refund Management Routes
     Route::middleware('role:admin')->prefix('admin/refunds')->group(function () {
@@ -214,7 +214,7 @@ Route::middleware('auth:api')->group(function() {
 
     // Enquiry (lead-based) routes
     Route::get('enquiries/config', [EnquiryController::class, 'config']);
-    Route::middleware('role:tutor')->group(function () {
+    Route::middleware(['role:tutor', 'check.tutor.profile'])->group(function () {
         Route::get('tutor-jobs', [EnquiryController::class, 'index']);
         Route::post('enquiries/{enquiry}/unlock', [EnquiryController::class, 'unlock']);
     });
@@ -225,7 +225,7 @@ Route::middleware('auth:api')->group(function() {
     Route::post('tutors/{tutor}/reviews', [ReviewController::class,'store']);
 
     // Tutor Documents (Tutor role)
-    Route::middleware('role:tutor')->prefix('tutor/documents')->group(function () {
+    Route::middleware(['role:tutor', 'check.tutor.profile'])->prefix('tutor/documents')->group(function () {
         Route::get('/', [\App\Http\Controllers\Api\TutorDocumentController::class, 'index']);
         Route::post('/', [\App\Http\Controllers\Api\TutorDocumentController::class, 'store']);
         Route::delete('{id}', [\App\Http\Controllers\Api\TutorDocumentController::class, 'destroy']);

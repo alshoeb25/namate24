@@ -10,6 +10,8 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Columns\BadgeColumn;
 use Spatie\Permission\Models\Role;
 
 class UserRoleResource extends Resource
@@ -155,6 +157,14 @@ class UserRoleResource extends Resource
                     ->trueColor('success')
                     ->falseColor('danger'),
 
+                Tables\Columns\BadgeColumn::make('is_disabled')
+                    ->label('Status')
+                    ->formatStateUsing(fn (bool $state) => $state ? 'Disabled' : 'Active')
+                    ->colors([
+                        'danger' => true,
+                        'success' => false,
+                    ]),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Registered')
                     ->dateTime()
@@ -175,6 +185,39 @@ class UserRoleResource extends Resource
                 Tables\Actions\EditAction::make()
                     ->label('Manage Roles'),
                 Tables\Actions\ViewAction::make(),
+                Action::make('disable')
+                    ->label('Disable User')
+                    ->icon('heroicon-o-no-symbol')
+                    ->color('danger')
+                    ->visible(fn (User $record) => !$record->is_disabled)
+                    ->form([
+                        Forms\Components\Textarea::make('reason')
+                            ->label('Reason')
+                            ->required()
+                            ->rows(3),
+                    ])
+                    ->action(function (User $record, array $data) {
+                        $record->update([
+                            'is_disabled' => true,
+                            'disabled_reason' => $data['reason'],
+                            'disabled_by' => auth()->id(),
+                            'disabled_at' => now(),
+                        ]);
+                    }),
+                Action::make('enable')
+                    ->label('Enable User')
+                    ->icon('heroicon-o-check')
+                    ->color('success')
+                    ->visible(fn (User $record) => $record->is_disabled)
+                    ->requiresConfirmation()
+                    ->action(function (User $record) {
+                        $record->update([
+                            'is_disabled' => false,
+                            'disabled_reason' => null,
+                            'disabled_by' => null,
+                            'disabled_at' => null,
+                        ]);
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkAction::make('assign_role')
