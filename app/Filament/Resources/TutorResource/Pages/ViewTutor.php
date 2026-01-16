@@ -17,21 +17,55 @@ class ViewTutor extends ViewRecord
 {
     protected static string $resource = TutorResource::class;
 
+    public function mount(int|string $record): void
+    {
+        parent::mount($record);
+        
+        // Ensure all relationships are loaded
+        $this->record->load([
+            'user',
+            'reviewedBy',
+            'moderationActions.admin',
+            'documents',
+            'disabledBy'
+        ]);
+    }
+
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        // Ensure nested relationships are available in form data
+        if ($this->record && $this->record->user) {
+            $data['user'] = [
+                'name' => $this->record->user->name,
+                'email' => $this->record->user->email,
+                'phone' => $this->record->user->phone,
+            ];
+        }
+        
+        if ($this->record && $this->record->reviewedBy) {
+            $data['reviewedBy'] = [
+                'name' => $this->record->reviewedBy->name,
+            ];
+        }
+        
+        return $data;
+    }
+
     public function form(Form $form): Form
     {
         return $form
             ->schema([
                 Forms\Components\Section::make('Personal Information')
                     ->schema([
-                        Forms\Components\TextInput::make('user.name')
+                        Forms\Components\Placeholder::make('user.name')
                             ->label('Name')
-                            ->disabled(),
-                        Forms\Components\TextInput::make('user.email')
+                            ->content(fn () => $this->record?->user?->name ?? '-'),
+                        Forms\Components\Placeholder::make('user.email')
                             ->label('Email')
-                            ->disabled(),
-                        Forms\Components\TextInput::make('user.phone')
+                            ->content(fn () => $this->record?->user?->email ?? '-'),
+                        Forms\Components\Placeholder::make('user.phone')
                             ->label('Phone')
-                            ->disabled(),
+                            ->content(fn () => $this->record?->user?->phone ?? '-'),
                     ])
                     ->columns(3),
 
@@ -95,15 +129,15 @@ class ViewTutor extends ViewRecord
                                 'rejected' => 'Rejected',
                             ])
                             ->disabled(),
-                        Forms\Components\TextInput::make('reviewedBy.name')
+                        Forms\Components\Placeholder::make('reviewedBy.name')
                             ->label('Reviewed By')
-                            ->disabled(),
+                            ->content(fn () => $this->record?->reviewedBy?->name ?? '-'),
                         Forms\Components\TextInput::make('reviewed_at')
                             ->label('Reviewed At')
                             ->disabled(),
                         Forms\Components\Placeholder::make('account_status')
                             ->label('Account Status')
-                            ->content(fn ($record) => $record?->is_disabled ? 'Disabled' : 'Active'),
+                            ->content(fn () => $this->record?->is_disabled ? 'Disabled' : 'Active'),
                     ])
                     ->columns(3),
 
@@ -143,23 +177,7 @@ class ViewTutor extends ViewRecord
                     ])
                     ->visible(fn ($record) => $record && $record->moderationActions()->exists()),
 
-                Forms\Components\Section::make('Documents')
-                    ->schema([
-                        Forms\Components\Repeater::make('documents')
-                            ->relationship('documents')
-                            ->disabled()
-                            ->schema([
-                                Forms\Components\TextInput::make('document_type')->label('Type')->disabled(),
-                                Forms\Components\TextInput::make('verification_status')->label('Status')->disabled(),
-                                Forms\Components\TextInput::make('rejection_reason')->label('Rejection Reason')->disabled(),
-                                Forms\Components\TextInput::make('file_path')
-                                    ->label('File URL')
-                                    ->disabled()
-                                    ->formatStateUsing(fn ($state) => $state ? url('/storage/' . ltrim($state, '/')) : '-'),
-                            ])
-                            ->columns(2)
-                    ])
-                    ->visible(fn ($record) => $record && $record->documents()->exists()),
+               
             ]);
     }
 
