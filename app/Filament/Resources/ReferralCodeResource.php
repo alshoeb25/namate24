@@ -7,11 +7,13 @@ use App\Filament\Traits\RoleBasedAccess;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\DateTimePickerComponent;
+use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\DeleteAction;
+use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -37,9 +39,9 @@ class ReferralCodeResource extends Resource
                 TextInput::make('referral_code')
                     ->required()
                     ->unique(ReferralCode::class, 'referral_code', ignoreRecord: true)
-                    ->disabled(fn ($record) => $record !== null)
                     ->label('Referral Code')
-                    ->helperText('Unique code for referral campaign'),
+                    ->helperText('Unique code for referral campaign')
+                    ->maxLength(50),
 
                 Select::make('type')
                     ->options([
@@ -72,7 +74,7 @@ class ReferralCodeResource extends Resource
                     ->label('Max Redemptions')
                     ->helperText('Optional: Limit how many times this code can be used'),
 
-                DateTimePickerComponent::make('expiry')
+                DateTimePicker::make('expiry')
                     ->label('Expiry Date')
                     ->helperText('Optional: When this code expires'),
 
@@ -163,14 +165,21 @@ class ReferralCodeResource extends Resource
                     ),
             ])
             ->actions([
-                EditAction::make()
-                    ->disabled(fn ($record) => $record->used),
-
+                EditAction::make(),
                 DeleteAction::make()
-                    ->disabled(fn ($record) => $record->used),
+                    ->requiresConfirmation()
+                    ->modalHeading('Delete Referral Code')
+                    ->modalDescription('Are you sure you want to delete this referral code? This action cannot be undone.')
+                    ->modalSubmitActionLabel('Yes, Delete'),
             ])
             ->bulkActions([
-                // Bulk actions disabled for used codes
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
+                        ->requiresConfirmation()
+                        ->modalHeading('Delete Selected Referral Codes')
+                        ->modalDescription('Are you sure you want to delete the selected referral codes? This action cannot be undone.')
+                        ->modalSubmitActionLabel('Yes, Delete All'),
+                ]),
             ]);
     }
 
@@ -186,10 +195,5 @@ class ReferralCodeResource extends Resource
             'create' => Pages\CreateReferralCode::route('/create'),
             'edit' => Pages\EditReferralCode::route('/{record}/edit'),
         ];
-    }
-
-    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
-    {
-        return !$record->used;
     }
 }
