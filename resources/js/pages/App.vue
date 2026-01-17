@@ -3,7 +3,7 @@
     <HeaderRoot />
 
     <!-- Main Content -->
-    <main class="max-w-6xl mx-auto p-4">
+    <main class="max-w-6xl mx-auto p-4 pt-0">
       <router-view />
     </main>
 

@@ -115,10 +115,18 @@
                   <i class="fas fa-gift text-green-600 mt-0.5"></i>
                   <div class="text-sm">
                     <p class="text-green-800 font-semibold">
-                      Valid referral code from {{ referrerInfo.name }}!
+                      <template v-if="referrerInfo.type === 'user'">
+                        Valid referral code from {{ referrerInfo.name }}!
+                      </template>
+                      <template v-else>
+                        Valid admin referral code!
+                      </template>
                     </p>
                     <p class="text-green-700 mt-1">
-                      🎁 You'll earn <strong>{{ referrerInfo.reward?.referred_coins || 25 }} coins</strong> when you sign up!
+                      🎁 You'll earn <strong>{{ referrerInfo.reward?.coins || referrerInfo.reward?.referred_coins || 0 }} coins</strong> when you sign up!
+                    </p>
+                    <p v-if="referrerInfo.type === 'user' && referrerInfo.reward?.referrer_coins" class="text-green-700 mt-1 text-xs">
+                      💝 Your referrer will also receive {{ referrerInfo.reward.referrer_coins }} bonus coins
                     </p>
                   </div>
                 </div>
@@ -174,7 +182,7 @@
 </template>
 
 <script>
-import { reactive, ref, onMounted } from 'vue';
+import { reactive, ref, onMounted, watch } from 'vue';
 import { useUserStore } from '../store';
 import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
@@ -227,6 +235,15 @@ export default {
       }
     });
 
+    // Watch for referral code changes and reset validation
+    watch(() => payload.referralCode, (newCode, oldCode) => {
+      if (newCode !== oldCode) {
+        referralValidated.value = false;
+        referralError.value = '';
+        referrerInfo.value = null;
+      }
+    });
+
     async function validateReferral() {
       if (!payload.referralCode) return;
       
@@ -242,8 +259,29 @@ export default {
         
         if (response.data.valid) {
           referralValidated.value = true;
-          referrerInfo.value = response.data.referrer;
-          referrerInfo.value.reward = response.data.reward;
+          const data = response.data;
+          
+          // Handle both user and admin referral types
+          if (data.type === 'user') {
+            // User referral code
+            referrerInfo.value = {
+              name: data.referrer?.name || 'Your Friend',
+              referral_code: data.referral_code,
+              type: 'user',
+              reward: data.reward
+            };
+          } else if (data.type === 'admin') {
+            // Admin referral code
+            referrerInfo.value = {
+              name: 'NaMate24',
+              referral_code: data.referral_code,
+              type: 'admin',
+              reward: {
+                coins: data.reward?.coins || 0,
+                type: data.reward?.type || 'admin'
+              }
+            };
+          }
         }
       } catch (e) {
         referralError.value = e.response?.data?.message || 'Invalid referral code';

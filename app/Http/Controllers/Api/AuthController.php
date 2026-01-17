@@ -29,7 +29,7 @@ class AuthController extends Controller
             'phone' => 'nullable|unique:users,phone',
             'password' => 'required|min:6',
             'role' => ['required', Rule::in(['student', 'tutor', 'admin'])],
-            'referral_code' => 'nullable|string|exists:users,referral_code',
+            'referral_code' => 'nullable|string',
         ]);
 
         // Generate email verification token if email is provided
@@ -79,8 +79,23 @@ class AuthController extends Controller
         // Process referral code if provided
         $referralReward = null;
         if (!empty($data['referral_code'])) {
-            $referralReward = $this->processReferral($user, $data['referral_code']);
+            // First try user referral code
+            $referralReward = $this->processUserReferral($user, $data['referral_code']);
+            
+            // If no user referral found, try admin referral code
+            if (!$referralReward) {
+                $referralReward = $this->processAdminReferralCode($user, $data['referral_code']);
+            }
         }
+
+        // Fallback: admin referral invites (email-based)
+        $adminReferral = null;
+        if (!$referralReward && $data['email']) {
+            $adminReferral = $this->processAdminReferral($user);
+        }
+
+        // Refresh user to get updated coins balance
+        $user->refresh();
 
         // Send verification email if email provided
         if ($data['email']) {
@@ -89,7 +104,20 @@ class AuthController extends Controller
 
         $message = $data['email'] ? 'Registration successful! Please check your email to verify your account.' : 'Registration successful!';
         if ($referralReward) {
-            $message .= " You earned {$referralReward['coins']} coins from the referral!";
+            if (!empty($referralReward['limit_reached'])) {
+                $message .= " Referral applied, but the referrer has already rewarded {$referralReward['limit']} friends. No bonus coins were added.";
+            } else {
+                $earned = $referralReward['referred_coins'] ?? $referralReward['coins'] ?? 0;
+                $referrerCoins = $referralReward['referrer_coins'] ?? 0;
+                if ($referrerCoins > 0) {
+                    $message .= " Referral applied! You received {$earned} coins. Your referrer received {$referrerCoins} coins.";
+                } else {
+                    $message .= " Welcome bonus applied! You received {$earned} coins from our referral invite.";
+                }
+            }
+        } elseif ($adminReferral) {
+            $earned = $adminReferral['referred_coins'] ?? $adminReferral['coins'] ?? 0;
+            $message .= " Welcome bonus applied! You received {$earned} coins from our admin invite.";
         }
 
         return response()->json([
@@ -99,6 +127,7 @@ class AuthController extends Controller
             'email_sent' => (bool) $data['email'],
             'referral_applied' => !empty($data['referral_code']),
             'referral_reward' => $referralReward,
+            'admin_referral' => $adminReferral,
             'coins' => $user->coins,
         ], 201);
     }
@@ -338,25 +367,75 @@ class AuthController extends Controller
             'referral_code' => 'required|string',
         ]);
 
-        $referrer = User::where('referral_code', $request->referral_code)->first();
+        $code = strtoupper($request->referral_code);
 
-        if (!$referrer) {
+        // First check if it's a user referral code
+        $referrer = User::where('referral_code', $code)->first();
+
+        if ($referrer) {
+            return response()->json([
+                'valid' => true,
+                'message' => 'Valid referral code',
+                'type' => 'user',
+                'referrer' => [
+                    'name' => $referrer->name,
+                    'referral_code' => $referrer->referral_code,
+                ],
+                'reward' => [
+                    'referrer_coins' => 30,
+                    'referred_coins' => 15,
+                ],
+            ]);
+        }
+
+        // Then check if it's an admin referral code
+        $referralCode = \App\Models\ReferralCode::where('referral_code', $code)->first();
+
+        if (!$referralCode) {
             return response()->json([
                 'valid' => false,
                 'message' => 'Invalid referral code',
             ], 404);
         }
 
+        // Check if code is already used
+        if ($referralCode->used) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'This referral code has already been used',
+            ], 400);
+        }
+
+        // Check if code has expired
+        if ($referralCode->expiry && $referralCode->expiry < now()) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'This referral code has expired',
+            ], 400);
+        }
+
+        // Check if max usage count reached
+        if ($referralCode->max_count !== null) {
+            $usageCount = \App\Models\ReferralInvite::where('referral_code_id', $referralCode->id)
+                ->where('is_used', true)
+                ->count();
+            
+            if ($usageCount >= $referralCode->max_count) {
+                return response()->json([
+                    'valid' => false,
+                    'message' => 'This referral code has reached its maximum usage limit',
+                ], 400);
+            }
+        }
+
         return response()->json([
             'valid' => true,
             'message' => 'Valid referral code',
-            'referrer' => [
-                'name' => $referrer->name,
-                'referral_code' => $referrer->referral_code,
-            ],
+            'type' => 'admin',
+            'referral_code' => $referralCode->referral_code,
             'reward' => [
-                'referrer_coins' => 50,
-                'referred_coins' => 25,
+                'coins' => $referralCode->coins,
+                'type' => $referralCode->referral_type,
             ],
         ]);
     }
@@ -376,7 +455,7 @@ class AuthController extends Controller
     /**
      * Process referral code during registration
      */
-    private function processReferral(User $newUser, string $referralCode): ?array
+    private function processUserReferral(User $newUser, string $referralCode): ?array
     {
         $referrer = User::where('referral_code', $referralCode)->first();
 
@@ -387,8 +466,26 @@ class AuthController extends Controller
         try {
             \DB::beginTransaction();
 
-            $referrerCoins = 50; // Coins for referrer
-            $referredCoins = 25; // Coins for new user
+            $referrerCoins = 30; // Coins for referrer
+            $referredCoins = 15; // Coins for new user
+            $maxReferrals = 5;   // Max rewarded referrals per referrer
+
+            // Enforce referral cap – no rewards beyond limit
+            $currentReferrals = \App\Models\Referral::where('referrer_id', $referrer->id)->count();
+            if ($currentReferrals >= $maxReferrals) {
+                \Log::info('Referral limit reached for referrer', [
+                    'referrer_id' => $referrer->id,
+                    'limit' => $maxReferrals,
+                ]);
+
+                return [
+                    'coins' => 0,
+                    'referrer_name' => $referrer->name,
+                    'limit_reached' => true,
+                    'limit' => $maxReferrals,
+                    'message' => "Referral reward limit reached ({$maxReferrals} referrals). No coins awarded.",
+                ];
+            }
 
             // Credit coins to referrer
             $referrer->increment('coins', $referrerCoins);
@@ -430,11 +527,198 @@ class AuthController extends Controller
 
             return [
                 'coins' => $referredCoins,
+                'referred_coins' => $referredCoins,
+                'referrer_coins' => $referrerCoins,
                 'referrer_name' => $referrer->name,
+                'limit_reached' => false,
+                'limit' => $maxReferrals,
             ];
         } catch (\Throwable $e) {
             \DB::rollBack();
             \Log::error('Referral processing failed during registration: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Process admin referral code during registration
+     */
+    private function processAdminReferralCode(User $newUser, string $referralCode): ?array
+    {
+        $code = strtoupper($referralCode);
+        $referralCode = \App\Models\ReferralCode::where('referral_code', $code)->first();
+
+        if (!$referralCode) {
+            return null;
+        }
+
+        // Check if code is already used
+        if ($referralCode->used) {
+            \Log::warning('Admin referral code already used', ['code' => $code]);
+            return null;
+        }
+
+        // Check if code has expired
+        if ($referralCode->expiry && $referralCode->expiry < now()) {
+            \Log::warning('Admin referral code expired', ['code' => $code]);
+            return null;
+        }
+
+        // Check if max usage count reached
+        if ($referralCode->max_count !== null) {
+            $usageCount = \App\Models\ReferralInvite::where('referral_code_id', $referralCode->id)
+                ->where('is_used', true)
+                ->count();
+            
+            if ($usageCount >= $referralCode->max_count) {
+                \Log::warning('Admin referral code usage limit reached', ['code' => $code, 'limit' => $referralCode->max_count]);
+                return null;
+            }
+        }
+
+        // Check if email exists in referral_invite with this referral code
+        $invite = \App\Models\ReferralInvite::where('email', $newUser->email)
+            ->where('referral_code_id', $referralCode->id)
+            ->first();
+
+        if (!$invite) {
+            \Log::warning('Email not found in referral invites for this code', [
+                'email' => $newUser->email,
+                'code' => $code,
+            ]);
+            return null;
+        }
+
+        // Check if invite is already used
+        if ($invite->is_used) {
+            \Log::warning('Referral invite already used', [
+                'email' => $newUser->email,
+                'code' => $code,
+            ]);
+            return null;
+        }
+
+        try {
+            \DB::beginTransaction();
+
+            $coins = $referralCode->coins;
+
+            // Credit coins to user
+            $newUser->increment('coins', $coins);
+            $newUser->refresh();
+
+            // Update wallet coins if wallet exists
+            if ($newUser->wallet) {
+                $newUser->wallet()->update(['balance' => $newUser->wallet->balance + $coins]);
+            }
+
+            // Create referral record (ADMIN referral)
+            \App\Models\Referral::create([
+                'referrer_id' => null, // ADMIN
+                'referred_id' => $newUser->id,
+                'referrer_coins' => 0,
+                'referred_coins' => $coins,
+                'reward_given' => true,
+                'reward_given_at' => now(),
+            ]);
+
+            // Coin transaction
+            \App\Models\CoinTransaction::create([
+                'user_id' => $newUser->id,
+                'type' => 'admin_referral_bonus',
+                'amount' => $coins,
+                'balance_after' => $newUser->coins,
+                'description' => "Welcome bonus ({$referralCode->referral_type} - {$code})",
+                'meta' => ['source' => 'admin', 'code' => $code],
+            ]);
+
+            // Mark invite as used
+            $invite->update([
+                'is_used' => true,
+                'used_at' => now(),
+            ]);
+
+            \DB::commit();
+
+            return [
+                'coins' => $coins,
+                'referred_coins' => $coins,
+                'referrer_coins' => 0,
+                'type' => $referralCode->referral_type,
+                'limit_reached' => false,
+            ];
+        } catch (\Throwable $e) {
+            \DB::rollBack();
+            \Log::error('Admin referral code processing failed: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Admin-driven referral invite (email-based, no code needed)
+     */
+    private function processAdminReferral(User $newUser): ?array
+    {
+        $invite = \App\Models\ReferralInvite::where('email', $newUser->email)
+            ->where('is_used', false)
+            ->first();
+
+        if (!$invite) {
+            return null;
+        }
+
+        try {
+            \DB::beginTransaction();
+
+            $coins = $invite->referred_coins;
+
+            // Credit coins to user
+            $newUser->increment('coins', $coins);
+            $newUser->refresh();
+
+            // Update wallet coins if wallet exists
+            if ($newUser->wallet) {
+                $newUser->wallet()->update(['balance' => $newUser->wallet->balance + $coins]);
+            }
+
+            // Create referral record (ADMIN referral)
+            \App\Models\Referral::create([
+                'referrer_id' => null, // ADMIN
+                'referred_id' => $newUser->id,
+                'referrer_coins' => 0,
+                'referred_coins' => $coins,
+                'reward_given' => true,
+                'reward_given_at' => now(),
+            ]);
+
+            // Coin transaction
+            \App\Models\CoinTransaction::create([
+                'user_id' => $newUser->id,
+                'type' => 'admin_referral_bonus',
+                'amount' => $coins,
+                'balance_after' => $newUser->coins,
+                'description' => 'Welcome bonus (Admin referral)',
+                'meta' => ['source' => 'admin'],
+            ]);
+
+            // Lock invite
+            $invite->update([
+                'is_used' => true,
+                'used_at' => now(),
+            ]);
+
+            \DB::commit();
+
+            return [
+                'coins' => $coins,
+                'referred_coins' => $coins,
+                'referrer_coins' => 0,
+                'source' => 'admin',
+            ];
+
+        } catch (\Throwable $e) {
+            \DB::rollBack();
+            \Log::error('Admin referral failed: ' . $e->getMessage());
             return null;
         }
     }

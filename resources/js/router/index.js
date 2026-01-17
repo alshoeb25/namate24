@@ -9,6 +9,7 @@ import TutorJobs from '../pages/TutorJobs.vue';
 import Login from '../pages/Login.vue';
 import Register from '../pages/Register.vue';
 import VerifyEmail from '../pages/VerifyEmail.vue';
+import EmailVerified from '../pages/EmailVerified.vue';
 import ForgotPassword from '../pages/ForgotPassword.vue';
 import ResetPassword from '../pages/ResetPassword.vue';
 import Conversations from '../pages/Conversations.vue';
@@ -99,6 +100,7 @@ const routes = [
   { path: '/login', name: 'login', component: Login },
   { path: '/register', name: 'register', component: Register },
   { path: '/verify-email', name: 'verify-email', component: VerifyEmail },
+  { path: '/email-verified', name: 'email-verified', component: EmailVerified },
   { path: '/forgot-password', name: 'forgot-password', component: ForgotPassword },
   { path: '/reset-password', name: 'reset-password', component: ResetPassword },
 

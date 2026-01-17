@@ -4,7 +4,7 @@
     <div class="flex items-center justify-between mb-6">
       <div>
         <h2 class="text-2xl font-bold mb-2">
-          <i class="fas fa-gift mr-2"></i>Earn 50 Coins Per Referral!
+          <i class="fas fa-gift mr-2"></i>Earn 30 Coins Per Referral!
         </h2>
         <p class="text-white/90 text-sm">
           Share your code with friends and earn coins when they sign up
@@ -71,13 +71,6 @@
         <span class="hidden sm:inline">Facebook</span>
       </button>
       <button
-        @click="shareVia('twitter')"
-        class="bg-sky-500 hover:bg-sky-600 text-white px-4 py-3 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2"
-      >
-        <i class="fab fa-twitter text-xl"></i>
-        <span class="hidden sm:inline">Twitter</span>
-      </button>
-      <button
         @click="shareVia('email')"
         class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2"
       >
@@ -100,7 +93,7 @@
       </div>
       <div class="bg-white/10 backdrop-blur-sm rounded-lg p-4 text-center border border-white/20 col-span-2 md:col-span-1">
         <i class="fas fa-gift text-2xl mb-2"></i>
-        <p class="text-2xl font-bold">50 + 25</p>
+        <p class="text-2xl font-bold">30 + 15</p>
         <p class="text-white/80 text-sm">You + Friend Reward</p>
       </div>
     </div>
@@ -122,11 +115,11 @@
         </li>
         <li class="flex items-start gap-2">
           <span class="font-bold">3.</span>
-          <span>You get <strong>50 coins</strong>, they get <strong>25 coins</strong> instantly!</span>
+          <span>You get <strong>30 coins</strong>, they get <strong>15 coins</strong> instantly!</span>
         </li>
         <li class="flex items-start gap-2">
           <span class="font-bold">4.</span>
-          <span>There's <strong>no limit</strong> - refer as many friends as you want!</span>
+          <span>Limited to <strong>5 referrals</strong> with rewards.</span>
         </li>
       </ol>
     </div>
@@ -160,7 +153,7 @@ export default {
     });
 
     const shareMessage = computed(() => {
-      return `Join Namate24 using my referral code ${props.referralCode} and get 25 bonus coins! 🎁`;
+      return `Join Namate24 using my referral code ${props.referralCode} and get 15 bonus coins! 🎁`;
     });
 
     const copyCode = async () => {

@@ -405,6 +405,19 @@ Route::middleware('auth:api')->group(function() {
             Route::post('{user}/photo/unverify', [\App\Http\Controllers\Api\Admin\TutorVerificationController::class, 'photoUnverify']);
             Route::post('{user}/photo/delete', [\App\Http\Controllers\Api\Admin\TutorVerificationController::class, 'photoDelete']);
         });
+
+        // Referral Invites Management (Admin)
+        Route::prefix('admin/referral-invites')->group(function () {
+            Route::get('', [\App\Http\Controllers\Api\Admin\ReferralInviteController::class, 'index'])->name('invites.index');
+            Route::post('', [\App\Http\Controllers\Api\Admin\ReferralInviteController::class, 'store'])->name('invites.store');
+            Route::get('stats', [\App\Http\Controllers\Api\Admin\ReferralInviteController::class, 'stats'])->name('invites.stats');
+            Route::post('bulk-upload', [\App\Http\Controllers\Api\Admin\ReferralInviteController::class, 'bulkUpload'])->name('invites.bulk-upload');
+            Route::post('bulk-create-text', [\App\Http\Controllers\Api\Admin\ReferralInviteController::class, 'bulkCreateFromText'])->name('invites.bulk-create-text');
+            Route::post('send-emails', [\App\Http\Controllers\Api\Admin\ReferralInviteController::class, 'sendEmails'])->name('invites.send-emails');
+            Route::get('{id}', [\App\Http\Controllers\Api\Admin\ReferralInviteController::class, 'show'])->name('invites.show');
+            Route::patch('{id}', [\App\Http\Controllers\Api\Admin\ReferralInviteController::class, 'update'])->name('invites.update');
+            Route::delete('{id}', [\App\Http\Controllers\Api\Admin\ReferralInviteController::class, 'destroy'])->name('invites.destroy');
+        });
     });
 });
 

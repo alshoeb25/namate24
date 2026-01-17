@@ -54,20 +54,20 @@
               <i class="fas fa-gift text-white text-xl"></i>
             </div>
             <div>
-              <h4 class="font-bold text-gray-800 mb-2 text-lg">Earn 50 Coins Per Referral!</h4>
-              <p class="text-gray-700">For each friend who signs up, you get <strong>50 coins</strong> and they get <strong>25 welcome coins</strong>. There's no limit to how many friends you can refer!</p>
+              <h4 class="font-bold text-gray-800 mb-2 text-lg">Earn 30 Coins Per Referral!</h4>
+              <p class="text-gray-700">For each friend who signs up, you get <strong>30 coins</strong> and they get <strong>15 welcome coins</strong>. Rewards apply to your first <strong>5 referrals</strong>.</p>
               <div class="mt-4 flex flex-wrap gap-3">
                 <div class="bg-white rounded-lg px-4 py-2 shadow-sm">
                   <span class="text-xs text-gray-500">You Earn</span>
-                  <p class="font-bold text-pink-600">50 Coins</p>
+                  <p class="font-bold text-pink-600">30 Coins</p>
                 </div>
                 <div class="bg-white rounded-lg px-4 py-2 shadow-sm">
                   <span class="text-xs text-gray-500">Friend Gets</span>
-                  <p class="font-bold text-blue-600">25 Coins</p>
+                  <p class="font-bold text-blue-600">15 Coins</p>
                 </div>
                 <div class="bg-white rounded-lg px-4 py-2 shadow-sm">
                   <span class="text-xs text-gray-500">Referral Limit</span>
-                  <p class="font-bold text-green-600">Unlimited</p>
+                  <p class="font-bold text-green-600">5 referrals</p>
                 </div>
               </div>
             </div>

@@ -93,6 +93,8 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make()
                     ->label('Wallet Management'),
                 NavigationGroup::make()
+                    ->label('Referrals'),
+                NavigationGroup::make()
                     ->label('User Management'),
                 NavigationGroup::make()
                     ->label('Service Management'),

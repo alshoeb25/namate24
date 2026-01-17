@@ -25,6 +25,18 @@ class AdminRolesAndPermissionsSeeder extends Seeder
             'view-transactions',
             'refund-coins',
 
+            // Referral Invites Management
+            'view-referral-invites',
+            'create-referral-invites',
+            'edit-referral-invites',
+            'delete-referral-invites',
+
+            // Referral Codes Management
+            'view-referral-codes',
+            'create-referral-codes',
+            'edit-referral-codes',
+            'delete-referral-codes',
+
             // Student Management
             'view-students',
             'create-students',
@@ -82,6 +94,23 @@ class AdminRolesAndPermissionsSeeder extends Seeder
         );
         $superAdmin->syncPermissions($permissions);
 
+        // Referral Manager
+        $referralManager = Role::firstOrCreate(
+            ['name' => 'referral_admin'],
+            ['guard_name' => 'web']
+        );
+        $referralManager->syncPermissions([
+            'view-referral-invites',
+            'create-referral-invites',
+            'edit-referral-invites',
+            'delete-referral-invites',
+            'view-referral-codes',
+            'create-referral-codes',
+            'edit-referral-codes',
+            'delete-referral-codes',
+            'view-dashboard',
+        ]);
+
         // Coin & Wallet Manager
         $coinManager = Role::firstOrCreate(
             ['name' => 'coin_wallet_admin'],
@@ -96,6 +125,10 @@ class AdminRolesAndPermissionsSeeder extends Seeder
             'manage-wallet',
             'view-transactions',
             'refund-coins',
+            'view-referral-invites',
+            'create-referral-invites',
+            'edit-referral-invites',
+            'delete-referral-invites',
             'view-dashboard',
         ]);
 
