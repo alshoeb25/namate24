@@ -34,6 +34,9 @@ export function initEcho(authToken = null) {
     auth: {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     },
+    // Add connection timeout to prevent hanging
+    activityTimeout: 30000,
+    pongTimeout: 10000,
   };
 
   // Self-hosted (Laravel WebSockets): provide host/port and transports
@@ -46,7 +49,23 @@ export function initEcho(authToken = null) {
       }
     : {};
 
-  echo = new Echo({ ...baseConfig, ...selfHostedConfig });
+  try {
+    echo = new Echo({ ...baseConfig, ...selfHostedConfig });
+    
+    // Handle connection errors gracefully
+    if (echo.connector && echo.connector.pusher) {
+      echo.connector.pusher.connection.bind('error', (err) => {
+        console.warn('Pusher connection error:', err);
+      });
+      
+      echo.connector.pusher.connection.bind('unavailable', () => {
+        console.warn('Pusher connection unavailable');
+      });
+    }
+  } catch (err) {
+    console.error('Failed to initialize Echo:', err);
+    return null;
+  }
 
   window.Echo = echo;
   return echo;
