@@ -96,6 +96,7 @@ class ReferralResource extends Resource
     {
         return [
             'index' => Pages\ListReferrals::route('/'),
+            'manual' => Pages\ManualReferral::route('/manual'),
         ];
     }
 }

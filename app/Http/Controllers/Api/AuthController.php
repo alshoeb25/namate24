@@ -466,8 +466,8 @@ class AuthController extends Controller
         try {
             \DB::beginTransaction();
 
-            $referrerCoins = 30; // Coins for referrer
-            $referredCoins = 15; // Coins for new user
+            $referrerCoins = config('coins.referral_bonus', 30); // Coins for referrer
+            $referredCoins = config('coins.referral_reward', 15); // Coins for new user
             $maxReferrals = 5;   // Max rewarded referrals per referrer
 
             // Enforce referral cap – no rewards beyond limit

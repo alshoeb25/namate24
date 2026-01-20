@@ -71,52 +71,51 @@ class ViewTutor extends ViewRecord
 
                 Forms\Components\Section::make('Profile Information')
                     ->schema([
-                        Forms\Components\TextInput::make('headline')
-                            ->disabled(),
-                        Forms\Components\Textarea::make('about')
-                            ->disabled()
-                            ->rows(4),
-                        Forms\Components\TextInput::make('gender')
-                            ->disabled(),
+                        Forms\Components\Placeholder::make('headline')
+                            ->content(fn () => $this->record?->headline ?? '-'),
+                        Forms\Components\Placeholder::make('about')
+                            ->content(fn () => $this->record?->about ?? '-'),
+                        Forms\Components\Placeholder::make('gender')
+                            ->content(fn () => $this->record?->gender ?? '-'),
                     ])
                     ->columns(1),
 
                 Forms\Components\Section::make('Teaching Details')
                     ->schema([
-                        Forms\Components\TextInput::make('price_per_hour')
+                        Forms\Components\Placeholder::make('price_per_hour')
                             ->label('Price per Hour (₹)')
-                            ->disabled(),
-                        Forms\Components\TextInput::make('city')
-                            ->disabled(),
-                        Forms\Components\TextInput::make('address')
-                            ->disabled(),
-                        Forms\Components\TextInput::make('state')
-                            ->disabled(),
-                        Forms\Components\TextInput::make('country')
-                            ->disabled(),
-                        Forms\Components\TextInput::make('postal_code')
-                            ->disabled(),
+                            ->content(fn () => $this->record?->price_per_hour ? '₹' . number_format($this->record->price_per_hour, 2) : '-'),
+                        Forms\Components\Placeholder::make('city')
+                            ->content(fn () => $this->record?->city ?? '-'),
+                        Forms\Components\Placeholder::make('address')
+                            ->content(fn () => $this->record?->address ?? '-'),
+                        Forms\Components\Placeholder::make('state')
+                            ->content(fn () => $this->record?->state ?? '-'),
+                        Forms\Components\Placeholder::make('country')
+                            ->content(fn () => $this->record?->country ?? '-'),
+                        Forms\Components\Placeholder::make('postal_code')
+                            ->content(fn () => $this->record?->postal_code ?? '-'),
                     ])
                     ->columns(3),
 
                 Forms\Components\Section::make('Professional Details')
                     ->schema([
-                        Forms\Components\TextInput::make('experience_years')
+                        Forms\Components\Placeholder::make('experience_years')
                             ->label('Years of Experience')
-                            ->disabled(),
-                        Forms\Components\Select::make('teaching_mode')
-                            ->options([
+                            ->content(fn () => $this->record?->experience_years ?? '-'),
+                        Forms\Components\Placeholder::make('teaching_mode')
+                            ->content(fn () => match($this->record?->teaching_mode) {
                                 'online' => 'Online',
                                 'offline' => 'Offline',
                                 'both' => 'Both',
-                            ])
-                            ->disabled(),
-                        Forms\Components\TextInput::make('rating_avg')
+                                default => '-'
+                            }),
+                        Forms\Components\Placeholder::make('rating_avg')
                             ->label('Average Rating')
-                            ->disabled(),
-                        Forms\Components\TextInput::make('rating_count')
+                            ->content(fn () => $this->record?->rating_avg ? number_format($this->record->rating_avg, 2) : '-'),
+                        Forms\Components\Placeholder::make('rating_count')
                             ->label('Number of Ratings')
-                            ->disabled(),
+                            ->content(fn () => $this->record?->rating_count ?? '-'),
                     ])
                     ->columns(2),
 

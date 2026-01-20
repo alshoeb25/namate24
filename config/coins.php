@@ -16,8 +16,9 @@ return [
     // Enquiry unlock cost for tutors
     'enquiry_unlock_cost' => env('ENQUIRY_UNLOCK_COST', 5),
 
-    // Referral bonus coins
-    'referral_bonus' => env('REFERRAL_BONUS', 50),
+    // Referral rewards
+    'referral_bonus' => env('REFERRAL_BONUS', 30), // Coins for referrer (who referred)
+    'referral_reward' => env('REFERRAL_REWARD', 15), // Coins for referred user (who got referred)
 
     // Free requirements count for students
     'free_requirements_count' => env('FREE_REQUIREMENTS_COUNT', 3),
