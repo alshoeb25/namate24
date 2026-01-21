@@ -54,6 +54,8 @@ class ListTutors extends ListRecords
                 'Email',
                 'Phone',
                 'Headline',
+                'About',
+                'Description',
                 'Price/Hour (₹)',
                 'Teaching Mode',
                 'City',
@@ -61,6 +63,7 @@ class ListTutors extends ListRecords
                 'Rating',
                 'Rating Count',
                 'Experience (Years)',
+                'Share Contact',
                 'Reviewed By',
                 'Reviewed At',
                 'Created At',
@@ -68,19 +71,31 @@ class ListTutors extends ListRecords
 
             // Data rows
             foreach ($tutors as $tutor) {
+                $teachingMode = $tutor->teaching_mode;
+                if (is_array($teachingMode)) {
+                    $teachingMode = implode(', ', array_map('ucfirst', $teachingMode));
+                } elseif ($teachingMode) {
+                    $teachingMode = ucfirst((string) $teachingMode);
+                } else {
+                    $teachingMode = '-';
+                }
+
                 fputcsv($file, [
                     $tutor->id,
                     $tutor->user->name ?? '-',
                     $tutor->user->email ?? '-',
                     $tutor->user->phone ?? '-',
                     $tutor->headline ?? '-',
+                    $tutor->about ?? '-',
+                    $tutor->description ?? '-',
                     $tutor->price_per_hour ?? '-',
-                    ucfirst($tutor->teaching_mode[0] ?? '-'),
+                    $teachingMode,
                     $tutor->city ?? '-',
                     ucfirst($tutor->moderation_status),
                     $tutor->rating_avg ?? '-',
                     $tutor->rating_count ?? '-',
                     $tutor->experience_years ?? '-',
+                    $tutor->do_not_share_contact ? 'Hidden' : 'Shared',
                     $tutor->reviewedBy->name ?? '-',
                     $tutor->reviewed_at?->format('M d, Y H:i') ?? '-',
                     $tutor->created_at->format('M d, Y H:i'),

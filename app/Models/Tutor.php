@@ -13,7 +13,7 @@ class Tutor extends Model
 {
     
     protected $fillable = [
-        'user_id','headline','about','experience_years','price_per_hour',
+        'user_id','headline','about','description','do_not_share_contact','experience_years','price_per_hour',
         'teaching_mode','city','area','phone','whatsapp_number','country_code','lat','lng','verified','rating_avg','rating_count',
         'gender','badges','moderation_status','is_disabled','disabled_reason','disabled_by','disabled_at','address','state','country','postal_code',
         'introductory_video','video_title','youtube_intro_url','teaching_methodology','educations','experiences',
@@ -46,6 +46,7 @@ class Tutor extends Model
         'helps_homework' => 'boolean',
         'employed_full_time' => 'boolean',
         'is_disabled' => 'boolean',
+        'do_not_share_contact' => 'boolean',
         'disabled_at' => 'datetime',
     ];
 

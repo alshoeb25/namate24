@@ -30,8 +30,10 @@ class TutorResource extends Resource
         return $form->schema([
             Forms\Components\Select::make('user_id')->relationship('user', 'name')->required(),
             Forms\Components\TextInput::make('headline')->required(),
-            Forms\Components\Textarea::make('about'),
+            Forms\Components\Textarea::make('about')->columnSpanFull(),
+            Forms\Components\Textarea::make('description')->label('Description')->columnSpanFull(),
             Forms\Components\TextInput::make('price_per_hour')->numeric(),
+            Forms\Components\Toggle::make('do_not_share_contact')->label('Do Not Share Contact'),
             Forms\Components\Select::make('moderation_status')
                 ->options([
                     'pending' => 'pending',
@@ -49,8 +51,6 @@ class TutorResource extends Resource
                 Tables\Columns\TextColumn::make('user.name')->label('Name')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('user.email')->label('Email')->searchable()->toggleable(),
                 Tables\Columns\TextColumn::make('user.phone')->label('Phone')->searchable()->toggleable(),
-                Tables\Columns\TextColumn::make('headline')->limit(50)->wrap()->searchable(),
-                Tables\Columns\TextColumn::make('price_per_hour')->label('Price/hr')->money('INR', true)->sortable(),
                 Tables\Columns\BadgeColumn::make('moderation_status')->colors([
                     'secondary' => 'pending',
                     'success' => 'approved',
@@ -85,7 +85,10 @@ class TutorResource extends Resource
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        return parent::getEloquentQuery()->with('user:id,name,email,phone');
+        return parent::getEloquentQuery()->with([
+            'user:id,name,email,phone',
+            'reviewedBy:id,name',
+        ]);
     }
 
     public static function getRelations(): array
