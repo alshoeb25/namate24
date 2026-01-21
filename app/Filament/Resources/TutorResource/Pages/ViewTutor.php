@@ -7,7 +7,9 @@ use App\Models\Tutor;
 use App\Models\TutorModerationAction;
 use App\Notifications\TutorApprovalNotification;
 use App\Notifications\TutorRejectionNotification;
+use App\Jobs\SendTutorApprovalReminderJob;
 use Filament\Forms;
+use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Form;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Actions;
@@ -65,6 +67,49 @@ class ViewTutor extends ViewRecord
             ->schema([
                 Forms\Components\Section::make('Required Fields for Approval')
                     ->schema([
+                        Forms\Components\Actions::make([
+                                    FormAction::make('sendReminder')
+                                ->label('Send reminder email')
+                                ->icon('heroicon-o-envelope')
+                                ->color('primary')
+                                ->visible(fn () => $this->record?->user?->email && !$this->areApprovalRequirementsComplete($this->record))
+                                ->action(function () {
+                                    $record = $this->record;
+                                    if (!$record?->user?->email) {
+                                        \Filament\Notifications\Notification::make()
+                                            ->title('No email found')
+                                            ->body('Tutor does not have an email address to send the reminder to.')
+                                            ->danger()
+                                            ->send();
+                                        return;
+                                    }
+
+                                    $missing = $this->getApprovalRequirementErrors($record);
+
+                                    if (empty($missing)) {
+                                        \Filament\Notifications\Notification::make()
+                                            ->title('All requirements complete')
+                                            ->body('This tutor already meets all approval requirements.')
+                                            ->success()
+                                            ->send();
+                                        return;
+                                    }
+
+                                    $link = url('/tutor/profile/personal-details');
+                                    SendTutorApprovalReminderJob::dispatch(
+                                        $record->user->email,
+                                        $record->user->name ?? 'Tutor',
+                                        $missing,
+                                        $link
+                                    );
+
+                                    \Filament\Notifications\Notification::make()
+                                        ->title('Reminder queued')
+                                        ->body('Email reminder has been queued to send the missing requirements list.')
+                                        ->success()
+                                        ->send();
+                                }),
+                        ])->columnSpanFull(),
                         Forms\Components\Placeholder::make('approval_requirements')
                             ->label('')
                             ->content(fn () => new HtmlString($this->getApprovalRequirementsMessage())),
@@ -757,6 +802,37 @@ class ViewTutor extends ViewRecord
         return $html;
     }
 
+    private function getApprovalRequirementErrors(Tutor $record): array
+    {
+        $errors = [];
+        
+        if (!$record->user?->name) {
+            $errors[] = 'Name is required';
+        }
+        if (!$record->user?->email) {
+            $errors[] = 'Email is required';
+        }
+        if (!$record->subjects()->exists()) {
+            $errors[] = 'At least one subject is required';
+        }
+        if (empty($record->languages)) {
+            $errors[] = 'At least one language is required';
+        }
+        if (!$record->documents()->exists()) {
+            $errors[] = 'At least one document must be uploaded';
+        }
+        if (!$record->headline && !$record->description && !$record->speciality) {
+            $errors[] = 'Profile information (headline, description, or speciality) is required';
+        }
+
+        return $errors;
+    }
+
+    private function areApprovalRequirementsComplete(Tutor $record): bool
+    {
+        return empty($this->getApprovalRequirementErrors($record));
+    }
+
     protected function getHeaderActions(): array
     {
         return [
@@ -775,28 +851,20 @@ class ViewTutor extends ViewRecord
                 ->modalDescription('Are you sure you want to approve this tutor profile?')
                 ->action(function (Tutor $record, array $data) {
                     // Validate required fields before approval
-                    $errors = [];
-                    
-                    if (!$record->user?->name) {
-                        $errors[] = 'Name is required';
-                    }
-                    if (!$record->user?->email) {
-                        $errors[] = 'Email is required';
-                    }
-                    if (!$record->subjects()->exists()) {
-                        $errors[] = 'At least one subject is required';
-                    }
-                    if (empty($record->languages)) {
-                        $errors[] = 'At least one language is required';
-                    }
-                    if (!$record->documents()->exists()) {
-                        $errors[] = 'At least one document must be uploaded';
-                    }
-                    if (!$record->headline && !$record->description && !$record->speciality) {
-                        $errors[] = 'Profile information (headline, description, or speciality) is required';
-                    }
+                    $errors = $this->getApprovalRequirementErrors($record);
                     
                     if (!empty($errors)) {
+                        // If tutor has an email, queue a reminder with missing items and profile link
+                        if ($record->user?->email) {
+                            $link = url('/tutor/profile/personal-details');
+                            SendTutorApprovalReminderJob::dispatch(
+                                $record->user->email,
+                                $record->user->name ?? 'Tutor',
+                                $errors,
+                                $link
+                            );
+                        }
+
                         \Filament\Notifications\Notification::make()
                             ->title('Cannot Approve Tutor')
                             ->body('The following fields are missing:<br>' . implode('<br>', array_map(fn($e) => '• ' . $e, $errors)))
