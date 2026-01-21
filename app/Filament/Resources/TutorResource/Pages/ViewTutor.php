@@ -765,10 +765,15 @@ class ViewTutor extends ViewRecord
                 ->color('success')
                 ->icon('heroicon-o-check')
                 ->visible(fn () => $this->record->moderation_status !== 'approved')
-                ->requiresConfirmation()
+                ->form([
+                    Forms\Components\Textarea::make('approval_reason')
+                        ->label('Approval Message (Optional)')
+                        ->placeholder('Add a personalized message to the tutor')
+                        ->rows(3),
+                ])
                 ->modalHeading('Approve Tutor Profile')
                 ->modalDescription('Are you sure you want to approve this tutor profile?')
-                ->action(function (Tutor $record) {
+                ->action(function (Tutor $record, array $data) {
                     // Validate required fields before approval
                     $errors = [];
                     
@@ -817,8 +822,8 @@ class ViewTutor extends ViewRecord
                         'new_status' => 'approved',
                     ]);
 
-                    // Notify tutor
-                    $record->user->notify(new TutorApprovalNotification($record));
+                    // Notify tutor with approval reason
+                    $record->user->notify(new TutorApprovalNotification($record, $data['approval_reason'] ?? null));
                     
                     \Filament\Notifications\Notification::make()
                         ->title('Tutor Approved')

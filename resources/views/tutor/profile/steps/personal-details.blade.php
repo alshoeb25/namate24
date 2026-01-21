@@ -108,6 +108,15 @@
                     <textarea id="strength" name="strength" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Short strengths or areas you excel in">{{ old('strength', $tutor->strength ?? '') }}</textarea>
                 </div>
 
+                <!-- Languages -->
+                <div>
+                    <label for="languages" class="block text-sm font-medium text-gray-700 mb-2">Languages (optional)</label>
+                    <input type="text" id="languages" name="languages" value="{{ old('languages', is_array($tutor->languages ?? []) ? implode(', ', $tutor->languages) : $tutor->languages ?? '') }}" 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           placeholder="e.g., English, Hindi, Sanskrit (comma-separated)">
+                    <p class="text-xs text-gray-500 mt-1">Enter languages separated by commas</p>
+                </div>
+
                 <!-- Buttons -->
                 <div class="flex gap-4 pt-4">
                     <button type="submit" class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">

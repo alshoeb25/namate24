@@ -60,6 +60,7 @@ class ProfileController extends Controller
             'speciality' => 'nullable|string|max:255',
             'strength' => 'nullable|string|max:1000',
             'current_role' => 'nullable|string|max:255',
+            'languages' => 'nullable|string|max:500',
         ]);
 
         $user->update([
@@ -68,11 +69,19 @@ class ProfileController extends Controller
             'phone' => $validated['phone'],
         ]);
 
+        // Parse languages from comma-separated string to array
+        $languages = [];
+        if (!empty($validated['languages'])) {
+            $languages = array_map('trim', explode(',', $validated['languages']));
+            $languages = array_filter($languages); // Remove empty values
+        }
+
         $user->tutor->update([
             'gender' => $validated['gender'],
             'speciality' => $validated['speciality'] ?? null,
             'strength' => $validated['strength'] ?? null,
             'current_role' => $validated['current_role'] ?? null,
+            'languages' => $languages ?: null,
         ]);
 
         return redirect()->route('tutor.profile.dashboard')

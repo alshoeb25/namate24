@@ -45,9 +45,14 @@ class TutorRejectionNotification extends Notification implements ShouldQueue
 
     public function toDatabase($notifiable)
     {
+        $message = 'Your tutor profile was not approved at this time.';
+        if ($this->rejectionReason) {
+            $message .= ' Reason: ' . $this->rejectionReason;
+        }
+
         return [
-            'title' => 'Profile Review',
-            'message' => 'Your tutor profile was not approved. ' . ($this->rejectionReason ? 'Reason: ' . $this->rejectionReason : ''),
+            'title' => 'Profile Needs Revision',
+            'message' => $message,
             'type' => 'rejection',
             'tutor_id' => $this->tutor->id,
             'rejection_reason' => $this->rejectionReason,

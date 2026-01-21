@@ -47,7 +47,7 @@ class TutorProfileController extends Controller
         return response()->json([
             'tutor' => $tutor->only([
                 'id', 'user_id', 'headline', 'current_role', 'speciality', 'strength', 'youtube_url',
-                'phone_verified', 'phone_otp', 'phone_otp_expires_at','gender'
+                'phone_verified', 'phone_otp', 'phone_otp_expires_at','gender', 'languages'
             ]),
             'user' => Auth::user()->only(['id', 'name', 'email', 'phone']),
         ]);
@@ -65,6 +65,8 @@ class TutorProfileController extends Controller
             'gender' => 'nullable|string|in:Male,Female,Other,Prefer not to say',
             'strength' => 'nullable|string',
             'youtube_url' => 'nullable|url',
+            'languages' => 'nullable|array',
+            'languages.*' => 'string|max:100',
         ]);
 
         $tutor = $this->getTutor();

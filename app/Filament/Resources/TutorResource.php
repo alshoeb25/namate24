@@ -28,7 +28,15 @@ class TutorResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Select::make('user_id')->relationship('user', 'name')->required(),
+            Forms\Components\Section::make('Personal Details')
+                ->schema([
+                    Forms\Components\Select::make('user_id')->relationship('user', 'name')->required(),
+                    Forms\Components\TagsInput::make('languages')
+                        ->label('Languages')
+                        ->placeholder('Add languages (e.g., English, Hindi, Sanskrit)')
+                        ->separator(','),
+                ])
+                ->columns(2),
             Forms\Components\TextInput::make('headline')->required(),
             Forms\Components\Textarea::make('about')->columnSpanFull(),
             Forms\Components\Textarea::make('description')->label('Description')->columnSpanFull(),

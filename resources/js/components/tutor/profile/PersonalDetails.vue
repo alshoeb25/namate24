@@ -74,6 +74,44 @@
           />
         </div>
 
+        <!-- Languages -->
+        <div>
+          <label class="block text-gray-700 mb-2">Languages you can communicate in</label>
+          <div class="relative">
+            <input
+              v-model="languageSearch"
+              type="text"
+              class="w-full border px-3 py-2 rounded-sm"
+              placeholder="Type to search languages"
+              @focus="languageDropdown = true"
+              @blur="closeLanguageDropdown"
+            />
+            <div v-if="languageDropdown" class="absolute z-10 mt-1 w-full bg-white border rounded shadow max-h-56 overflow-y-auto">
+              <div
+                v-for="lang in filteredLanguages"
+                :key="lang"
+                class="px-3 py-2 hover:bg-blue-50 flex items-center gap-2 cursor-pointer"
+                @mousedown.prevent="toggleLanguage(lang)"
+              >
+                <input type="checkbox" class="rounded" :checked="form.languages.includes(lang)" />
+                <span>{{ lang }}</span>
+              </div>
+              <div v-if="filteredLanguages.length === 0 && languageSearch" class="px-3 py-2 text-sm text-gray-500">No results</div>
+              <div v-if="filteredLanguages.length === 0 && !languageSearch" class="px-3 py-2 text-sm text-gray-500">Type to search languages</div>
+            </div>
+            <div class="mt-2 flex flex-wrap gap-2">
+              <span
+                v-for="lang in form.languages"
+                :key="lang"
+                class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm flex items-center gap-1"
+              >
+                {{ lang }}
+                <button type="button" class="text-blue-700" @click="toggleLanguage(lang)">×</button>
+              </span>
+            </div>
+          </div>
+        </div>
+
         <!-- Submit Button -->
         <div class="flex gap-4 pt-4">
           <button 
@@ -118,16 +156,48 @@ export default {
         gender: '',
         strength: '',
         youtube_url: '',
+        languages: [],
       },
-      loading: false,
-      message: '',
-      error: '',
+      languageSearch: '',
+      languageDropdown: false,
+      allLanguages: [
+        // Indian Languages
+        'Hindi', 'English', 'Tamil', 'Telugu', 'Kannada', 'Malayalam', 'Marathi', 'Bengali', 'Gujarati', 'Punjabi', 'Urdu', 'Assamese', 'Odia', 'Konkani', 'Manipuri', 'Nepali', 'Sindhi', 'Sanskrit',
+        // Foreign Languages
+        'Spanish', 'French', 'German', 'Chinese (Simplified)', 'Chinese (Traditional)', 'Japanese', 'Korean', 'Portuguese', 'Italian', 'Russian', 'Arabic', 'Dutch', 'Polish', 'Swedish', 'Norwegian', 'Danish', 'Finnish', 'Thai', 'Vietnamese', 'Indonesian', 'Filipino (Tagalog)', 'Turkish', 'Persian', 'Hebrew', 'Greek', 'Czech', 'Hungarian', 'Romanian', 'Bulgarian', 'Serbian', 'Ukrainian', 'Afrikaans'
+      ],
     };
+  },
+  computed: {
+    filteredLanguages() {
+      if (!this.languageSearch) {
+        // Show all languages not already selected
+        return this.allLanguages.filter(lang => !this.form.languages.includes(lang));
+      }
+      const search = this.languageSearch.toLowerCase();
+      return this.allLanguages.filter(lang => 
+        lang.toLowerCase().includes(search) && 
+        !this.form.languages.includes(lang)
+      );
+    }
   },
   mounted() {
     this.fetchPersonalDetails();
   },
   methods: {
+    closeLanguageDropdown() {
+      setTimeout(() => {
+        this.languageDropdown = false;
+      }, 100);
+    },
+    toggleLanguage(lang) {
+      const index = this.form.languages.indexOf(lang);
+      if (index > -1) {
+        this.form.languages.splice(index, 1);
+      } else {
+        this.form.languages.push(lang);
+      }
+    },
     async fetchPersonalDetails() {
       try {
         console.log('Fetching personal details...');
@@ -141,6 +211,7 @@ export default {
           gender: response.data.tutor.gender || '',
           strength: response.data.tutor.strength || '',
           youtube_url: response.data.tutor.youtube_url || '',
+          languages: Array.isArray(response.data.tutor.languages) ? response.data.tutor.languages : [],
         };
       } catch (err) {
         console.error('Error fetching personal details:', err);
