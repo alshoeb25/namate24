@@ -8,6 +8,9 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\ViewAction;
@@ -30,18 +33,101 @@ class StudentRequirementResource extends Resource
     {
         return $form
             ->schema([
-                TextInput::make('student.user.name')
+                // Student Information
+                TextInput::make('student_name')
                     ->label('Student Name')
+                    ->default(fn($record) => $record?->student?->name ?? $record?->student_name)
                     ->disabled(),
-                Textarea::make('description')
+                TextInput::make('phone')
+                    ->label('Phone')
+                    ->disabled(),
+                TextInput::make('alternate_phone')
+                    ->label('Alternate Phone')
+                    ->disabled(),
+                
+                // Subject & Details
+                TextInput::make('other_subject')
+                    ->label('Subject'),
+                Select::make('service_type')
+                    ->label('Service Type')
+                    ->options([
+                        'tutoring' => 'Tutoring',
+                        'assignment' => 'Assignment Help',
+                        'exam_prep' => 'Exam Preparation',
+                    ]),
+                Textarea::make('details')
+                    ->label('Details')
                     ->columnSpanFull(),
-                TextInput::make('post_fee')
-                    ->numeric()
-                    ->disabled(),
-                TextInput::make('unlock_price')
-                    ->numeric()
-                    ->disabled(),
+                
+                // Location
+                TextInput::make('location')
+                    ->label('Location'),
+                TextInput::make('city')
+                    ->label('City'),
+                TextInput::make('area')
+                    ->label('Area'),
+                TextInput::make('pincode')
+                    ->label('Pincode'),
+                
+                // Academic Details
+                TextInput::make('class')
+                    ->label('Class/Grade'),
+                Select::make('level')
+                    ->label('Level')
+                    ->options([
+                        'Beginner' => 'Beginner',
+                        'Intermediate' => 'Intermediate',
+                        'Advanced' => 'Advanced',
+                        'Expert' => 'Expert',
+                    ]),
+                
+                // Budget
+                TextInput::make('budget')
+                    ->label('Budget')
+                    ->numeric(),
+                Select::make('budget_type')
+                    ->label('Budget Type')
+                    ->options([
+                        'per_hour' => 'Per Hour',
+                        'per_month' => 'Per Month',
+                        'fixed' => 'Fixed',
+                    ]),
+                
+                // Preferences
+                Select::make('mode')
+                    ->label('Mode')
+                    ->options([
+                        'online' => 'Online',
+                        'offline' => 'Offline',
+                        'both' => 'Both',
+                    ]),
+                Select::make('gender_preference')
+                    ->label('Gender Preference')
+                    ->options([
+                        'male' => 'Male',
+                        'female' => 'Female',
+                        'no_preference' => 'No Preference',
+                    ]),
+                Select::make('availability')
+                    ->label('Availability')
+                    ->options([
+                        'morning' => 'Morning',
+                        'afternoon' => 'Afternoon',
+                        'evening' => 'Evening',
+                        'flexible' => 'Flexible',
+                        'full_time' => 'Full Time',
+                    ]),
+                
+                // Status & Lead Management
+                Select::make('status')
+                    ->label('Status')
+                    ->options([
+                        'active' => 'Active',
+                        'inactive' => 'Inactive',
+                        'completed' => 'Completed',
+                    ]),
                 Select::make('lead_status')
+                    ->label('Lead Status')
                     ->options([
                         'open' => 'Open',
                         'full' => 'Full',
@@ -49,10 +135,112 @@ class StudentRequirementResource extends Resource
                         'cancelled' => 'Cancelled',
                     ]),
                 TextInput::make('current_leads')
+                    ->label('Current Leads')
                     ->numeric()
                     ->disabled(),
                 TextInput::make('max_leads')
+                    ->label('Max Leads')
                     ->numeric(),
+                
+                // Pricing
+                TextInput::make('post_fee')
+                    ->label('Post Fee')
+                    ->numeric()
+                    ->disabled(),
+                TextInput::make('unlock_price')
+                    ->label('Unlock Price')
+                    ->numeric()
+                    ->disabled(),
+            ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Section::make('Student Information')
+                    ->schema([
+                        TextEntry::make('student.user.name')
+                            ->label('Student Name'),
+                        TextEntry::make('phone')
+                            ->label('Phone'),
+                        TextEntry::make('alternate_phone')
+                            ->label('Alternate Phone'),
+                    ])
+                    ->columns(3),
+                
+                Section::make('Subject & Details')
+                    ->schema([
+                        TextEntry::make('subjects.name')
+                            ->label('Subjects')
+                            ->badge()
+                            ->separator(','),
+                        TextEntry::make('service_type')
+                            ->label('Service Type'),
+                        TextEntry::make('details')
+                            ->label('Details')
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(2),
+                
+                Section::make('Location')
+                    ->schema([
+                        TextEntry::make('location')
+                            ->label('Location'),
+                        TextEntry::make('city')
+                            ->label('City'),
+                        TextEntry::make('area')
+                            ->label('Area'),
+                        TextEntry::make('pincode')
+                            ->label('Pincode'),
+                    ])
+                    ->columns(4),
+                
+                Section::make('Academic Details')
+                    ->schema([
+                        TextEntry::make('class')
+                            ->label('Class/Grade'),
+                        TextEntry::make('level')
+                            ->label('Level'),
+                    ])
+                    ->columns(2),
+                
+                Section::make('Budget & Preferences')
+                    ->schema([
+                        TextEntry::make('budget')
+                            ->label('Budget')
+                            ->money('INR'),
+                        TextEntry::make('budget_type')
+                            ->label('Budget Type'),
+                        TextEntry::make('mode')
+                            ->label('Mode'),
+                        TextEntry::make('gender_preference')
+                            ->label('Gender Preference'),
+                        TextEntry::make('availability')
+                            ->label('Availability'),
+                    ])
+                    ->columns(3),
+                
+                Section::make('Status & Lead Management')
+                    ->schema([
+                        TextEntry::make('status')
+                            ->label('Status')
+                            ->badge(),
+                        TextEntry::make('lead_status')
+                            ->label('Lead Status')
+                            ->badge(),
+                        TextEntry::make('current_leads')
+                            ->label('Current Leads'),
+                        TextEntry::make('max_leads')
+                            ->label('Max Leads'),
+                        TextEntry::make('post_fee')
+                            ->label('Post Fee')
+                            ->money('INR'),
+                        TextEntry::make('unlock_price')
+                            ->label('Unlock Price')
+                            ->money('INR'),
+                    ])
+                    ->columns(3),
             ]);
     }
 
@@ -64,8 +252,6 @@ class StudentRequirementResource extends Resource
                     ->label('Student')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('description')
-                    ->limit(50),
                 TextColumn::make('current_leads')
                     ->label('Leads'),
                 TextColumn::make('max_leads')
@@ -92,8 +278,9 @@ class StudentRequirementResource extends Resource
                     ]),
             ])
             ->actions([
-                ViewAction::make(),
-                EditAction::make(),
+                ViewAction::make()
+                    ->label('View')
+                    ->icon('heroicon-o-eye'),
             ]);
     }
 
@@ -112,6 +299,11 @@ class StudentRequirementResource extends Resource
         return auth()->user()?->can('view-enquiries') ?? false;
     }
 
+    public static function canView($record = null): bool
+    {
+        return auth()->user()?->can('view-enquiries') ?? false;
+    }
+
     public static function canCreate(): bool
     {
         return false; // Enquiries are created by students
@@ -119,7 +311,7 @@ class StudentRequirementResource extends Resource
 
     public static function canEdit($record = null): bool
     {
-        return auth()->user()?->can('manage-enquiries') ?? false;
+        return false; // Requirements are read-only
     }
 
     public static function canDelete($record = null): bool

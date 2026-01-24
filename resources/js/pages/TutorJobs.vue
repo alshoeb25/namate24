@@ -43,9 +43,14 @@
             {{ total }} Job{{ total !== 1 ? 's' : '' }}
           </h2>
           <p class="text-gray-600 mt-1">
-            <span v-if="filters.subject_id">Subject: <strong>{{ getSubjectName(filters.subject_id) }}</strong></span>
+            <span v-if="filters.subject_id">Subject: <strong>{{ selectedSubjectName }}</strong></span>
             <span v-if="filters.subject_id && filters.location"> • </span>
-            <span v-if="filters.location">Location: <strong>{{ filters.location }}</strong></span>
+            <span v-if="filters.location">
+              Location: <strong>{{ filters.location }}</strong>
+              <span v-if="filters.lat && filters.lng" class="ml-1 text-blue-600">
+                <i class="fas fa-location-arrow"></i> within 50km
+              </span>
+            </span>
           </p>
         </div>
 
@@ -124,6 +129,7 @@ export default {
     const loading = ref(false);
     const requirements = ref([]);
     const subjects = ref([]);
+    const tutorSubjects = ref([]);
     const fieldLabels = ref({});
     const total = ref(0);
     const currentPage = ref(1);
@@ -133,6 +139,8 @@ export default {
     const filters = ref({
       subject_id: route.query.subject_id || '',
       location: route.query.location || '',
+      lat: route.query.lat ? parseFloat(route.query.lat) : null,
+      lng: route.query.lng ? parseFloat(route.query.lng) : null,
       mode: route.query.mode || '',
       sort_by: route.query.sort_by || 'recent'
     });
@@ -153,12 +161,33 @@ export default {
       return pages;
     });
 
+    const selectedSubjectName = computed(() => {
+      if (!filters.value.subject_id) return '';
+      return getSubjectName(filters.value.subject_id);
+    });
+
     async function loadSubjects() {
       try {
         const res = await axios.get('/api/subjects');
         subjects.value = res.data;
       } catch (error) {
         console.error('Error loading subjects:', error);
+      }
+    }
+
+    async function loadTutorSubjects() {
+      try {
+        const res = await axios.get('/api/tutor/profile/subjects');
+        tutorSubjects.value = res.data?.subjects || [];
+
+        // Pre-select first subject if no filter selected
+        if (!filters.value.subject_id && tutorSubjects.value.length > 0) {
+          filters.value.subject_id = String(tutorSubjects.value[0].id);
+        }
+      } catch (error) {
+        if (![401, 403].includes(error.response?.status)) {
+          console.error('Error loading tutor subjects:', error);
+        }
       }
     }
 
@@ -201,6 +230,12 @@ export default {
           per_page: perPage.value,
           ...filters.value
         };
+
+        // Enable nearby search if we have coordinates
+        if (params.lat && params.lng) {
+          params.nearby = true;
+          params.radius = 50; // Search within 50km radius
+        }
 
         // Remove empty filters
         Object.keys(params).forEach(key => {
@@ -257,6 +292,10 @@ export default {
         page: currentPage.value > 1 ? currentPage.value : undefined
       };
       
+      // Format lat/lng to avoid precision issues
+      if (query.lat) query.lat = parseFloat(query.lat).toFixed(6);
+      if (query.lng) query.lng = parseFloat(query.lng).toFixed(6);
+      
       // Remove empty values
       Object.keys(query).forEach(key => {
         if (query[key] === '' || query[key] === null || query[key] === undefined) {
@@ -271,16 +310,19 @@ export default {
       if (newQuery.page) {
         currentPage.value = parseInt(newQuery.page);
       }
-      Object.keys(filters.value).forEach(key => {
-        if (newQuery[key] !== undefined) {
-          filters.value[key] = newQuery[key];
-        }
-      });
+      
+      filters.value.subject_id = newQuery.subject_id || '';
+      filters.value.location = newQuery.location || '';
+      filters.value.lat = newQuery.lat ? parseFloat(newQuery.lat) : null;
+      filters.value.lng = newQuery.lng ? parseFloat(newQuery.lng) : null;
+      filters.value.mode = newQuery.mode || '';
+      filters.value.sort_by = newQuery.sort_by || 'recent';
     });
 
     onMounted(async () => {
       await loadSubjects();
       await loadFieldLabels();
+      await loadTutorSubjects();
       await searchJobs();
     });
 
@@ -294,6 +336,7 @@ export default {
       currentPage,
       lastPage,
       visiblePages,
+      selectedSubjectName,
       handleSearch,
       goToPage,
       getSubjectName

@@ -44,7 +44,7 @@ class EnquiryController extends Controller
                 $q->where('lead_status', 'open')->orWhereNull('lead_status');
             })
             ->whereColumn('current_leads', '<', 'max_leads')
-            ->with('subjects')
+            ->with(['subject', 'subjects'])
             ->withExists([
                 'unlocks as has_unlocked' => function ($q) use ($user) {
                     $tutorId = $user->tutor ? $user->tutor->id : null;
@@ -54,9 +54,29 @@ class EnquiryController extends Controller
                 }
             ]);
 
+        // Filter by subject_id (single subject dropdown)
+        if ($subjectId = $request->query('subject_id')) {
+            $query->where(function ($q) use ($subjectId) {
+                // Check if subject_id matches
+                $q->where('subject_id', $subjectId)
+                // OR check in the many-to-many subjects relationship
+                ->orWhereHas('subjects', function ($sq) use ($subjectId) {
+                    $sq->where('subjects.id', $subjectId);
+                });
+            });
+        }
+        
+        // Filter by subject name (text search)
         if ($subject = $request->query('subject')) {
-            $query->whereHas('subjects', function ($q) use ($subject) {
-                $q->where('name', 'like', '%' . $subject . '%');
+            $query->where(function ($q) use ($subject) {
+                // Check in the many-to-many subjects relationship
+                $q->whereHas('subjects', function ($sq) use ($subject) {
+                    $sq->where('name', 'like', '%' . $subject . '%');
+                })
+                // OR check in the single subject relationship
+                ->orWhereHas('subject', function ($sq) use ($subject) {
+                    $sq->where('name', 'like', '%' . $subject . '%');
+                });
             });
         }
 
@@ -72,9 +92,23 @@ class EnquiryController extends Controller
             // Add labels for display and Elasticsearch
             $enquiry = $this->addLabelsToEnquiry($enquiry);
             
+            // Extract and add subject_name and subject_names
+            if ($enquiry->relationLoaded('subject') && $enquiry->subject) {
+                $enquiry->subject_name = $enquiry->subject->name;
+            }
+            
+            if ($enquiry->relationLoaded('subjects') && $enquiry->subjects && $enquiry->subjects->isNotEmpty()) {
+                $enquiry->subject_names = $enquiry->subjects->pluck('name')->toArray();
+                // If no single subject, use first from subjects
+                if (!isset($enquiry->subject_name)) {
+                    $enquiry->subject_name = $enquiry->subject_names[0] ?? null;
+                }
+            }
+            
             if (!$enquiry->has_unlocked) {
                 $enquiry->makeHidden(['phone', 'alternate_phone']);
             }
+            
             // Add lead transparency info
             $enquiry->setAttribute('lead_info', [
                 'current_leads' => $enquiry->current_leads,
@@ -82,6 +116,7 @@ class EnquiryController extends Controller
                 'spots_available' => $enquiry->max_leads - $enquiry->current_leads,
                 'is_full' => $enquiry->current_leads >= $enquiry->max_leads,
             ]);
+            
             return $enquiry;
         });
 

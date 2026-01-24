@@ -13,7 +13,7 @@ class StudentRequirement extends Model
         'student_id','subject_id','budget_min','budget_max','mode',
         'details','city','area','pincode','lat','lng','desired_start','visible',
         // New fields for 3-section form
-        'phone','country_code','alternate_phone','student_name','location','level','service_type',
+        'phone','country_code','alternate_phone','student_name','location','class','level','service_type',
         'meeting_options','travel_distance','budget','budget_type','gender_preference',
         'availability','languages','tutor_location_preference','other_subject','status',
         // Lead/coin fields
@@ -30,9 +30,57 @@ class StudentRequirement extends Model
         'hired_at' => 'datetime',
     ];
 
+    protected $appends = ['subject_name', 'subject_names'];
+
+    /**
+     * Get the subject name from the subject relationship
+     */
+    public function getSubjectNameAttribute()
+    {
+        // Check if already set as attribute (from LabelService)
+        if (isset($this->attributes['subject_name'])) {
+            return $this->attributes['subject_name'];
+        }
+        
+        // Try to get from single subject relationship
+        if ($this->relationLoaded('subject') && $this->subject) {
+            return $this->subject->name;
+        }
+        
+        // Fallback: try to get from subjects relationship (first one)
+        if ($this->relationLoaded('subjects') && $this->subjects && $this->subjects->isNotEmpty()) {
+            return $this->subjects->first()->name;
+        }
+        
+        // Last resort: check if other_subject field has data
+        if (!empty($this->other_subject)) {
+            return $this->other_subject;
+        }
+        
+        return null;
+    }
+
+    /**
+     * Get subject names from subjects relationship
+     */
+    public function getSubjectNamesAttribute()
+    {
+        // Check if already set as attribute (from LabelService)
+        if (isset($this->attributes['subject_names'])) {
+            return $this->attributes['subject_names'];
+        }
+        
+        // Otherwise get from relationship
+        if ($this->relationLoaded('subjects') && $this->subjects) {
+            return $this->subjects->pluck('name')->toArray();
+        }
+        
+        return [];
+    }
+
     public function student(): BelongsTo
     {
-        return $this->belongsTo(User::class,'student_id');
+        return $this->belongsTo(Student::class, 'student_id');
     }
 
     public function subject(): BelongsTo
@@ -87,6 +135,7 @@ class StudentRequirement extends Model
         $lng = is_numeric($this->lng) ? (float) $this->lng : null;
 
         $subjects = $this->subjects ? $this->subjects->pluck('name')->toArray() : [];
+        $subjectIds = $this->subjects ? $this->subjects->pluck('id')->toArray() : [];
 
         // Use LabelService for all labels from database
         $labelService = app(\App\Services\LabelService::class);
@@ -96,6 +145,7 @@ class StudentRequirement extends Model
             'student_id' => $this->student_id,
             'student_name' => $this->student?->name ?? $this->student_name ?? null,
             'subject_id' => $this->subject_id,
+            'subject_ids' => $subjectIds,
             'subjects' => $subjects,
             'subject_name' => $this->subject?->name ?? null,
             'budget_min' => (float) ($this->budget_min ?? 0),
@@ -113,6 +163,7 @@ class StudentRequirement extends Model
             'location_display' => $this->location ?: ($this->city . ($this->area ? ', ' . $this->area : '')),
             'pincode' => $this->pincode,
             'details' => $this->details,
+            'class' => $this->class,
             'gender_preference' => $this->gender_preference,
             'gender_preference_label' => FieldLabel::getLabel('gender_preference', $this->gender_preference) ?? $this->gender_preference,
             'level' => $this->level,

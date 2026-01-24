@@ -173,15 +173,6 @@
                 <p class="text-sm text-gray-500 text-center mt-1">Write about your teaching philosophy</p>
             </router-link>
 
-            <!-- Show contact setting -->
-            <router-link to="/tutor/profile/settings"
-                class="dashboard-card flex flex-col items-center justify-center gap-4 bg-white rounded-2xl p-6 shadow-md hover:shadow-xl">
-                <div class="icon-container">
-                    <i class="fas fa-cog text-white text-2xl"></i>
-                </div>
-                <h3 class="text-xl font-semibold text-gray-800 text-center">Contact Settings</h3>
-                <p class="text-sm text-gray-500 text-center mt-1">Manage how students can contact you</p>
-            </router-link>
         </div>
 
         <!-- MOBILE VIEW -->
@@ -350,18 +341,6 @@
                 <i class="fas fa-chevron-right text-gray-400 ml-auto"></i>
             </router-link>
             
-            <!-- Show Contact Setting -->
-            <router-link to="/tutor/profile/settings"
-                class="dashboard-card flex items-center gap-4 bg-white rounded-2xl p-4 shadow-md">
-                <div class="icon-container">
-                    <i class="fas fa-cog text-white"></i>
-                </div>
-                <div>
-                    <p class="text-lg font-semibold text-gray-800">Contact Settings</p>
-                    <p class="text-sm text-gray-500">Manage how students can contact you</p>
-                </div>
-                <i class="fas fa-chevron-right text-gray-400 ml-auto"></i>
-            </router-link>
         </div>
 
     </section>

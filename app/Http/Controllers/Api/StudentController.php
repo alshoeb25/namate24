@@ -55,8 +55,9 @@ class StudentController extends Controller
             'subjects.*' => 'string',
             'other_subject' => 'nullable|string',
             
-            // Section 2: Requirement Details - Level
-            'level' => 'required|string',
+            // Section 2: Requirement Details - Class & Level
+            'class' => 'nullable|string|max:255',
+            'level' => 'nullable|string|max:255',
             
             // Section 2: Requirement Details - Service Type
             'service_type' => 'required|string|in:tutoring,assignment_help',
@@ -108,7 +109,8 @@ class StudentController extends Controller
             'student_name' => $data['student_name'],
             'details' => $data['description'] ?? '',
             'other_subject' => $data['other_subject'] ?? null,
-            'level' => $data['level'],
+            'class' => $data['class'] ?? null,
+            'level' => $data['level'] ?? null,
             'service_type' => $data['service_type'],
             'meeting_options' => $data['meeting_options'],
             'travel_distance' => $data['travel_distance'] ?? null,
@@ -242,8 +244,9 @@ class StudentController extends Controller
             'subjects.*' => 'string',
             'other_subject' => 'nullable|string',
             
-            // Section 2: Requirement Details - Level
-            'level' => 'required|string',
+            // Section 2: Requirement Details - Class & Level
+            'class' => 'nullable|string|max:255',
+            'level' => 'nullable|string|max:255',
             
             // Section 2: Requirement Details - Service Type
             'service_type' => 'required|string|in:tutoring,assignment_help',
@@ -296,7 +299,8 @@ class StudentController extends Controller
             'student_name' => $data['student_name'],
             'details' => $data['description'] ?? '',
             'other_subject' => $data['other_subject'] ?? null,
-            'level' => $data['level'],
+            'class' => $data['class'] ?? null,
+            'level' => $data['level'] ?? null,
             'service_type' => $data['service_type'],
             'meeting_options' => $data['meeting_options'],
             'travel_distance' => $data['travel_distance'] ?? null,

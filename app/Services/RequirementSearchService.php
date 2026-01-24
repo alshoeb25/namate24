@@ -43,9 +43,35 @@ class RequirementSearchService
             ];
         }
 
-        // Subject-based filtering
+        // Subject-based filtering (supports multiple subjects)
+        $subjectIds = [];
+        if (!empty($filters['subject_ids'])) {
+            $subjectIds = is_array($filters['subject_ids'])
+                ? $filters['subject_ids']
+                : array_filter(explode(',', $filters['subject_ids']));
+        }
+
         if (!empty($filters['subject_id'])) {
-            $must[] = ['term' => ['subject_id' => intval($filters['subject_id'])]];
+            $subjectIds[] = $filters['subject_id'];
+        }
+
+        $subjectIds = collect($subjectIds)
+            ->map(fn($id) => intval($id))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if (!empty($subjectIds)) {
+            $must[] = [
+                'bool' => [
+                    'should' => [
+                        ['terms' => ['subject_ids' => $subjectIds]],
+                        ['terms' => ['subject_id' => $subjectIds]],
+                    ],
+                    'minimum_should_match' => 1,
+                ]
+            ];
         }
 
         if (!empty($filters['subject'])) {
@@ -144,21 +170,82 @@ class RequirementSearchService
         if (!empty($filters['sort_by'])) {
             $queryBody['sort'] = $this->getSortOptions($filters['sort_by'], $filters);
         } else {
-            // Default: Recent first
-            $queryBody['sort'] = [
-                ['posted_at' => ['order' => 'desc']],
-                ['created_at' => ['order' => 'desc']],
+            // Default: Recent first, but prioritize distance if location search
+            if (!empty($filters['nearby']) && !empty($filters['lat']) && !empty($filters['lng'])) {
+                $queryBody['sort'] = [
+                    [
+                        '_geo_distance' => [
+                            'location_geo' => [
+                                'lat' => floatval($filters['lat']),
+                                'lon' => floatval($filters['lng']),
+                            ],
+                            'order' => 'asc',
+                            'unit' => 'km'
+                        ]
+                    ],
+                    ['posted_at' => ['order' => 'desc']],
+                ];
+            } else {
+                $queryBody['sort'] = [
+                    ['posted_at' => ['order' => 'desc']],
+                    ['created_at' => ['order' => 'desc']],
+                ];
+            }
+        }
+
+        // Add distance calculation for results if location search is active
+        if (!empty($filters['lat']) && !empty($filters['lng'])) {
+            $queryBody['script_fields'] = [
+                'distance' => [
+                    'script' => [
+                        'lang' => 'painless',
+                        'source' => "if (doc['location_geo'].size() == 0) { return null; } else { return doc['location_geo'].arcDistance(params.lat, params.lon) / 1000; }",
+                        'params' => [
+                            'lat' => floatval($filters['lat']),
+                            'lon' => floatval($filters['lng'])
+                        ]
+                    ]
+                ]
             ];
         }
 
         // 🔥 Elasticsearch Query
-        $results = $this->elastic->client()->search([
-            'index' => 'requirements',
-            'body' => $queryBody
-        ]);
+        try {
+            $results = $this->elastic->client()->search([
+                'index' => 'requirements',
+                'body' => $queryBody
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Elasticsearch search error', [
+                'error' => $e->getMessage(),
+                'filters' => $filters,
+                'query' => json_encode($queryBody)
+            ]);
+            
+            // Return empty results on error
+            return new LengthAwarePaginator(
+                collect([]),
+                0,
+                $perPage,
+                $page,
+                ['path' => request()->url(), 'query' => request()->query()]
+            );
+        }
 
-        // Extract hits
-        $hits = collect($results['hits']['hits'])->map(fn($hit) => $hit['_source']);
+        // Extract hits and merge distance if calculated
+        $hits = collect($results['hits']['hits'])->map(function($hit) {
+            $source = $hit['_source'];
+            
+            // Add calculated distance if available and valid
+            if (isset($hit['fields']['distance'][0]) && $hit['fields']['distance'][0] !== null) {
+                $distance = floatval($hit['fields']['distance'][0]);
+                if ($distance >= 0) {
+                    $source['distance'] = round($distance, 2);
+                }
+            }
+            
+            return $source;
+        });
 
         // Total hits
         $total = $results['hits']['total']['value'] ?? 0;
@@ -201,7 +288,7 @@ class RequirementSearchService
     {
         // Build filters based on tutor profile
         if ($tutor->subjects && $tutor->subjects->count() > 0) {
-            $filters['subject_id'] = $tutor->subjects->first()->id;
+            $filters['subject_ids'] = $tutor->subjects->pluck('id')->toArray();
         }
 
         if ($tutor->lat && $tutor->lng) {

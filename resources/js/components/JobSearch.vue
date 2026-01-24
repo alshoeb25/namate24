@@ -82,7 +82,7 @@
 </template>
 
 <script>
-import { reactive, computed, ref, onMounted } from 'vue';
+import { reactive, computed, ref, onMounted, watch } from 'vue';
 import { loadGoogleMaps } from '../utils/googleMaps';
 
 export default {
@@ -160,6 +160,10 @@ export default {
       if (value.length < 2 || !autocompleteService) {
         locationSuggestions.value = [];
         showLocationSuggestions.value = false;
+        // Trigger search when location is cleared
+        if (value.length === 0) {
+          apply();
+        }
         return;
       }
 
@@ -223,7 +227,19 @@ export default {
     }
 
     function apply() {
-      emit('search', { ...form });
+      const searchParams = { 
+        ...form,
+        lat: locationDetails.lat,
+        lng: locationDetails.lng
+      };
+      
+      // Only include lat/lng if we have valid coordinates
+      if (!searchParams.lat || !searchParams.lng) {
+        delete searchParams.lat;
+        delete searchParams.lng;
+      }
+      
+      emit('search', searchParams);
     }
 
     function reset() {
@@ -239,6 +255,17 @@ export default {
       locationDetails.placeId = '';
       emit('search', { ...form });
     }
+
+    watch(
+      () => props.initialFilters,
+      (newFilters) => {
+        form.subject_id = newFilters.subject_id || '';
+        form.location = newFilters.location || '';
+        form.mode = newFilters.mode || '';
+        form.sort_by = newFilters.sort_by || 'recent';
+      },
+      { deep: true }
+    );
 
     return {
       form,

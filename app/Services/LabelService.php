@@ -92,8 +92,13 @@ class LabelService
             }
         }
 
-        // Add subject names if subjects relationship exists
-        if (!$isArray && isset($item->subjects)) {
+        // Add subject name from subject relationship (single subject)
+        if (!$isArray && method_exists($item, 'relationLoaded') && $item->relationLoaded('subject') && $item->subject) {
+            $item->subject_name = $item->subject->name;
+        }
+
+        // Add subject names if subjects relationship exists (multiple subjects)
+        if (!$isArray && method_exists($item, 'relationLoaded') && $item->relationLoaded('subjects') && $item->subjects) {
             $item->subject_names = $item->subjects->pluck('name')->toArray();
         }
 

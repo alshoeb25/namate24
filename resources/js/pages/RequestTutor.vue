@@ -372,6 +372,30 @@
             </div>
           </div>
 
+          <!-- Class -->
+          <div class="space-y-6">
+            <h3 class="text-lg font-semibold text-gray-800 pb-3 border-b flex items-center gap-2">
+              <i class="fas fa-book-open text-blue-600"></i>Class
+            </h3>
+            
+            <div class="grid md:grid-cols-4 gap-4 md:gap-6">
+              <div class="md:col-span-1">
+                <label class="block text-gray-700 font-medium mb-2">Class/Grade</label>
+                <p class="text-gray-500 text-sm">Optional</p>
+              </div>
+              <div class="md:col-span-3">
+                <select v-model="form.class"
+                        :disabled="loadingLevels"
+                        class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white disabled:bg-gray-100 disabled:cursor-not-allowed">
+                  <option value="">{{ loadingLevels ? 'Loading classes...' : 'Select class/grade (optional)' }}</option>
+                  <option v-for="cls in classOptions" :key="cls.id" :value="cls.name">{{ cls.name }}</option>
+                </select>
+                <p v-if="!loadingLevels && !classOptions.length" class="text-xs text-gray-500 mt-1">No class options available; you can leave this blank.</p>
+                <p v-else-if="loadingLevels" class="text-xs text-blue-600 mt-1"><i class="fas fa-spinner fa-spin mr-1"></i>Loading class options...</p>
+              </div>
+            </div>
+          </div>
+
           <!-- Level -->
           <div class="space-y-6">
             <h3 class="text-lg font-semibold text-gray-800 pb-3 border-b flex items-center gap-2">
@@ -381,7 +405,7 @@
             <div class="grid md:grid-cols-4 gap-4 md:gap-6">
               <div class="md:col-span-1">
                 <label class="block text-gray-700 font-medium mb-2">Your Level</label>
-                <p class="text-gray-500 text-sm">Current knowledge level</p>
+                <p class="text-gray-500 text-sm">Optional</p>
               </div>
               <div class="md:col-span-3">
                 <select v-model="form.level" 
@@ -790,6 +814,7 @@ export default {
     
     // Level handling
     const levelOptions = ref([]);
+    const classOptions = ref([]);
     const loadingLevels = ref(false);
     
     // Language handling
@@ -818,6 +843,7 @@ export default {
       description: '',
       subjects: [],
       other_subject: '',
+      class: '',
       level: '',
       service_type: '',
       meeting_options: [],
@@ -855,7 +881,7 @@ export default {
           const phoneValue = phoneNumber.value || form.phone;
           return !!(form.city && form.area && phoneValue);
         case 2: // Requirement Details
-          return !!(form.student_name && form.subjects.length > 0 && form.level && form.service_type);
+          return !!(form.student_name && form.subjects.length > 0 && form.service_type);
         case 3: // Logistics & Preferences
           return !!(form.meeting_options.length > 0 && form.budget_amount && form.budget_type && 
                    form.gender_preference && form.availability && form.languages.length > 0 && form.tutor_location);
@@ -913,28 +939,45 @@ export default {
         const subjectsRes = await axios.get('/api/subjects');
         subjectOptions.value = subjectsRes.data;
         
-        // Fetch levels
+        // Fetch levels (includes grades)
         loadingLevels.value = true;
         try {
           const levelsRes = await axios.get('/api/tutor/levels/all');
           console.log('Levels API response:', levelsRes.data);
-          
-          // Handle different response formats
-          if (levelsRes.data?.levels && Array.isArray(levelsRes.data.levels)) {
-            levelOptions.value = levelsRes.data.levels;
-          } else if (Array.isArray(levelsRes.data)) {
-            levelOptions.value = levelsRes.data;
-          } else {
-            throw new Error('Invalid levels response format');
-          }
+
+          // Normalize grouped or flat responses
+          const normalizeLevels = (payload) => {
+            let list = [];
+            if (payload?.levels) payload = payload.levels;
+            if (Array.isArray(payload)) return payload;
+            if (payload && typeof payload === 'object') {
+              Object.entries(payload).forEach(([group, items]) => {
+                if (Array.isArray(items)) {
+                  items.forEach(item => list.push({ ...item, group_name: item.group_name ?? group }));
+                }
+              });
+            }
+            return list;
+          };
+
+          const allLevels = normalizeLevels(levelsRes.data);
+          const isGrade = (lvl) => (lvl.group_name || '').toLowerCase().includes('grade');
+
+          classOptions.value = allLevels.filter(isGrade);
+          levelOptions.value = allLevels.filter(lvl => !isGrade(lvl));
+
+          // If API only returns one group, reuse it for both
+          if (levelOptions.value.length === 0) levelOptions.value = allLevels;
+          if (classOptions.value.length === 0) classOptions.value = allLevels;
         } catch (levelError) {
           console.error('Failed to fetch levels, using fallback:', levelError);
-          // Use fallback data
+          // Fallback options
           levelOptions.value = [
             { id: 1, name: 'Beginner' },
             { id: 2, name: 'Intermediate' },
             { id: 3, name: 'Advanced' }
           ];
+          classOptions.value = [];
         } finally {
           loadingLevels.value = false;
         }
@@ -959,6 +1002,9 @@ export default {
             { id: 2, name: 'Intermediate' },
             { id: 3, name: 'Advanced' }
           ];
+        }
+        if (classOptions.value.length === 0) {
+          classOptions.value = [];
         }
         enquiryConfig.value = { post_fee: 0, unlock_fee: 0, max_leads: 5 };
       }
@@ -1060,6 +1106,7 @@ export default {
         form.alternate_country_code = req.alternate_country_code || '+91';
         form.student_name = req.student_name || '';
         form.description = req.details || '';
+        form.class = req.class || '';
         form.level = req.level || '';
         form.service_type = req.service_type || '';
         form.meeting_options = Array.isArray(req.meeting_options) ? req.meeting_options : [];
@@ -1366,6 +1413,7 @@ export default {
       showSubjectDropdown,
       customSubject,
       filteredSubjects,
+      classOptions,
       levelOptions,
       loadingLevels,
       genderOptions,

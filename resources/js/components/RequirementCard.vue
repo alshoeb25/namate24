@@ -4,7 +4,7 @@
     <div class="flex items-start justify-between mb-4">
       <div class="flex-1">
         <h3 class="text-xl font-bold text-gray-900 mb-2">
-          {{ requirement.subject?.name || 'Subject Required' }}
+          {{ getSubjectsDisplay() }}
         </h3>
         <div class="flex flex-col gap-2">
           <!-- Location with Address Details -->
@@ -28,6 +28,10 @@
             <span class="flex items-center gap-1">
               <i class="fas fa-clock"></i>
               {{ formatDate(requirement.created_at) }}
+            </span>
+            <span v-if="requirement.distance !== undefined && requirement.distance !== null && requirement.distance >= 0" class="flex items-center gap-1 text-blue-600">
+              <i class="fas fa-map-marker-alt"></i>
+              {{ formatDistance(requirement.distance) }}
             </span>
             <span v-if="requirement.mode" :class="`px-3 py-1 rounded-full text-xs font-medium ${getModeColor()}`">
               {{ getModeText() }}
@@ -66,6 +70,17 @@
         <div>
           <div class="text-gray-500">{{ getFieldLabel('budget', 'Budget') }}</div>
           <div class="font-medium">{{ getBudgetDisplay() }}</div>
+        </div>
+      </div>
+
+      <!-- Class -->
+      <div v-if="requirement.class" class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+          <i class="fas fa-book text-indigo-600"></i>
+        </div>
+        <div>
+          <div class="text-gray-500">Class</div>
+          <div class="font-medium">{{ requirement.class }}</div>
         </div>
       </div>
 
@@ -200,6 +215,31 @@ export default {
     };
   },
   methods: {
+    getSubjectsDisplay() {
+      // Try subject_names first (array of subject names)
+      if (this.requirement.subject_names && Array.isArray(this.requirement.subject_names) && this.requirement.subject_names.length > 0) {
+        return this.requirement.subject_names.join(', ');
+      }
+      
+      // Try subjects array (array of subject objects)
+      if (this.requirement.subjects && Array.isArray(this.requirement.subjects) && this.requirement.subjects.length > 0) {
+        return this.requirement.subjects.map(s => s.name).join(', ');
+      }
+      
+      // Try single subject object
+      if (this.requirement.subject && this.requirement.subject.name) {
+        return this.requirement.subject.name;
+      }
+      
+      // Try subject_name string
+      if (this.requirement.subject_name) {
+        return this.requirement.subject_name;
+      }
+      
+      // Fallback
+      return 'Subjects required';
+    },
+
     getFieldLabel(fieldName, fallback) {
       // Get label for field from props or use fallback
       if (this.fieldLabels && this.fieldLabels[fieldName]) {
@@ -233,6 +273,20 @@ export default {
       if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
       
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    },
+    
+    formatDistance(distance) {
+      // Distance comes from Elasticsearch in km
+      const km = parseFloat(distance);
+      if (isNaN(km)) return '';
+      
+      if (km < 1) {
+        return `${Math.round(km * 1000)}m away`;
+      } else if (km < 10) {
+        return `${km.toFixed(1)}km away`;
+      } else {
+        return `${Math.round(km)}km away`;
+      }
     },
     
     getBudgetDisplay() {

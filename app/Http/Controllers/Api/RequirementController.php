@@ -89,6 +89,7 @@ class RequirementController extends Controller
             'q' => $request->input('q'),
             'subject' => $request->input('subject'),
             'subject_id' => $request->input('subject_id'),
+            'subject_ids' => $request->input('subject_ids'),
             'location' => $request->input('location'),
             'city' => $request->input('city'),
             'state' => $request->input('state'),
