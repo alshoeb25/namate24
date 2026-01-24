@@ -44,7 +44,9 @@ class ManualReferral extends Page implements HasForms
                                 return User::query()
                                     ->whereNotNull('referral_code')
                                     ->orderBy('name')
-                                    ->pluck('name', 'id');
+                                    ->get()
+                                    ->mapWithKeys(fn ($user) => [$user->id => "{$user->name} ({$user->email})"])
+                                    ->toArray();
                             })
                             ->searchable()
                             ->required()
@@ -60,7 +62,9 @@ class ManualReferral extends Page implements HasForms
                                     ->when($referrerId, fn($q) => $q->where('id', '!=', $referrerId))
                                     ->whereNull('referred_by') // Only show users not already referred
                                     ->orderBy('name')
-                                    ->pluck('name', 'id');
+                                    ->get()
+                                    ->mapWithKeys(fn ($user) => [$user->id => "{$user->name} ({$user->email})"])
+                                    ->toArray();
                             })
                             ->searchable()
                             ->required()
