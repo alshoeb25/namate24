@@ -225,10 +225,12 @@ class ProfileController extends Controller
                 'youtube_intro_url' => $request->youtube_url,
                 'introductory_video' => null,
                 'video_title' => $request->video_title ?? $tutor->video_title,
+                'video_approval_status' => 'pending',
+                'video_rejection_reason' => null,
             ]);
 
             return redirect()->route('tutor.profile.dashboard')
-                ->with('success', 'YouTube intro link saved successfully!');
+                ->with('success', 'YouTube intro link submitted for approval!');
         }
 
         // Otherwise handle file upload
@@ -246,13 +248,39 @@ class ProfileController extends Controller
                 'introductory_video' => $videoPath,
                 'youtube_intro_url' => null,
                 'video_title' => $request->video_title ?? $tutor->video_title,
+                'video_approval_status' => 'pending',
+                'video_rejection_reason' => null,
             ]);
 
             return redirect()->route('tutor.profile.dashboard')
-                ->with('success', 'Introductory video uploaded successfully!');
+                ->with('success', 'Introductory video submitted for approval!');
         }
 
         return back()->withErrors(['video' => 'Please provide a video file or a YouTube URL.']);
+    }
+
+    /**
+     * Delete introductory video
+     */
+    public function deleteVideo(Request $request)
+    {
+        $tutor = Auth::user()->tutor;
+
+        // Delete uploaded video file if exists
+        if ($tutor->introductory_video) {
+            Storage::disk('public')->delete($tutor->introductory_video);
+        }
+
+        $tutor->update([
+            'introductory_video' => null,
+            'youtube_intro_url' => null,
+            'video_title' => null,
+            'video_approval_status' => null,
+            'video_rejection_reason' => null,
+        ]);
+
+        return redirect()->route('tutor.profile.video')
+            ->with('success', 'Introductory video deleted successfully!');
     }
 
     /**

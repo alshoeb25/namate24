@@ -8,6 +8,7 @@ use App\Models\TutorModerationAction;
 use App\Notifications\TutorApprovalNotification;
 use App\Notifications\TutorRejectionNotification;
 use App\Jobs\SendTutorApprovalReminderJob;
+use App\Services\ElasticService;
 use Filament\Forms;
 use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Form;
@@ -252,6 +253,59 @@ class ViewTutor extends ViewRecord
                             ->content(fn () => new HtmlString($this->formatTeachingPreferences())),
                     ])
                     ->columnSpanFull(),
+
+                Forms\Components\Section::make('Profile Photo & Introduction Video')
+                    ->schema([
+                        Forms\Components\Placeholder::make('media')
+                            ->label('')
+                            ->content(fn () => new HtmlString($this->formatPhotoAndVideo())),
+                        Forms\Components\Actions::make([
+                            FormAction::make('approveVideo')
+                                ->label('✓ Approve Video')
+                                ->icon('heroicon-o-check-circle')
+                                ->color('success')
+                                ->visible(fn () => ($this->record?->video_approval_status === 'pending' || $this->record?->video_approval_status === null) && ($this->record?->introductory_video || $this->record?->youtube_intro_url))
+                                ->action(function () {
+                                    $this->record->update([
+                                        'video_approval_status' => 'approved',
+                                        'video_rejection_reason' => null,
+                                    ]);
+                                    
+                                    \Filament\Notifications\Notification::make()
+                                        ->title('Video Approved')
+                                        ->body('Tutor\'s introduction video has been approved.')
+                                        ->success()
+                                        ->send();
+                                }),
+                            FormAction::make('rejectVideo')
+                                ->label('✗ Reject Video')
+                                ->icon('heroicon-o-x-circle')
+                                ->color('danger')
+                                ->visible(fn () => $this->record?->video_approval_status !== 'rejected' && ($this->record?->introductory_video || $this->record?->youtube_intro_url))
+                                ->form([
+                                    Forms\Components\Textarea::make('rejection_reason')
+                                        ->label('Rejection Reason')
+                                        ->required()
+                                        ->rows(4)
+                                        ->placeholder('Explain why the video is being rejected...'),
+                                ])
+                                ->action(function (array $data) {
+                                    $this->record->update([
+                                        'video_approval_status' => 'rejected',
+                                        'video_rejection_reason' => $data['rejection_reason'],
+                                    ]);
+                                    
+                                    \Filament\Notifications\Notification::make()
+                                        ->title('Video Rejected')
+                                        ->body('Tutor has been notified about the rejection.')
+                                        ->warning()
+                                        ->send();
+                                }),
+                        ])->columnSpanFull()
+                            ->visible(fn () => $this->record?->introductory_video || $this->record?->youtube_intro_url),
+                    ])
+                    ->columnSpanFull()
+                    ->visible(fn () => $this->record?->photo || $this->record?->introductory_video || $this->record?->youtube_intro_url),
 
                 Forms\Components\Section::make('Rejection Details')
                     ->schema([
@@ -687,6 +741,111 @@ class ViewTutor extends ViewRecord
         return $html;
     }
 
+    private function formatPhotoAndVideo(): string
+    {
+        $html = '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">';
+        
+        // Profile Photo
+        $html .= '<div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 3px solid #007bff;">';
+        $html .= '<h4 style="margin-top: 0; color: #007bff;">Profile Photo</h4>';
+        
+        if ($this->record?->photo) {
+            $photoUrl = asset('storage/' . $this->record->photo);
+            
+            // Show thumbnail
+            $html .= sprintf(
+                '<img src="%s" alt="Profile Photo" style="max-width: 150px; max-height: 150px; border-radius: 6px; object-fit: cover; display: block; margin: 10px 0;">',
+                htmlspecialchars($photoUrl)
+            );
+            
+            // Show link to open in new tab
+            $html .= sprintf(
+                '<a href="%s" target="_blank" rel="noopener noreferrer" style="display: inline-block; margin-top: 10px; padding: 8px 16px; background: #007bff; color: white; text-decoration: none; border-radius: 4px; font-size: 13px; font-weight: 500;">
+                    <span style="margin-right: 6px;">🔗</span> Open Photo in New Tab
+                </a>',
+                htmlspecialchars($photoUrl)
+            );
+            
+            $html .= sprintf('<p style="font-size: 12px; color: #666; margin: 10px 0 0 0;">📁 File: %s</p>', htmlspecialchars($this->record->photo));
+        } else {
+            $html .= '<p style="color: #999; font-style: italic;">No profile photo uploaded</p>';
+        }
+        
+        $html .= '</div>';
+        
+        // Introduction Video
+        $html .= '<div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 3px solid #9333ea;">';
+        $html .= '<h4 style="margin-top: 0; color: #9333ea;">Introduction Video</h4>';
+        
+        // Approval Status Badge
+        if ($this->record?->video_approval_status || $this->record?->introductory_video || $this->record?->youtube_intro_url) {
+            $status = $this->record->video_approval_status ?? 'pending';
+            $statusColor = match($status) {
+                'approved' => '#22c55e',
+                'rejected' => '#ef4444',
+                'pending' => '#f59e0b',
+                default => '#f59e0b'
+            };
+            $statusText = ucfirst($status);
+            $html .= sprintf(
+                '<div style="display: inline-block; padding: 6px 12px; background: %s; color: white; border-radius: 4px; font-size: 12px; font-weight: bold; margin-bottom: 10px;">%s</div>',
+                $statusColor,
+                $statusText
+            );
+        }
+        
+        if ($this->record?->introductory_video) {
+            $videoUrl = asset('storage/' . $this->record->introductory_video);
+            
+            // Show link to open video in new tab
+            $html .= sprintf(
+                '<div style="margin: 15px 0;">
+                    <a href="%s" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 10px 20px; background: #9333ea; color: white; text-decoration: none; border-radius: 4px; font-size: 14px; font-weight: 500;">
+                        <span style="margin-right: 8px;">🎥</span> Open Video in New Tab
+                    </a>
+                </div>',
+                htmlspecialchars($videoUrl)
+            );
+            
+            $html .= sprintf('<p style="font-size: 12px; color: #666; margin: 10px 0 0 0;">📁 File: %s</p>', htmlspecialchars($this->record->introductory_video));
+        } elseif ($this->record?->youtube_intro_url) {
+            // Show link to YouTube video
+            $html .= sprintf(
+                '<div style="margin: 15px 0;">
+                    <a href="%s" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 10px 20px; background: #ff0000; color: white; text-decoration: none; border-radius: 4px; font-size: 14px; font-weight: 500;">
+                        <span style="margin-right: 8px;">▶️</span> Open YouTube Video
+                    </a>
+                </div>',
+                htmlspecialchars($this->record->youtube_intro_url)
+            );
+            
+            $html .= sprintf(
+                '<p style="font-size: 12px; color: #666; margin: 10px 0 0 0;">🔗 YouTube: <a href="%s" target="_blank" style="color: #9333ea; text-decoration: none;">%s</a></p>',
+                htmlspecialchars($this->record->youtube_intro_url),
+                htmlspecialchars($this->record->youtube_intro_url)
+            );
+        } else {
+            $html .= '<p style="color: #999; font-style: italic;">No introduction video uploaded</p>';
+        }
+        
+        if ($this->record?->video_title) {
+            $html .= sprintf('<p style="font-size: 13px; margin: 8px 0 0 0;"><strong>Title:</strong> %s</p>', htmlspecialchars($this->record->video_title));
+        }
+        
+        // Show rejection reason if rejected
+        if ($this->record?->video_approval_status === 'rejected' && $this->record?->video_rejection_reason) {
+            $html .= sprintf(
+                '<div style="margin-top: 15px; padding: 10px; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 4px; color: #991b1b;"><strong>Rejection Reason:</strong><br>%s</div>',
+                htmlspecialchars($this->record->video_rejection_reason)
+            );
+        }
+        
+        $html .= '</div>';
+        
+        $html .= '</div>';
+        return $html;
+    }
+
     private function formatSubjects(): string
     {
         $subjects = $this->record->subjects ?? [];
@@ -893,6 +1052,21 @@ class ViewTutor extends ViewRecord
                     // Notify tutor with approval reason
                     $record->user->notify(new TutorApprovalNotification($record, $data['approval_reason'] ?? null));
                     
+                    // Index tutor in Elasticsearch
+                    try {
+                        $elasticService = app(ElasticService::class);
+                        $client = $elasticService->client();
+                        $record->load('user', 'subjects');
+                        $client->index([
+                            'index' => 'tutors',
+                            'id' => $record->id,
+                            'body' => $record->toElasticArray(),
+                            'refresh' => true
+                        ]);
+                    } catch (\Exception $e) {
+                        \Log::error('Failed to index tutor in Elasticsearch: ' . $e->getMessage());
+                    }
+                    
                     \Filament\Notifications\Notification::make()
                         ->title('Tutor Approved')
                         ->body($record->user->name . ' has been approved successfully!')
@@ -996,6 +1170,19 @@ class ViewTutor extends ViewRecord
                         'new_status' => 'rejected',
                     ]);
 
+                    // Remove tutor from Elasticsearch
+                    try {
+                        $elasticService = app(ElasticService::class);
+                        $client = $elasticService->client();
+                        $client->delete([
+                            'index' => 'tutors',
+                            'id' => $record->id,
+                            'refresh' => true
+                        ]);
+                    } catch (\Exception $e) {
+                        \Log::error('Failed to remove tutor from Elasticsearch: ' . $e->getMessage());
+                    }
+                    
                     // Notify tutor with rejection reason
                     $record->user->notify(new TutorRejectionNotification(
                         $record,

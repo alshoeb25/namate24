@@ -225,7 +225,17 @@ class TutorProfileController extends Controller
     public function getVideo(Request $request): JsonResponse
     {
         $tutor = $this->getTutor();
-        return response()->json(['video' => $tutor->video_url]);
+        
+        return response()->json([
+            'introductory_video' => $tutor->introductory_video,
+            'youtube_intro_url' => $tutor->youtube_intro_url,
+            'video_title' => $tutor->video_title,
+            'video_approval_status' => $tutor->video_approval_status,
+            'video_rejection_reason' => $tutor->video_rejection_reason,
+            'video_url' => $tutor->introductory_video 
+                ? asset('storage/' . $tutor->introductory_video) 
+                : null,
+        ]);
     }
 
     /**
@@ -233,15 +243,101 @@ class TutorProfileController extends Controller
      */
     public function updateVideo(Request $request): JsonResponse
     {
-        $validated = $request->validate(['video' => 'required|mimes:mp4,avi,mov,wmv|max:50000']);
+        $request->validate([
+            'video' => 'nullable|mimes:mp4,mov,avi,wmv|max:102400', // 100MB max
+            'youtube_url' => 'nullable|url',
+            'video_title' => 'nullable|string|max:255',
+        ]);
 
         $tutor = $this->getTutor();
-        if ($request->hasFile('video')) {
-            $path = $request->file('video')->store('tutors/videos', 'public');
-            $tutor->update(['video_url' => $path]);
+
+        // If a YouTube URL is provided, save it and remove any uploaded video
+        if ($request->filled('youtube_url')) {
+            // Basic youtube hostname check
+            if (!preg_match('/(youtube\.com|youtu\.be)/i', $request->youtube_url)) {
+                return response()->json([
+                    'message' => 'Please provide a valid YouTube URL.',
+                    'errors' => ['youtube_url' => ['Please provide a valid YouTube URL.']]
+                ], 422);
+            }
+
+            // Delete stored video file if exists
+            if ($tutor->introductory_video) {
+                \Storage::disk('public')->delete($tutor->introductory_video);
+            }
+
+            $tutor->update([
+                'youtube_intro_url' => $request->youtube_url,
+                'introductory_video' => null,
+                'video_title' => $request->video_title ?? $tutor->video_title,
+                'video_approval_status' => 'pending',
+                'video_rejection_reason' => null,
+            ]);
+
+            return response()->json([
+                'message' => 'YouTube intro link submitted for approval!',
+                'youtube_intro_url' => $tutor->youtube_intro_url,
+                'video_title' => $tutor->video_title,
+                'video_approval_status' => $tutor->video_approval_status,
+            ]);
         }
 
-        return response()->json(['message' => 'Video updated', 'video_url' => $tutor->video_url]);
+        // Otherwise handle file upload
+        if ($request->hasFile('video')) {
+            // Delete old video if exists
+            if ($tutor->introductory_video) {
+                \Storage::disk('public')->delete($tutor->introductory_video);
+            }
+
+            $videoPath = $request->file('video')->store('videos/introductory', 'public');
+
+            $tutor->update([
+                'introductory_video' => $videoPath,
+                'youtube_intro_url' => null,
+                'video_title' => $request->video_title ?? $tutor->video_title,
+                'video_approval_status' => 'pending',
+                'video_rejection_reason' => null,
+            ]);
+
+            return response()->json([
+                'message' => 'Introductory video submitted for approval!',
+                'introductory_video' => $tutor->introductory_video,
+                'video_url' => asset('storage/' . $tutor->introductory_video),
+                'video_title' => $tutor->video_title,
+                'video_approval_status' => $tutor->video_approval_status,
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Please provide a video file or a YouTube URL.',
+            'errors' => ['video' => ['Please provide a video file or a YouTube URL.']]
+        ], 422);
+    }
+
+    /**
+     * Delete Video
+     */
+    public function deleteVideo(Request $request): JsonResponse
+    {
+        $tutor = $this->getTutor();
+
+        // Delete stored video file if exists
+        if ($tutor->introductory_video) {
+            \Storage::disk('public')->delete($tutor->introductory_video);
+        }
+
+        // Clear all video-related fields
+        $tutor->update([
+            'introductory_video' => null,
+            'youtube_intro_url' => null,
+            'video_title' => null,
+            'video_approval_status' => null,
+            'video_rejection_reason' => null,
+        ]);
+
+        return response()->json([
+            'message' => 'Video deleted successfully!',
+        ]);
     }
 
     /**

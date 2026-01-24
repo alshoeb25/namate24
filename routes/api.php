@@ -291,6 +291,7 @@ Route::middleware('auth:api')->group(function() {
         // Video
         Route::get('video', [TutorProfileController::class, 'getVideo'])->name('video');
         Route::post('video', [TutorProfileController::class, 'updateVideo'])->name('update-video');
+        Route::delete('video', [TutorProfileController::class, 'deleteVideo'])->name('delete-video');
 
         // Subjects
         Route::get('subjects/all', [TutorProfileController::class, 'getAllSubjects'])->name('subjects.all');

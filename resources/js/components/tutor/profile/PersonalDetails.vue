@@ -63,17 +63,6 @@
           ></textarea>
         </div>
 
-        <!-- YouTube URL -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700">YouTube Intro Link</label>
-          <input 
-            v-model="form.youtube_url" 
-            type="url" 
-            class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            placeholder="https://youtube.com/..."
-          />
-        </div>
-
         <!-- Languages -->
         <div>
           <label class="block text-gray-700 mb-2">Languages you can communicate in</label>
@@ -155,7 +144,6 @@ export default {
         speciality: '',
         gender: '',
         strength: '',
-        youtube_url: '',
         languages: [],
       },
       languageSearch: '',
@@ -210,7 +198,6 @@ export default {
           speciality: response.data.tutor.speciality || '',
           gender: response.data.tutor.gender || '',
           strength: response.data.tutor.strength || '',
-          youtube_url: response.data.tutor.youtube_url || '',
           languages: Array.isArray(response.data.tutor.languages) ? response.data.tutor.languages : [],
         };
       } catch (err) {

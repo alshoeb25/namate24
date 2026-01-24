@@ -21,6 +21,7 @@ Route::middleware(['auth', 'role:tutor'])->prefix('tutor/profile')->name('tutor.
     // Video
     Route::get('video', [ProfileController::class, 'video'])->name('video');
     Route::post('video', [ProfileController::class, 'updateVideo'])->name('update-video');
+    Route::delete('video', [ProfileController::class, 'deleteVideo'])->name('delete-video');
 
     // Subjects
     Route::get('subjects', [ProfileController::class, 'subjects'])->name('subjects');

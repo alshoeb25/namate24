@@ -17,6 +17,7 @@
 
     <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <section class="lg:col-span-2 space-y-6">
+
         <div class="bg-white rounded-lg p-6">
           <h2 class="text-xl font-semibold text-gray-700 mb-4">Teaching Overview</h2>
           <p class="text-gray-600 mb-6 leading-relaxed whitespace-pre-line">
@@ -197,6 +198,28 @@
             No reviews yet. Please log in to leave a review.
           </p>
         </div>
+
+        <!-- Introduction Video (approved only) after reviews -->
+        <div v-if="approvedVideoUrl" class="bg-white rounded-lg p-6 border-l-4 border-purple-500 shadow">
+          <div class="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <h2 class="text-xl font-semibold text-gray-700 flex items-center gap-2">
+                <i class="fas fa-video text-purple-600"></i>
+                Introduction Video
+              </h2>
+              <p v-if="profile?.video_title" class="text-sm text-gray-600 mt-1">{{ profile.video_title }}</p>
+              <p class="text-xs text-green-700 font-semibold mt-2">Approved</p>
+            </div>
+            <a :href="approvedVideoUrl" target="_blank" rel="noopener noreferrer"
+               class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm font-medium">
+              <i class="fas fa-external-link-alt mr-2"></i>
+              Open Video in New Tab
+            </a>
+          </div>
+          <p v-if="profile?.youtube_intro_url" class="text-sm text-gray-600 mt-3 break-all">
+            Source: YouTube • {{ profile.youtube_intro_url }}
+          </p>
+        </div>
       </section>
 
       <aside class="lg:col-span-1">
@@ -307,6 +330,31 @@ export default {
     const isLoggedIn = computed(() => !!user.value);
     const profile = ref(null);
     const loading = ref(true);
+    const approvedVideoUrl = computed(() => {
+      const p = profile.value;
+      if (!p) return null;
+
+      // normalize status
+      const status = (p.video_approval_status || '').trim().toLowerCase();
+      if (status !== 'approved') return null;
+
+      // Prefer YouTube link if present
+      if (p.youtube_intro_url) return p.youtube_intro_url;
+
+      // Try explicit URL fields if the API provides them
+      if (p.video_url) return p.video_url;
+      if (p.introductory_video_url) return p.introductory_video_url;
+
+      // Build storage URL for uploaded file
+      if (p.introductory_video) {
+        if (p.introductory_video.startsWith('http')) return p.introductory_video;
+        const base = window.location.origin.replace(/\/$/, '');
+        const path = p.introductory_video.replace(/^\/?storage\//, '');
+        return `${base}/storage/${path}`;
+      }
+
+      return null;
+    });
 
     async function loadProfile() {
       loading.value = true;
@@ -404,6 +452,7 @@ export default {
       user,
       profile,
       loading,
+      approvedVideoUrl,
       formatDate,
       getTotalExperience,
       getLocation,

@@ -71,8 +71,8 @@
                 </p>
             </div>
 
-            <!-- Introduction Video (Uploaded or YouTube) -->
-            @if ($tutor->introductory_video || $tutor->youtube_intro_url)
+            <!-- Introduction Video (Uploaded or YouTube) - Only show if approved -->
+            @if (($tutor->introductory_video || $tutor->youtube_intro_url) && $tutor->video_approval_status === 'approved')
                 <div class="bg-white rounded-lg shadow-md p-6">
                     <h2 class="text-2xl font-bold text-gray-800 mb-4">Introduction Video</h2>
                     @if ($tutor->introductory_video)
