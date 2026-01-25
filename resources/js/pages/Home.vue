@@ -11,17 +11,18 @@
       <section class="max-w-7xl mx-auto px-4 mt-8">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-semibold text-gray-900">Trending Courses</h2>
-          <router-link to="/search" class="text-blue-600 text-sm font-medium hover:underline">See All</router-link>
+          <router-link to="/tutors" class="text-blue-600 text-sm font-medium hover:underline">See All</router-link>
         </div>
 
         <div class="flex gap-4 overflow-x-auto pb-2 scrollbar-hidden">
           <div v-for="(category, idx) in categories" :key="idx" 
-               class="flex flex-col items-center cursor-pointer transition-transform hover:scale-105"
+               class="flex flex-col items-center cursor-pointer transition-transform hover:scale-105 flex-shrink-0"
+               style="width: 96px; max-width: 96px; min-width: 96px;"
                @click="searchBySubject(category.name)">
             <div class="w-20 h-20 rounded-2xl flex items-center justify-center" :style="{ backgroundColor: category.bgColor }">
               <img :src="category.icon" class="w-8 h-8" />
             </div>
-            <span class="mt-2 text-sm text-gray-700">{{ category.name }}</span>
+            <span class="mt-2 text-xs text-gray-700 text-center break-words leading-tight" style="width: 96px; word-wrap: break-word; overflow-wrap: break-word;">{{ category.name }}</span>
           </div>
         </div>
       </section>

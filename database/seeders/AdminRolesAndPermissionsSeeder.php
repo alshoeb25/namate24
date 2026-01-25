@@ -20,6 +20,7 @@ class AdminRolesAndPermissionsSeeder extends Seeder
             'create-coins',
             'edit-coins',
             'delete-coins',
+            'manage-coins', // Permission to add coins to users
             'view-wallet',
             'manage-wallet',
             'view-transactions',

@@ -9,6 +9,7 @@ class CoinTransaction extends Model
 {
     protected $fillable = [
         'user_id',
+        'added_by_admin_id',
         'type',
         'amount',
         'balance_after',
@@ -39,5 +40,13 @@ class CoinTransaction extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the admin who added this transaction (if manually added)
+     */
+    public function addedByAdmin(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'added_by_admin_id');
     }
 }

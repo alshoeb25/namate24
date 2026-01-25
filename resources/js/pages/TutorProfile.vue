@@ -48,6 +48,36 @@
           </div>
         </div>
 
+        <!-- Introduction Video -->
+        <div class="bg-white rounded-lg p-6">
+          <h2 class="text-xl font-semibold text-purple-600 mb-4 flex items-center">
+            <i class="fas fa-video mr-3"></i>
+            Introduction Video
+          </h2>
+          
+          <div v-if="approvedVideoUrl">
+            <div class="flex items-center justify-between gap-4 flex-wrap">
+              <div>
+                <p v-if="profile?.video_title" class="text-sm text-gray-600 mb-1">{{ profile.video_title }}</p>
+                <p class="text-xs text-green-700 font-semibold">✓ Approved</p>
+              </div>
+              <a :href="approvedVideoUrl" target="_blank" rel="noopener noreferrer"
+                 class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm font-medium">
+                <i class="fas fa-external-link-alt mr-2"></i>
+                Open Video
+              </a>
+            </div>
+            <p v-if="profile?.youtube_intro_url" class="text-sm text-gray-500 mt-3 break-all">
+              <i class="fab fa-youtube mr-1"></i>
+              {{ profile.youtube_intro_url }}
+            </p>
+          </div>
+          
+          <div v-else class="text-gray-600">
+            <p>No video found.</p>
+          </div>
+        </div>
+
         <!-- SUBJECTS -->
         <div class="bg-white rounded-lg p-6">
           <h2 class="text-xl font-semibold text-teal-600 mb-4 flex items-center">
@@ -218,27 +248,7 @@
           </p>
         </div>
 
-        <!-- Introduction Video (approved only) after reviews -->
-        <div v-if="approvedVideoUrl" class="bg-white rounded-lg p-6 border-l-4 border-purple-500 shadow">
-          <div class="flex items-center justify-between gap-4 flex-wrap">
-            <div>
-              <h2 class="text-xl font-semibold text-gray-700 flex items-center gap-2">
-                <i class="fas fa-video text-purple-600"></i>
-                Introduction Video
-              </h2>
-              <p v-if="profile?.video_title" class="text-sm text-gray-600 mt-1">{{ profile.video_title }}</p>
-              <p class="text-xs text-green-700 font-semibold mt-2">Approved</p>
-            </div>
-            <a :href="approvedVideoUrl" target="_blank" rel="noopener noreferrer"
-               class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm font-medium">
-              <i class="fas fa-external-link-alt mr-2"></i>
-              Open Video in New Tab
-            </a>
-          </div>
-          <p v-if="profile?.youtube_intro_url" class="text-sm text-gray-600 mt-3 break-all">
-            Source: YouTube • {{ profile.youtube_intro_url }}
-          </p>
-        </div>
+       
 
       </section>
 
