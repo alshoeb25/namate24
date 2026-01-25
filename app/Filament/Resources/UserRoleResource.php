@@ -22,9 +22,9 @@ class UserRoleResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-users';
     protected static ?string $navigationGroup = 'Access Control';
     protected static ?int $navigationSort = 3;
-    protected static ?string $navigationLabel = 'Assign Admin Roles';
-    protected static ?string $pluralLabel = 'Admin Users';
-    protected static ?string $modelLabel = 'Admin User';
+    protected static ?string $navigationLabel = 'User Role Management';
+    protected static ?string $pluralLabel = 'Users & Roles';
+    protected static ?string $modelLabel = 'User';
 
     protected static function getResourcePermissionName(): string
     {
@@ -33,17 +33,9 @@ class UserRoleResource extends Resource
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        $adminRoles = [
-            'coin_wallet_admin',
-            'student_admin',
-            'tutor_admin',
-            'enquiries_admin',
-            'reviews_admin',
-            'service_admin',
-        ];
-
+        // Show all users - tutors, students, and admins
         return parent::getEloquentQuery()
-            ->whereHas('roles', fn ($query) => $query->whereIn('name', $adminRoles));
+            ->withCount('roles');
     }
 
     public static function shouldRegisterNavigation(): bool
@@ -92,11 +84,11 @@ class UserRoleResource extends Resource
                 Forms\Components\Section::make('Admin Roles')
                     ->schema([
                         Forms\Components\CheckboxList::make('roles')
-                            ->relationship('roles', 'name', fn ($query) => $query->where('guard_name', 'web')->whereNotIn('name', ['super_admin','tutor','student']))
+                            ->relationship('roles', 'name', fn ($query) => $query->where('guard_name', 'web')->whereNotIn('name', ['super_admin', 'student', 'tutor']))
                             ->columns(2)
                             ->searchable()
                             ->bulkToggleable()
-                            ->helperText('Assign admin roles to this user (multiple selections allowed). Super admin is protected and only available via system administration.'),
+                            ->helperText('Assign admin roles to this user (multiple selections allowed). Base roles (student/tutor) are managed separately.'),
                     ]),
 
                 Forms\Components\Section::make('Direct Permissions')
@@ -131,17 +123,24 @@ class UserRoleResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('role')
-                    ->label('User Type')
+                    ->label('Base Role')
                     ->badge()
-                    ->color('danger')
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->color(fn (string $state): string => match ($state) {
+                        'admin' => 'danger',
+                        'tutor' => 'info',
+                        'student' => 'success',
+                        default => 'gray',
+                    })
+                    ->searchable()
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('roles.name')
                     ->label('Admin Roles')
                     ->badge()
                     ->separator(',')
-                    ->limit(3)
-                    ->searchable(),
+                    ->wrap()
+                    ->searchable()
+                    ->default('None'),
 
                 Tables\Columns\TextColumn::make('roles_count')
                     ->counts('roles')
@@ -172,6 +171,14 @@ class UserRoleResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                Tables\Filters\SelectFilter::make('role')
+                    ->label('Filter by Base Role')
+                    ->options([
+                        'student' => 'Student',
+                        'tutor' => 'Tutor',
+                        'admin' => 'Admin',
+                    ])
+                    ->multiple(),
                 Tables\Filters\SelectFilter::make('roles')
                     ->relationship('roles', 'name')
                     ->label('Filter by Admin Role')
@@ -179,6 +186,11 @@ class UserRoleResource extends Resource
                     ->searchable(),
                 Tables\Filters\TernaryFilter::make('email_verified_at')
                     ->label('Email Verified')
+                    ->nullable(),
+                Tables\Filters\TernaryFilter::make('is_disabled')
+                    ->label('User Status')
+                    ->trueLabel('Disabled Only')
+                    ->falseLabel('Active Only')
                     ->nullable(),
             ])
             ->actions([

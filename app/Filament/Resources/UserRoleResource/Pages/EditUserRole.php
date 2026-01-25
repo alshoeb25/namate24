@@ -11,6 +11,8 @@ class EditUserRole extends EditRecord
 {
     protected static string $resource = UserRoleResource::class;
 
+    protected ?string $heading = 'Edit User Role and Permission';
+
     protected function getHeaderActions(): array
     {
         return [
