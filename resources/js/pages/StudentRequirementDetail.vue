@@ -143,6 +143,44 @@
         <p v-else class="text-gray-500 italic">No additional details provided</p>
       </div>
 
+      <!-- History Section -->
+      <div v-if="history.length" class="mb-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-3">Requirement History</h2>
+        <div class="space-y-4">
+          <div v-for="(event, idx) in history" :key="idx" class="flex items-start gap-4">
+            <div class="mt-1">
+              <span class="inline-flex items-center justify-center w-8 h-8 rounded-full"
+                    :class="event.type === 'hired' ? 'bg-green-100 text-green-700' : (event.type === 'unlock' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700')">
+                <i :class="event.type === 'hired' ? 'fas fa-check' : (event.type === 'unlock' ? 'fas fa-unlock' : 'fas fa-plus')"></i>
+              </span>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center justify-between">
+                <p class="font-semibold text-gray-800">{{ event.label }}</p>
+                <span class="text-xs text-gray-500">{{ formatDate(event.date) }}</span>
+              </div>
+              <div v-if="event.tutor" class="mt-2 flex items-center gap-3">
+                <img v-if="event.tutor.photo" :src="event.tutor.photo" :alt="event.tutor.name" class="w-10 h-10 rounded-full object-cover">
+                <div v-else class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                  <i class="fas fa-user text-blue-600"></i>
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-gray-800">{{ event.tutor.name || 'Tutor' }}</p>
+                  <p class="text-xs text-gray-600" v-if="event.tutor.email">{{ event.tutor.email }}</p>
+                  <p class="text-xs text-gray-600" v-if="event.tutor.phone">{{ event.tutor.phone }}</p>
+                  <p class="text-xs text-gray-500" v-if="event.tutor.subjects && event.tutor.subjects.length">
+                    {{ event.tutor.subjects.join(', ') }}
+                  </p>
+                </div>
+              </div>
+              <div v-if="event.type === 'unlock' && event.unlock_price" class="mt-1 text-xs text-gray-600">
+                Unlock Price: ₹{{ event.unlock_price }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
         <div class="flex items-center text-gray-600">
           <i class="fas fa-rupee-sign mr-2 text-purple-600"></i>
@@ -217,6 +255,7 @@ export default {
     const router = useRouter();
     const requirement = ref({});
     const loading = ref(true);
+    const history = ref([]);
 
     // Refund modal state
     const showRefundModal = ref(false);
@@ -233,6 +272,7 @@ export default {
       try {
         const response = await axios.get(`/api/student/requirement-details/${route.params.id}`);
         requirement.value = response.data.requirement || response.data;
+        history.value = response.data.history || [];
       } catch (err) {
         console.error('Error loading requirement:', err);
         router.push('/student/requirements');
@@ -370,6 +410,7 @@ export default {
     return {
       requirement,
       loading,
+      history,
       showRefundModal,
       refundAmount,
       showInterestedModal,

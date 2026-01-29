@@ -13,6 +13,14 @@
             Dashboard
           </router-link>
 
+          <router-link
+            to="/tutor/profile/my-learners"
+            class="nav-item"
+            :class="{ active: isActive('/tutor/profile/my-learners') }"
+          >
+            My Learners
+          </router-link>
+
           <!-- Edit Profile dropdown in nav -->
           <div class="relative" ref="editRef">
             <button @click="toggleEdit" class="nav-item flex items-center gap-2">

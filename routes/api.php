@@ -190,6 +190,7 @@ Route::middleware('auth:api')->group(function() {
     Route::prefix('tutor')->middleware('check.tutor.profile')->group(function () {
         Route::get('refunds', [\App\Http\Controllers\Api\TutorRefundController::class, 'myRefunds']);
         Route::get('refunds/{id}', [\App\Http\Controllers\Api\TutorRefundController::class, 'getRefund']);
+        Route::get('learners', [TutorController::class, 'myLearners']);
     });
 
     Route::post('enquiry/{id}/request-refund', [\App\Http\Controllers\Api\TutorRefundController::class, 'requestRefund'])->middleware('check.tutor.profile');

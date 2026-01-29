@@ -52,7 +52,7 @@
             <!-- Status Badge -->
             <span :class="['absolute top-3 right-3 px-3 py-1 text-xs font-semibold rounded-full',
                            item.status === 'completed' ? 'bg-green-100 text-green-800' :
-                           item.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
+                           item.status === 'confirmed' || item.status === 'hired' ? 'bg-blue-100 text-blue-800' :
                            'bg-yellow-100 text-yellow-800']">
               {{ item.status }}
             </span>
@@ -88,6 +88,14 @@
                 <i class="fas fa-clipboard-list mr-1"></i>Hired for: {{ item.subjects_requested }}
               </span>
             </div>
+            <div v-if="item.source === 'requirement' && (item.requirement_city || item.requirement_location)" class="mt-2">
+              <span class="text-xs text-gray-600">
+                <i class="fas fa-map-marker-alt mr-1"></i>{{ item.requirement_city || item.requirement_location }}<span v-if="item.requirement_area">, {{ item.requirement_area }}</span>
+              </span>
+            </div>
+            <div v-if="item.source === 'requirement' && item.requirement_details" class="mt-2 text-xs text-gray-600 line-clamp-2">
+              {{ item.requirement_details }}
+            </div>
 
             <!-- Booking Info -->
             <div class="mt-4 pt-4 border-t border-gray-200 space-y-2 text-sm">
@@ -97,7 +105,9 @@
               </div>
               <div class="flex justify-between">
                 <span class="text-gray-600">Price</span>
-                <span class="font-semibold text-blue-600">₹{{ item.session_price }}</span>
+                <span class="font-semibold text-blue-600">
+                  {{ item.session_price_display || `₹${item.session_price}` }}
+                </span>
               </div>
             </div>
 

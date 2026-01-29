@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\StudentRequirement;
 use App\Models\Tutor;
 use App\Services\TutorSearchService;
 use Illuminate\Http\Request;
@@ -197,6 +198,51 @@ class TutorController extends Controller
                 'error' => 'Search failed: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Get learners (hired students) for the authenticated tutor
+     * GET /api/tutor/learners
+     */
+    public function myLearners(Request $request)
+    {
+        $user = $request->user();
+        $tutor = $user->tutor;
+
+        if (!$tutor) {
+            return response()->json(['message' => 'Tutor profile not found.'], 404);
+        }
+
+        $requirements = StudentRequirement::with(['student.user', 'subjects', 'subject'])
+            ->where('status', 'hired')
+            ->where('hired_teacher_id', $tutor->id)
+            ->orderBy('hired_at', 'desc')
+            ->get()
+            ->map(function (StudentRequirement $requirement) {
+                $studentUser = $requirement->student?->user;
+                $subjects = $requirement->subjects?->pluck('name')->values()->all() ?? [];
+
+                return [
+                    'requirement_id' => $requirement->id,
+                    'student_id' => $requirement->student?->id,
+                    'student_name' => $studentUser?->name ?? $requirement->student_name ?? 'Student',
+                    'student_email' => $studentUser?->email,
+                    'student_phone' => $studentUser?->phone ?? $requirement->phone,
+                    'subjects' => $subjects,
+                    'subject_name' => $requirement->subject?->name ?? $requirement->subject_name ?? $requirement->other_subject,
+                    'city' => $requirement->city,
+                    'area' => $requirement->area,
+                    'location' => $requirement->location,
+                    'status' => $requirement->status,
+                    'hired_at' => $requirement->hired_at,
+                    'created_at' => $requirement->created_at,
+                ];
+            });
+
+        return response()->json([
+            'data' => $requirements,
+            'total' => $requirements->count(),
+        ]);
     }
 
     /**

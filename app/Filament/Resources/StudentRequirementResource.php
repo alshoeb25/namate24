@@ -8,6 +8,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Infolist;
@@ -220,6 +221,104 @@ class StudentRequirementResource extends Resource
                             ->label('Availability'),
                     ])
                     ->columns(3),
+
+                Section::make('Requirement History')
+                    ->schema([
+                        RepeatableEntry::make('history_items')
+                            ->label('')
+                            ->state(function (StudentRequirement $record) {
+                                $record->loadMissing([
+                                    'unlocks.tutor.user',
+                                    'unlocks.tutor.subjects',
+                                    'hiredTutor.user',
+                                    'hiredTutor.subjects',
+                                ]);
+
+                                $history = [];
+                                $history[] = [
+                                    'label' => 'Requirement Created',
+                                    'date' => $record->created_at,
+                                    'tutor_name' => null,
+                                    'tutor_email' => null,
+                                    'type' => 'created',
+                                ];
+
+                                foreach ($record->unlocks ?? [] as $unlock) {
+                                    $tutor = $unlock->tutor;
+                                    $tutorUser = $tutor?->user;
+                                    $history[] = [
+                                        'label' => 'Tutor Unlocked',
+                                        'date' => $unlock->created_at,
+                                        'tutor_name' => $tutorUser?->name,
+                                        'tutor_email' => $tutorUser?->email,
+                                        'type' => 'unlock',
+                                        'unlock_price' => $unlock->unlock_price,
+                                    ];
+                                }
+
+                                if ($record->hired_teacher_id && $record->hired_at && $record->hiredTutor) {
+                                    $hiredTutor = $record->hiredTutor;
+                                    $hiredUser = $hiredTutor->user;
+                                    $history[] = [
+                                        'label' => 'Tutor Hired',
+                                        'date' => $record->hired_at,
+                                        'tutor_name' => $hiredUser?->name,
+                                        'tutor_email' => $hiredUser?->email,
+                                        'type' => 'hired',
+                                    ];
+                                }
+
+                                usort($history, function ($a, $b) {
+                                    return strtotime($b['date'] ?? 0) <=> strtotime($a['date'] ?? 0);
+                                });
+
+                                return $history;
+                            })
+                            ->schema([
+                                TextEntry::make('label')
+                                    ->label('Event')
+                                    ->badge()
+                                    ->color(function ($state): string {
+                                        $state = is_array($state) ? $state : [];
+                                        return match ($state['type'] ?? null) {
+                                        'hired' => 'success',
+                                        'unlock' => 'info',
+                                        default => 'gray',
+                                        };
+                                    }),
+                                TextEntry::make('date')
+                                    ->label('Date')
+                                    ->dateTime(),
+                                TextEntry::make('tutor_name')
+                                    ->label('Tutor')
+                                    ->placeholder('—'),
+                                TextEntry::make('tutor_email')
+                                    ->label('Tutor Email')
+                                    ->placeholder('—'),
+
+                            ])
+                            ->columns(5)
+                            ->columnSpanFull(),
+                    ])
+                    ->collapsed()
+                    ->collapsible(),
+
+                Section::make('Hired Tutor Details')
+                    ->schema([
+                        TextEntry::make('hiredTutor.user.name')
+                            ->label('Tutor Name'),
+                        TextEntry::make('hiredTutor.user.email')
+                            ->label('Tutor Email'),
+                        TextEntry::make('hiredTutor.user.phone')
+                            ->label('Tutor Phone'),
+                        TextEntry::make('hiredTutor.rating_avg')
+                            ->label('Rating'),
+                        TextEntry::make('hired_at')
+                            ->label('Hired At')
+                            ->dateTime(),
+                    ])
+                    ->columns(3)
+                    ->visible(fn (StudentRequirement $record): bool => !is_null($record->hired_teacher_id)),
                 
                 Section::make('Status & Lead Management')
                     ->schema([

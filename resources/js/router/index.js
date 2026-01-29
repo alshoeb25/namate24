@@ -37,6 +37,7 @@ import Description from '../components/tutor/profile/Description.vue';
 import PhoneOtp from '../components/tutor/profile/PhoneOtp.vue';
 import Courses from '../components/tutor/profile/Courses.vue';
 import Settings from '../components/tutor/profile/Settings.vue';
+import MyLearners from '../pages/tutor/MyLearners.vue';
 
 // Student Components
 import StudentLayout from '../components/layout/StudentLayout.vue';
@@ -90,6 +91,7 @@ const routes = [
       { path: 'description', name: 'tutor.profile.description', component: Description },
       { path: 'phone', name: 'tutor.profile.phone', component: PhoneOtp },
       { path: 'courses', name: 'tutor.profile.courses', component: Courses },
+      { path: 'my-learners', name: 'tutor.profile.learners', component: MyLearners },
       { path: 'settings', name: 'tutor.profile.settings', component: Settings },
       { path: 'view', name: 'tutor.profile.view', component: TutorProfile },
     ]

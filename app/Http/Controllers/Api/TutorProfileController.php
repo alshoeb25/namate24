@@ -985,7 +985,7 @@ class TutorProfileController extends Controller
     public function viewProfile(Request $request, $id = null): JsonResponse
     {
         $tutorId = $id ?? $this->getTutor()->id;
-        $tutor = Tutor::with('subjects')->findOrFail($tutorId);
+        $tutor = Tutor::with(['subjects', 'approvedReviews.student'])->findOrFail($tutorId);
 
         // Privacy handling: sanitize if do_not_share_contact is true
         $profileData = $tutor->toArray();
@@ -994,6 +994,19 @@ class TutorProfileController extends Controller
         } else {
             $profileData['user'] = $tutor->user->only(['name', 'id', 'email', 'phone']);
         }
+
+        $profileData['reviews'] = $tutor->approvedReviews
+            ->map(function ($review) {
+                return [
+                    'id' => $review->id,
+                    'student_name' => $review->student?->name ?? 'Anonymous',
+                    'rating' => $review->rating,
+                    'comment' => $review->comment,
+                    'created_at' => $review->created_at,
+                ];
+            })
+            ->values()
+            ->all();
 
         return response()->json($profileData);
     }

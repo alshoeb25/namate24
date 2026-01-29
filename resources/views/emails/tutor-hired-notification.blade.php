@@ -343,12 +343,21 @@
 
             <a href="{{ $chatUrl ?? $dashboardUrl }}" class="action-button">Contact Student Now</a>
 
+            @if(isset($myLearnersUrl))
+            <p style="text-align: center; margin-top: -10px;">
+                <a href="{{ $myLearnersUrl }}">View My Learners</a>
+            </p>
+            @endif
+
             <div class="contact-box">
-                <p><strong>📞 Student Contact Details:</strong></p>
-                <p style="margin-top: 10px;"><strong>Email:</strong> <a href="mailto:{{ $student->email }}">{{ $student->email }}</a></p>
-                @if(isset($student->phone))
-                <p><strong>Phone:</strong> {{ $student->phone }}</p>
+                <p><strong>📞 Requirement Contact Details:</strong></p>
+                @if(isset($requirementPhone))
+                <p style="margin-top: 10px;"><strong>Phone:</strong> {{ $requirementPhone }}</p>
                 @endif
+                @if(isset($requirementAlternatePhone))
+                <p><strong>Alternate Phone:</strong> {{ $requirementAlternatePhone }}</p>
+                @endif
+                <p style="margin-top: 10px;"><strong>Email:</strong> <a href="mailto:{{ $student->email }}">{{ $student->email }}</a></p>
             </div>
 
             <div class="steps-box">

@@ -202,11 +202,77 @@ class StudentController extends Controller
             ->with('subjects')
             ->firstOrFail();
 
+        $requirement->loadMissing([
+            'subjects',
+            'subject',
+            'unlocks.tutor.user',
+            'unlocks.tutor.subjects',
+            'hiredTutor.user',
+            'hiredTutor.subjects',
+        ]);
+
         // Add labels for better display
         $requirement = $this->addLabelsToRequirement($requirement);
 
+        $history = [];
+        $history[] = [
+            'type' => 'created',
+            'label' => 'Requirement Created',
+            'date' => $requirement->created_at,
+        ];
+
+        $unlocks = $requirement->unlocks?->map(function ($unlock) {
+            $tutor = $unlock->tutor;
+            $tutorUser = $tutor?->user;
+
+            return [
+                'type' => 'unlock',
+                'label' => 'Tutor Unlocked',
+                'date' => $unlock->created_at,
+                'tutor' => $tutor ? [
+                    'id' => $tutor->id,
+                    'user_id' => $tutor->user_id,
+                    'name' => $tutorUser?->name,
+                    'email' => $tutorUser?->email,
+                    'phone' => $tutorUser?->phone,
+                    'photo' => $tutor->photo_url ?? $tutorUser?->avatar_url,
+                    'subjects' => $tutor->subjects?->pluck('name')->values()->all() ?? [],
+                    'rating' => $tutor->rating_avg,
+                ] : null,
+                'unlock_price' => $unlock->unlock_price,
+            ];
+        })->values()->all() ?? [];
+
+        $history = array_merge($history, $unlocks);
+
+        if ($requirement->hired_teacher_id && $requirement->hired_at && $requirement->hiredTutor) {
+            $hiredTutor = $requirement->hiredTutor;
+            $hiredUser = $hiredTutor->user;
+
+            $history[] = [
+                'type' => 'hired',
+                'label' => 'Tutor Hired',
+                'date' => $requirement->hired_at,
+                'tutor' => [
+                    'id' => $hiredTutor->id,
+                    'user_id' => $hiredTutor->user_id,
+                    'name' => $hiredUser?->name,
+                    'email' => $hiredUser?->email,
+                    'phone' => $hiredUser?->phone,
+                    'photo' => $hiredTutor->photo_url ?? $hiredUser?->avatar_url,
+                    'subjects' => $hiredTutor->subjects?->pluck('name')->values()->all() ?? [],
+                    'rating' => $hiredTutor->rating_avg,
+                ],
+            ];
+        }
+
+        usort($history, function ($a, $b) {
+            return strtotime($a['date'] ?? 0) <=> strtotime($b['date'] ?? 0);
+        });
+
         return response()->json([
-            'requirement' => $requirement
+            'requirement' => $requirement,
+            'history' => $history,
         ]);
     }
 
@@ -472,6 +538,8 @@ class StudentController extends Controller
             'hired_at' => now(),
         ]);
 
+        $requirement->loadMissing('subjects', 'subject');
+
         // Notify hired teacher
         if ($tutor && $tutor->user) {
             $tutor->user->notify(new \App\Notifications\TeacherHiredNotification($requirement, $user));
@@ -561,6 +629,15 @@ class StudentController extends Controller
                     })
                     ->first();
 
+                $subjectNames = $requirement->subjects ? $requirement->subjects->pluck('name')->filter()->values()->all() : [];
+                $subjectFallback = $requirement->subject?->name
+                    ?? $requirement->subject_name
+                    ?? $requirement->other_subject
+                    ?? '';
+                $subjectsRequested = !empty($subjectNames)
+                    ? implode(', ', $subjectNames)
+                    : $subjectFallback;
+
                 return [
                     'id' => 'req_' . $requirement->id,
                     'source' => 'requirement',
@@ -582,10 +659,15 @@ class StudentController extends Controller
                     'start_at' => $requirement->hired_at,
                     'end_at' => null,
                     'session_price' => $requirement->budget ?? 0,
-                    'status' => 'confirmed',
+                    'session_price_display' => $requirement->budget_display ?? null,
+                    'status' => 'hired',
                     'payment_status' => 'pending',
                     'created_at' => $requirement->hired_at,
-                    'subjects_requested' => $requirement->subjects ? $requirement->subjects->pluck('name')->join(', ') : '',
+                    'subjects_requested' => $subjectsRequested,
+                    'requirement_details' => $requirement->details,
+                    'requirement_city' => $requirement->city,
+                    'requirement_area' => $requirement->area,
+                    'requirement_location' => $requirement->location,
                     'review' => $review ? [
                         'id' => $review->id,
                         'rating' => $review->rating,

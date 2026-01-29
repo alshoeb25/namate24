@@ -207,7 +207,7 @@
             <i class="fas fa-thumbs-up mr-3"></i>
             Reviews
           </h2>
-          <div v-if="profile?.rating_count && profile.rating_count > 0" class="space-y-4">
+          <div v-if="(profile?.rating_count && profile.rating_count > 0) || (profile?.reviews && profile.reviews.length > 0)" class="space-y-4">
             <!-- Rating Summary -->
             <div class="bg-yellow-50 p-4 rounded-lg">
               <div class="flex items-center gap-4">

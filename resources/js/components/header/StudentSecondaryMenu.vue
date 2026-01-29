@@ -38,6 +38,12 @@
             </div>
           </div>
 
+          <router-link to="/student/hired-tutors" 
+                       class="text-gray-700 hover:text-blue-600 font-medium transition"
+                       active-class="text-blue-600 font-semibold">
+            <i class="fas fa-user-tie mr-2"></i>My Tutors
+          </router-link>
+
           <router-link to="/search" 
                        class="text-gray-700 hover:text-blue-600 font-medium transition"
                        active-class="text-blue-600 font-semibold">
@@ -98,6 +104,13 @@
                 <li><router-link to="/student/request-tutor" @click="closeMobileMenu" class="block py-1 text-sm text-gray-600 hover:text-blue-600"><i class="fas fa-user-plus text-xs w-5 mr-2"></i>Request Tutor</router-link></li>
               </ul>
             </details>
+          </li>
+
+          <li>
+            <router-link to="/student/hired-tutors" @click="closeMobileMenu" 
+                         class="block px-4 py-2 text-gray-700 font-medium hover:bg-gray-50 rounded-md">
+              <i class="fas fa-user-tie mr-2"></i>My Tutors
+            </router-link>
           </li>
 
           <li>
