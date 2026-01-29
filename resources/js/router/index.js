@@ -44,6 +44,7 @@ import StudentDashboard from '../pages/StudentDashboard.vue';
 import RequestTutor from '../pages/RequestTutor.vue';
 import RequirementsList from '../pages/RequirementsList.vue';
 import RequirementDetail from '../pages/RequirementDetail.vue';
+import StudentRequirementDetail from '../pages/StudentRequirementDetail.vue';
 import StudentReviews from '../pages/StudentReviews.vue';
 import StudentWallet from '../pages/StudentWallet.vue';
 import StudentSettings from '../pages/StudentSettings.vue';
@@ -121,6 +122,7 @@ const routes = [
       { path: 'dashboard', name: 'student.dashboard', component: StudentDashboard },
       { path: 'request-tutor', name: 'student.request-tutor', component: RequestTutor },
       { path: 'requirements', name: 'student.requirements', component: RequirementsList },
+      { path: 'requirement-details/:id', name: 'student.requirement-details', component: StudentRequirementDetail, props: true },
       { path: 'requirements/:id/edit', name: 'student.requirement-edit', component: RequestTutor },
       { path: 'hired-tutors', name: 'student.hired-tutors', component: HiredTutors },
       { path: 'wallet', name: 'student.wallet', component: () => import('../pages/StudentWallet.vue') },

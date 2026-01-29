@@ -223,6 +223,10 @@ export default {
       
       // Try subjects array (array of subject objects)
       if (this.requirement.subjects && Array.isArray(this.requirement.subjects) && this.requirement.subjects.length > 0) {
+        const first = this.requirement.subjects[0];
+        if (typeof first === 'string') {
+          return this.requirement.subjects.join(', ');
+        }
         return this.requirement.subjects.map(s => s.name).join(', ');
       }
       

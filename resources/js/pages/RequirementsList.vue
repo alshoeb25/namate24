@@ -146,6 +146,10 @@
                         class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition">
                   <i class="fas fa-times-circle mr-1"></i>Close
                 </button>
+                <button @click="viewRequirement(req.id)" 
+                        class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition">
+                  <i class="fas fa-eye mr-1"></i>Details
+                </button>
                 <button @click="editRequirement(req.id)" 
                         class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition">
                   <i class="fas fa-edit mr-1"></i>Edit
@@ -301,6 +305,10 @@ export default {
 
     const editRequirement = (id) => {
       router.push(`/student/requirements/${id}/edit`);
+    };
+
+    const viewRequirement = (id) => {
+      router.push(`/student/requirement-details/${id}`);
     };
 
     const openRefundModal = (id) => {
@@ -469,6 +477,7 @@ export default {
       selectedRequirement,
       hireLoading,
       editRequirement,
+      viewRequirement,
       closeRequirement,
       formatDate,
       changePage,

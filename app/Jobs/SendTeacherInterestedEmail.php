@@ -20,18 +20,16 @@ class SendTeacherInterestedEmail implements ShouldQueue
     public function __construct(
         public int $enquiryId,
         public int $teacherId,
-        public string $studentEmail
+        public int $studentUserId,
+        public ?string $studentEmail = null
     ) {
     }
 
     public function handle(): void
     {
-        if (empty($this->studentEmail)) {
-            return;
-        }
-
-        $enquiry = StudentRequirement::with('subjects')->find($this->enquiryId);
+        $enquiry = StudentRequirement::with(['subjects', 'subject'])->find($this->enquiryId);
         $teacher = User::find($this->teacherId);
+        $studentUser = User::find($this->studentUserId);
 
         if (!$enquiry || !$teacher) {
             Log::warning('Teacher interest email skipped - missing data', [
@@ -44,23 +42,33 @@ class SendTeacherInterestedEmail implements ShouldQueue
         Log::info('Queue: sending teacher interest email', [
             'enquiry_id' => $this->enquiryId,
             'teacher_id' => $this->teacherId,
-            'to' => $this->studentEmail,
+            'to' => $studentUser?->email ?? $this->studentEmail,
         ]);
 
         try {
-            Notification::route('mail', $this->studentEmail)
-                ->notifyNow(new TeacherInterestedNotification($enquiry, $teacher));
+            if ($studentUser) {
+                $studentUser->notifyNow(new TeacherInterestedNotification($enquiry, $teacher));
+            } elseif (!empty($this->studentEmail)) {
+                Notification::route('mail', $this->studentEmail)
+                    ->notifyNow(new TeacherInterestedNotification($enquiry, $teacher));
+            } else {
+                Log::warning('Teacher interest email skipped - missing student email', [
+                    'enquiry_id' => $this->enquiryId,
+                    'teacher_id' => $this->teacherId,
+                ]);
+                return;
+            }
 
             Log::info('Teacher interest email sent', [
                 'enquiry_id' => $this->enquiryId,
                 'teacher_id' => $this->teacherId,
-                'to' => $this->studentEmail,
+                'to' => $studentUser?->email ?? $this->studentEmail,
             ]);
         } catch (\Throwable $e) {
             Log::error('Teacher interest email failed', [
                 'enquiry_id' => $this->enquiryId,
                 'teacher_id' => $this->teacherId,
-                'to' => $this->studentEmail,
+                'to' => $studentUser?->email ?? $this->studentEmail,
                 'error' => $e->getMessage(),
             ]);
             throw $e;

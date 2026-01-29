@@ -4,16 +4,19 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\StudentRequirement;
+use App\Services\LabelService;
 use App\Services\RequirementSearchService;
 use Illuminate\Http\Request;
 
 class RequirementController extends Controller
 {
     protected $searchService;
+    protected LabelService $labelService;
 
-    public function __construct(RequirementSearchService $searchService)
+    public function __construct(RequirementSearchService $searchService, LabelService $labelService)
     {
         $this->searchService = $searchService;
+        $this->labelService = $labelService;
     }
 
     public function store(Request $request)
@@ -274,7 +277,10 @@ class RequirementController extends Controller
 
     public function show($id)
     {
-        return response()->json(StudentRequirement::with('subject','student')->findOrFail($id));
+        $requirement = StudentRequirement::with('subject', 'subjects', 'student')->findOrFail($id);
+        $requirement = $this->labelService->addLabels($requirement);
+
+        return response()->json($requirement);
     }
 
     /**

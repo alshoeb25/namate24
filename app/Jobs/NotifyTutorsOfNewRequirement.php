@@ -34,13 +34,29 @@ class NotifyTutorsOfNewRequirement implements ShouldQueue
     public function handle(): void
     {
         try {
-            // Get ALL tutors with user accounts (no filtering)
-            $tutors = Tutor::with('user')->whereHas('user')->get();
+            $this->requirement->loadMissing('subjects');
 
-            Log::info('Starting notification dispatch', [
-                'requirement_id' => $this->requirement->id,
-                'total_tutors_found' => $tutors->count(),
-            ]);
+            $subjectIds = $this->subjectIds;
+            if (empty($subjectIds)) {
+                $subjectIds = $this->requirement->subjects
+                    ? $this->requirement->subjects->pluck('id')->toArray()
+                    : [];
+            }
+
+            if (empty($subjectIds)) {
+                Log::info('No subjects found for requirement; skipping tutor notifications', [
+                    'requirement_id' => $this->requirement->id,
+                ]);
+                return;
+            }
+
+            // Get tutors with matching subjects and user accounts
+            $tutors = Tutor::with('user')
+                ->whereHas('user')
+                ->whereHas('subjects', function ($query) use ($subjectIds) {
+                    $query->whereIn('subjects.id', $subjectIds);
+                })
+                ->get();
 
             // Send notification to each tutor
             $notifiedCount = 0;
@@ -58,12 +74,7 @@ class NotifyTutorsOfNewRequirement implements ShouldQueue
                     }
                 }
             }
-
-            Log::info('Sent new requirement notifications to all tutors', [
-                'requirement_id' => $this->requirement->id,
-                'tutors_notified' => $notifiedCount,
-                'total_tutors' => $tutors->count(),
-            ]);
+   
         } catch (\Exception $e) {
             Log::error('Failed to send tutor notifications', [
                 'requirement_id' => $this->requirement->id,

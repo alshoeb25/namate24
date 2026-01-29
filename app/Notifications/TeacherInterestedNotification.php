@@ -45,36 +45,52 @@ class TeacherInterestedNotification extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $subjects = collect($this->enquiry->subjects ?? [])->pluck('name')->implode(', ');
+        $enquiry = StudentRequirement::with('subjects', 'subject')->find($this->enquiry->id) ?? $this->enquiry;
+        $enquiry->loadMissing('subjects', 'subject');
+
+        $labelService = app(\App\Services\LabelService::class);
+        $labelService->addLabels($enquiry);
+
+        $subjects = collect($enquiry->subjects ?? [])->pluck('name')->implode(', ');
         $subjectLabel = $subjects !== ''
             ? $subjects
-            : ($this->enquiry->subject_name ?? $this->enquiry->other_subject ?? 'subjects');
-        $unlockCoins = $this->enquiry->unlock_price ?? config('enquiry.unlock_fee');
+            : ($enquiry->subject_name ?? $enquiry->other_subject ?? 'subjects');
 
-        $message = (new MailMessage)
+        $meetingOptionsRaw = $enquiry->meeting_options;
+        $meetingOptions = is_array($meetingOptionsRaw)
+            ? implode(', ', array_map('ucfirst', $meetingOptionsRaw))
+            : ($meetingOptionsRaw ? ucfirst($meetingOptionsRaw) : 'N/A');
+        $meetingOptionsLabel = $enquiry->meeting_options_labels ?? $meetingOptions;
+        if (is_array($meetingOptionsLabel)) {
+            $meetingOptionsLabel = implode(', ', $meetingOptionsLabel);
+        }
+
+        $unlockCoins = $enquiry->unlock_price ?? config('enquiry.unlock_fee');
+        $leadStatus = ($enquiry->current_leads ?? 0) . '/' . ($enquiry->max_leads ?? 0) . ' tutors';
+
+        return (new MailMessage)
             ->subject('New Tutor Interest in Your Requirement')
-            ->greeting('Hello ' . ($notifiable->name ?? 'Student') . '!')
-            ->line('A tutor has unlocked your requirement and is interested in teaching you.')
-            ->line('**Tutor:** ' . ($this->teacher->name ?? 'Tutor'))
-            ->line('**Subjects:** ' . $subjectLabel)
-            ->line('**Lead status:** ' . ($this->enquiry->current_leads ?? 0) . '/' . ($this->enquiry->max_leads ?? 0) . ' tutors');
-
-        if (!empty($this->teacher->email)) {
-            $message->line('**Tutor Email:** ' . $this->teacher->email);
-        }
-
-        if (!empty($this->teacher->phone)) {
-            $message->line('**Tutor Phone:** ' . $this->teacher->phone);
-        }
-
-        if (!empty($unlockCoins)) {
-            $message->line('**Unlock Coins:** ' . $unlockCoins . ' coins');
-        }
-
-        $message->action('View Interested Tutors', url('/student/requirements'))
-            ->line('Please review the tutor profile and respond if interested.');
-
-        return $message;
+            ->view('emails.teacher-interested', [
+                'studentName' => $notifiable->name ?? 'Student',
+                'teacherName' => $this->teacher->name ?? 'Tutor',
+                'requirement' => $enquiry,
+                'subjectLabel' => $subjectLabel,
+                'meetingOptions' => $meetingOptions,
+                'meetingOptionsLabel' => $meetingOptionsLabel,
+                'budgetDisplay' => $enquiry->budget_display
+                    ?? ($enquiry->budget_amount
+                        ? ('₹' . $enquiry->budget_amount)
+                        : null),
+                'serviceTypeLabel' => $enquiry->service_type_label
+                    ?? $enquiry->service_type,
+                'availabilityLabel' => $enquiry->availability_label
+                    ?? $enquiry->availability,
+                'genderPreferenceLabel' => $enquiry->gender_preference_label
+                    ?? $enquiry->gender_preference,
+                'unlockCoins' => $unlockCoins,
+                'leadStatus' => $leadStatus,
+                'viewUrl' => url('/student/requirement-details/' . $enquiry->id),
+            ]);
     }
 
     /**

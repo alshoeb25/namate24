@@ -211,6 +211,14 @@ class StudentController extends Controller
     }
 
     /**
+     * Get single requirement details (alias endpoint)
+     */
+    public function getRequirementDetails(Request $request, $id)
+    {
+        return $this->getRequirement($request, $id);
+    }
+
+    /**
      * Update requirement
      */
     public function updateRequirement(Request $request, $id)

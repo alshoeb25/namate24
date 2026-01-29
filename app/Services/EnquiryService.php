@@ -156,6 +156,7 @@ class EnquiryService
         \App\Jobs\SendTeacherInterestedEmail::dispatch(
             $enquiry->id,
             $teacher->id,
+            $studentUser->id,
             $studentUser->email
         );
     }

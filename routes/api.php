@@ -169,6 +169,7 @@ Route::middleware('auth:api')->group(function() {
         Route::post('request-tutor', [\App\Http\Controllers\Api\StudentController::class, 'requestTutor']);
         Route::get('requirements', [\App\Http\Controllers\Api\StudentController::class, 'getRequirements']);
         Route::get('requirements/{id}', [\App\Http\Controllers\Api\StudentController::class, 'getRequirement']);
+        Route::get('requirement-details/{id}', [\App\Http\Controllers\Api\StudentController::class, 'getRequirementDetails']);
         Route::put('requirements/{id}', [\App\Http\Controllers\Api\StudentController::class, 'updateRequirement']);
         Route::post('requirements/{id}/close', [\App\Http\Controllers\Api\StudentController::class, 'closeRequirement']);
         Route::delete('requirements/{id}', [\App\Http\Controllers\Api\StudentController::class, 'deleteRequirement']);

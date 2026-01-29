@@ -202,7 +202,7 @@
     <div class="email-container">
         <!-- Header with pink logo -->
         <div class="header">
-            <img src="{{ asset('storage/logo.png') }}"
+            <img src="{{ url('storage/logo.png') }}"
                 alt="Namate24 Logo" class="logo">
         </div>
 

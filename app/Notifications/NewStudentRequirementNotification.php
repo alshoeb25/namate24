@@ -42,23 +42,53 @@ class NewStudentRequirementNotification extends Notification implements ShouldQu
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $subjects = collect($this->requirement->subjects ?? [])->pluck('name')->implode(', ');
-        $meetingOptionsRaw = $this->requirement->meeting_options;
+        $requirement = StudentRequirement::with('subjects', 'subject')->find($this->requirement->id);
+        if (!$requirement) {
+            $requirement = $this->requirement;
+            $requirement->loadMissing('subjects', 'subject');
+        }
+
+        $labelService = app(\App\Services\LabelService::class);
+        $labelService->addLabels($requirement);
+
+        $subjects = collect($requirement->subjects ?? [])->pluck('name')->implode(', ');
+        $subjectLabel = $subjects !== ''
+            ? $subjects
+            : ($requirement->subject_name
+                ?? $requirement->other_subject
+                ?? 'N/A');
+        $meetingOptionsRaw = $requirement->meeting_options;
         $meetingOptions = is_array($meetingOptionsRaw)
             ? implode(', ', array_map('ucfirst', $meetingOptionsRaw))
             : ($meetingOptionsRaw ? ucfirst($meetingOptionsRaw) : 'N/A');
+        $meetingOptionsLabel = $requirement->meeting_options_labels
+            ?? $meetingOptions;
+        if (is_array($meetingOptionsLabel)) {
+            $meetingOptionsLabel = implode(', ', $meetingOptionsLabel);
+        }
 
         return (new MailMessage)
             ->subject('New Student Requirement Available')
-            ->greeting('Hello ' . $notifiable->name . '!')
-            ->line('A new student requirement has been posted that matches your profile.')
-            ->line('**Student:** ' . $this->requirement->student_name)
-            ->line('**Subjects:** ' . $subjects)
-            ->line('**Location:** ' . $this->requirement->area . ', ' . $this->requirement->city)
-            ->line('**Meeting Options:** ' . $meetingOptions)
-            ->line('**Budget:** ₹' . $this->requirement->budget_amount . ' per ' . $this->requirement->budget_type)
-            ->action('View Requirement', url('/tutor/requirements/' . $this->requirement->id))
-            ->line('Respond quickly to increase your chances of being hired!');
+            ->view('emails.new-requirement-tutor', [
+                'tutorName' => $notifiable->name,
+                'tutorEmail' => $notifiable->email,
+                'requirement' => $requirement,
+                'subjects' => $subjects,
+                'subjectLabel' => $subjectLabel,
+                'meetingOptions' => $meetingOptions,
+                'meetingOptionsLabel' => $meetingOptionsLabel,
+                'budgetDisplay' => $requirement->budget_display
+                    ?? ($requirement->budget_amount
+                        ? ('₹' . $requirement->budget_amount)
+                        : null),
+                'serviceTypeLabel' => $requirement->service_type_label
+                    ?? $requirement->service_type,
+                'availabilityLabel' => $requirement->availability_label
+                    ?? $requirement->availability,
+                'genderPreferenceLabel' => $requirement->gender_preference_label
+                    ?? $requirement->gender_preference,
+                'viewUrl' => url('/requirement/' . $requirement->id),
+            ]);
     }
 
     /**
