@@ -63,7 +63,7 @@
                 :class="(index + 1) === currentSection ? 'text-blue-600' : isSectionCompleted(index + 1) ? 'text-green-600' : 'text-gray-500'">
                 {{ section.title }}
               </div>
-              <div class="text-xs text-gray-400">{{ section.steps.length }} fields</div>
+              <div class="text-xs text-gray-400">{{ section.requiredFields }} required fields</div>
             </div>
           </button>
 
@@ -96,7 +96,7 @@
         
         <div class="mb-3">
           <p class="text-sm text-gray-600 font-medium">{{ sections[currentSection - 1].title }}</p>
-          <p class="text-xs text-gray-500 mt-1">{{ sections[currentSection - 1].steps.length }} fields</p>
+          <p class="text-xs text-gray-500 mt-1">{{ sections[currentSection - 1].requiredFields }} required fields</p>
         </div>
 
         <div class="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
@@ -237,7 +237,7 @@
             
             <div class="grid md:grid-cols-4 gap-4 md:gap-6">
               <div class="md:col-span-1">
-                <label class="block text-gray-700 font-medium mb-2">Phone Number</label>
+                <label class="block text-gray-700 font-medium mb-2">Phone Number<span class="text-red-500">*</span></label>
                 <p class="text-gray-500 text-sm">Tutors will contact you</p>
               </div>
               <div class="md:col-span-3">
@@ -248,10 +248,19 @@
                       {{ country.flag }} {{ country.code }}
                     </option>
                   </select>
-                  <input v-model="phoneNumber" @input="formatPhoneNumber"
-                         type="tel" placeholder="9876543210" maxlength="15"
-                         class="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                  <div class="flex-1 relative">
+                    <input v-model="phoneNumber" @input="formatPhoneNumber"
+                           type="tel" placeholder="9876543210" maxlength="15"
+                           :class="[
+                             'w-full rounded-lg px-4 py-3 pr-10 focus:outline-none focus:ring-2 border-2 transition-all',
+                             getFieldClass(phoneNumber || form.phone)
+                           ]">
+                    <i :class="[getFieldIcon(phoneNumber || form.phone), 'absolute right-3 top-4']" aria-hidden="true"></i>
+                  </div>
                 </div>
+                <p v-if="!(phoneNumber || form.phone)" class="text-red-500 text-xs mt-1">
+                  <i class="fas fa-info-circle mr-1"></i>Phone number is required
+                </p>
               </div>
             </div>
 
@@ -298,10 +307,19 @@
                 <p class="text-gray-500 text-sm">Who needs tutoring?</p>
               </div>
               <div class="md:col-span-3">
-                <input v-model="form.student_name" 
-                       type="text" 
-                       placeholder="Enter student name"
-                       class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <div class="relative">
+                  <input v-model="form.student_name" 
+                         type="text" 
+                         placeholder="Enter student name"
+                         :class="[
+                           'w-full rounded-lg px-4 py-3 pr-10 focus:outline-none focus:ring-2 border-2 transition-all',
+                           getFieldClass(form.student_name)
+                         ]">
+                  <i :class="[getFieldIcon(form.student_name), 'absolute right-3 top-4']" aria-hidden="true"></i>
+                </div>
+                <p v-if="!form.student_name" class="text-red-500 text-xs mt-1">
+                  <i class="fas fa-info-circle mr-1"></i>Student name is required
+                </p>
               </div>
             </div>
 
@@ -328,19 +346,23 @@
             
             <div class="grid md:grid-cols-4 gap-4 md:gap-6">
               <div class="md:col-span-1">
-                <label class="block text-gray-700 font-medium mb-2">Subjects</label>
+                <label class="block text-gray-700 font-medium mb-2">Subjects<span class="text-red-500">*</span></label>
                 <p class="text-gray-500 text-sm">What do you want to learn?</p>
               </div>
               <div class="md:col-span-3">
                  <div class="flex flex-wrap gap-2 mb-3">
                   <span v-for="subject in form.subjects" :key="subject"
-                        class="bg-blue-100 text-blue-800 px-3 py-1.5 rounded-full text-sm flex items-center gap-2">
+                        class="bg-green-100 text-green-800 px-3 py-1.5 rounded-full text-sm flex items-center gap-2">
+                    <i class="fas fa-check-circle text-xs"></i>
                     {{ subject }}
-                    <button @click="removeSubject(subject)" type="button" class="text-blue-600 hover:text-blue-800">
+                    <button @click="removeSubject(subject)" type="button" class="text-green-600 hover:text-green-800">
                       <i class="fas fa-times text-xs"></i>
                     </button>
                   </span>
                 </div>
+                <p v-if="form.subjects.length === 0" class="text-red-500 text-xs mb-2">
+                  <i class="fas fa-info-circle mr-1"></i>At least one subject is required
+                </p>
                 <div class="relative mb-3">
                   <input v-model="subjectSearch" @focus="showSubjectDropdown = true"
                          type="text" placeholder="Search subjects..."
@@ -434,23 +456,28 @@
               </div>
               <div class="md:col-span-3">
                 <div class="space-y-3">
-                  <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-blue-50 transition"
-                         :class="{ 'bg-blue-100 border-blue-500': form.service_type === 'tutoring' }">
+                  <label class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-blue-50 transition"
+                         :class="{ 'bg-green-50 border-green-500': form.service_type === 'tutoring', 'border-red-300': !form.service_type }">
                     <input type="radio" value="tutoring" v-model="form.service_type" class="text-blue-600">
                     <div>
                       <span class="font-medium text-gray-700">Tutoring</span>
                       <p class="text-sm text-gray-600">Regular classes and teaching</p>
                     </div>
+                    <i v-if="form.service_type === 'tutoring'" class="fas fa-check-circle text-green-500 ml-auto"></i>
                   </label>
-                  <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-blue-50 transition"
-                         :class="{ 'bg-blue-100 border-blue-500': form.service_type === 'assignment_help' }">
+                  <label class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-blue-50 transition"
+                         :class="{ 'bg-green-50 border-green-500': form.service_type === 'assignment_help', 'border-red-300': !form.service_type }">
                     <input type="radio" value="assignment_help" v-model="form.service_type" class="text-blue-600">
                     <div>
                       <span class="font-medium text-gray-700">Assignment Help</span>
                       <p class="text-sm text-gray-600">Help with assignments and projects</p>
                     </div>
+                    <i v-if="form.service_type === 'assignment_help'" class="fas fa-check-circle text-green-500 ml-auto"></i>
                   </label>
                 </div>
+                <p v-if="!form.service_type" class="text-red-500 text-xs mt-1">
+                  <i class="fas fa-info-circle mr-1"></i>Service type is required
+                </p>
               </div>
             </div>
           </div>
@@ -478,34 +505,40 @@
               </div>
               <div class="md:col-span-3">
                 <div class="space-y-3">
-                  <label class="flex items-start gap-3 p-4 border rounded-lg cursor-pointer hover:bg-blue-50 transition"
-                         :class="{ 'bg-blue-100 border-blue-500': form.meeting_options.includes('online') }">
+                  <label class="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-blue-50 transition"
+                         :class="{ 'bg-green-50 border-green-500': form.meeting_options.includes('online'), 'border-red-300': form.meeting_options.length === 0 }">
                     <input type="checkbox" value="online" v-model="form.meeting_options"
                            class="mt-1 w-5 h-5 text-blue-600 rounded">
-                    <div>
+                    <div class="flex-1">
                       <span class="font-medium text-gray-700">Online</span>
                       <p class="text-sm text-gray-600">Video call or online platform</p>
                     </div>
+                    <i v-if="form.meeting_options.includes('online')" class="fas fa-check-circle text-green-500 mt-1"></i>
                   </label>
-                  <label class="flex items-start gap-3 p-4 border rounded-lg cursor-pointer hover:bg-blue-50 transition"
-                         :class="{ 'bg-blue-100 border-blue-500': form.meeting_options.includes('at_my_place') }">
+                  <label class="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-blue-50 transition"
+                         :class="{ 'bg-green-50 border-green-500': form.meeting_options.includes('at_my_place'), 'border-red-300': form.meeting_options.length === 0 }">
                     <input type="checkbox" value="at_my_place" v-model="form.meeting_options"
                            class="mt-1 w-5 h-5 text-blue-600 rounded">
-                    <div>
+                    <div class="flex-1">
                       <span class="font-medium text-gray-700">At My Place</span>
                       <p class="text-sm text-gray-600">Tutor visits your location</p>
                     </div>
+                    <i v-if="form.meeting_options.includes('at_my_place')" class="fas fa-check-circle text-green-500 mt-1"></i>
                   </label>
-                  <label class="flex items-start gap-3 p-4 border rounded-lg cursor-pointer hover:bg-blue-50 transition"
-                         :class="{ 'bg-blue-100 border-blue-500': form.meeting_options.includes('travel_to_tutor') }">
+                  <label class="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-blue-50 transition"
+                         :class="{ 'bg-green-50 border-green-500': form.meeting_options.includes('travel_to_tutor'), 'border-red-300': form.meeting_options.length === 0 }">
                     <input type="checkbox" value="travel_to_tutor" v-model="form.meeting_options"
                            class="mt-1 w-5 h-5 text-blue-600 rounded">
-                    <div>
+                    <div class="flex-1">
                       <span class="font-medium text-gray-700">Travel to Tutor</span>
                       <p class="text-sm text-gray-600">Visit tutor's location</p>
                     </div>
+                    <i v-if="form.meeting_options.includes('travel_to_tutor')" class="fas fa-check-circle text-green-500 mt-1"></i>
                   </label>
                 </div>
+                <p v-if="form.meeting_options.length === 0" class="text-red-500 text-xs mt-1">
+                  <i class="fas fa-info-circle mr-1"></i>At least one meeting option is required
+                </p>
                 
                 <div v-if="form.meeting_options.includes('travel_to_tutor')" class="mt-4 flex items-center gap-4">
                   <input v-model="form.travel_distance" type="number" min="0" max="50"
@@ -532,21 +565,39 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label class="block text-sm text-gray-600 mb-2">Amount (INR)</label>
-                    <input v-model="form.budget_amount" type="number" min="0" placeholder="Enter amount"
-                           class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <div class="relative">
+                      <input v-model="form.budget_amount" type="number" min="0" placeholder="Enter amount"
+                             :class="[
+                               'w-full rounded-lg px-4 py-3 pr-10 focus:outline-none focus:ring-2 border-2 transition-all',
+                               getFieldClass(form.budget_amount)
+                             ]">
+                      <i :class="[getFieldIcon(form.budget_amount), 'absolute right-3 top-4']" aria-hidden="true"></i>
+                    </div>
+                    <p v-if="!form.budget_amount" class="text-red-500 text-xs mt-1">
+                      <i class="fas fa-info-circle mr-1"></i>Amount is required
+                    </p>
                   </div>
                   <div>
-                    <label class="block text-sm text-gray-600 mb-2">Budget Type</label>
-                    <select v-model="form.budget_type" 
-                            class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                      <option value="">Select type</option>
-                      <option value="fixed">Fixed/Flat</option>
-                      <option value="per_hour">Per Hour</option>
-                      <option value="per_day">Per Day</option>
-                      <option value="per_week">Per Week</option>
-                      <option value="per_month">Per Month</option>
-                      <option value="per_year">Per Year</option>
-                    </select>
+                    <label class="block text-sm text-gray-600 mb-2">Budget Type<span class="text-red-500">*</span></label>
+                    <div class="relative">
+                      <select v-model="form.budget_type" 
+                              :class="[
+                                'w-full rounded-lg px-4 py-3 pr-10 focus:outline-none focus:ring-2 border-2 transition-all bg-white',
+                                getFieldClass(form.budget_type)
+                              ]">
+                        <option value="">Select type</option>
+                        <option value="fixed">Fixed/Flat</option>
+                        <option value="per_hour">Per Hour</option>
+                        <option value="per_day">Per Day</option>
+                        <option value="per_week">Per Week</option>
+                        <option value="per_month">Per Month</option>
+                        <option value="per_year">Per Year</option>
+                      </select>
+                      <i :class="[getFieldIcon(form.budget_type), 'absolute right-3 top-4 pointer-events-none']" aria-hidden="true"></i>
+                    </div>
+                    <p v-if="!form.budget_type" class="text-red-500 text-xs mt-1">
+                      <i class="fas fa-info-circle mr-1"></i>Budget type is required
+                    </p>
                   </div>
                 </div>
               </div>
@@ -561,18 +612,22 @@
             
             <div class="grid md:grid-cols-4 gap-4 md:gap-6">
               <div class="md:col-span-1">
-                <label class="block text-gray-700 font-medium mb-2">Tutor Gender</label>
-                <p class="text-gray-500 text-sm">Optional</p>
+                <label class="block text-gray-700 font-medium mb-2">Tutor Gender<span class="text-red-500">*</span></label>
+                <p class="text-gray-500 text-sm">Required</p>
               </div>
               <div class="md:col-span-3">
                 <div class="space-y-3">
                   <label v-for="option in genderOptions" :key="option.value" 
-                         class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-blue-50 transition"
-                         :class="{ 'bg-blue-100 border-blue-500': form.gender_preference === option.value }">
+                         class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-blue-50 transition"
+                         :class="{ 'bg-green-50 border-green-500': form.gender_preference === option.value, 'border-red-300': !form.gender_preference }">
                     <input type="radio" :value="option.value" v-model="form.gender_preference" class="text-blue-600">
-                    <span class="font-medium text-gray-700">{{ option.label }}</span>
+                    <span class="font-medium text-gray-700 flex-1">{{ option.label }}</span>
+                    <i v-if="form.gender_preference === option.value" class="fas fa-check-circle text-green-500"></i>
                   </label>
                 </div>
+                <p v-if="!form.gender_preference" class="text-red-500 text-xs mt-1">
+                  <i class="fas fa-info-circle mr-1"></i>Gender preference is required
+                </p>
               </div>
             </div>
           </div>
@@ -590,23 +645,28 @@
               </div>
               <div class="md:col-span-3">
                 <div class="space-y-3">
-                  <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-blue-50 transition"
-                         :class="{ 'bg-blue-100 border-blue-500': form.availability === 'part_time' }">
+                  <label class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-blue-50 transition"
+                         :class="{ 'bg-green-50 border-green-500': form.availability === 'part_time', 'border-red-300': !form.availability }">
                     <input type="radio" value="part_time" v-model="form.availability" class="text-blue-600">
-                    <div>
+                    <div class="flex-1">
                       <span class="font-medium text-gray-700">Part Time</span>
                       <p class="text-sm text-gray-600">Few hours per week</p>
                     </div>
+                    <i v-if="form.availability === 'part_time'" class="fas fa-check-circle text-green-500"></i>
                   </label>
-                  <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-blue-50 transition"
-                         :class="{ 'bg-blue-100 border-blue-500': form.availability === 'full_time' }">
+                  <label class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-blue-50 transition"
+                         :class="{ 'bg-green-50 border-green-500': form.availability === 'full_time', 'border-red-300': !form.availability }">
                     <input type="radio" value="full_time" v-model="form.availability" class="text-blue-600">
-                    <div>
+                    <div class="flex-1">
                       <span class="font-medium text-gray-700">Full Time</span>
                       <p class="text-sm text-gray-600">Regular daily classes</p>
                     </div>
+                    <i v-if="form.availability === 'full_time'" class="fas fa-check-circle text-green-500"></i>
                   </label>
                 </div>
+                <p v-if="!form.availability" class="text-red-500 text-xs mt-1">
+                  <i class="fas fa-info-circle mr-1"></i>Availability is required
+                </p>
               </div>
             </div>
           </div>
@@ -619,19 +679,23 @@
             
             <div class="grid md:grid-cols-4 gap-4 md:gap-6">
               <div class="md:col-span-1">
-                <label class="block text-gray-700 font-medium mb-2">Languages</label>
+                <label class="block text-gray-700 font-medium mb-2">Languages<span class="text-red-500">*</span></label>
                 <p class="text-gray-500 text-sm">You can communicate in</p>
               </div>
               <div class="md:col-span-3">
-                <div class="flex flex-wrap gap-2">
+                <div class="flex flex-wrap gap-2 mb-2">
                   <span v-for="lang in form.languages" :key="lang"
-                        class="bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full text-sm flex items-center gap-2">
+                        class="bg-green-100 text-green-800 px-3 py-1.5 rounded-full text-sm flex items-center gap-2">
+                    <i class="fas fa-check-circle text-xs"></i>
                     {{ lang }}
-                    <button @click="removeLanguage(lang)" type="button" class="text-gray-500 hover:text-gray-700">
+                    <button @click="removeLanguage(lang)" type="button" class="text-green-600 hover:text-green-800">
                       <i class="fas fa-times text-xs"></i>
                     </button>
                   </span>
                 </div>
+                <p v-if="form.languages.length === 0" class="text-red-500 text-xs mb-2">
+                  <i class="fas fa-info-circle mr-1"></i>At least one language is required
+                </p>
                 <div class="relative mb-3">
                   <input v-model="languageSearch" @focus="showLanguageDropdown = true"
                          type="text" placeholder="Search languages..."
@@ -666,23 +730,28 @@
               </div>
               <div class="md:col-span-3">
                 <div class="space-y-3">
-                  <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-blue-50 transition"
-                         :class="{ 'bg-blue-100 border-blue-500': form.tutor_location === 'all_countries' }">
+                  <label class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-blue-50 transition"
+                         :class="{ 'bg-green-50 border-green-500': form.tutor_location === 'all_countries', 'border-red-300': !form.tutor_location }">
                     <input type="radio" value="all_countries" v-model="form.tutor_location" class="text-blue-600">
-                    <div>
+                    <div class="flex-1">
                       <span class="font-medium text-gray-700">All Countries</span>
                       <p class="text-sm text-gray-600">Accept tutors from anywhere</p>
                     </div>
+                    <i v-if="form.tutor_location === 'all_countries'" class="fas fa-check-circle text-green-500"></i>
                   </label>
-                  <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-blue-50 transition"
-                         :class="{ 'bg-blue-100 border-blue-500': form.tutor_location === 'india_only' }">
+                  <label class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-blue-50 transition"
+                         :class="{ 'bg-green-50 border-green-500': form.tutor_location === 'india_only', 'border-red-300': !form.tutor_location }">
                     <input type="radio" value="india_only" v-model="form.tutor_location" class="text-blue-600">
-                    <div>
+                    <div class="flex-1">
                       <span class="font-medium text-gray-700">In India</span>
                       <p class="text-sm text-gray-600">Only tutors from India</p>
                     </div>
+                    <i v-if="form.tutor_location === 'india_only'" class="fas fa-check-circle text-green-500"></i>
                   </label>
                 </div>
+                <p v-if="!form.tutor_location" class="text-red-500 text-xs mt-1">
+                  <i class="fas fa-info-circle mr-1"></i>Tutor location preference is required
+                </p>
               </div>
             </div>
           </div>
@@ -861,15 +930,18 @@ export default {
     const sections = [
       { 
         title: 'Basic Information',
-        steps: ['Location', 'Contact']
+        requiredFields: 3,
+        steps: ['City', 'Area', 'Phone']
       },
       { 
         title: 'Requirement Details',
-        steps: ['Details', 'Subject', 'Level', 'Service Type']
+        requiredFields: 3,
+        steps: ['Student Name', 'Subjects', 'Service Type']
       },
       { 
         title: 'Logistics & Preferences',
-        steps: ['Meeting', 'Budget', 'Gender Preference', 'Availability', 'Languages', 'Location Preference']
+        requiredFields: 7,
+        steps: ['Meeting Options', 'Budget Amount', 'Budget Type', 'Gender', 'Availability', 'Languages', 'Tutor Location']
       }
     ];
 
@@ -907,6 +979,28 @@ export default {
     const allRequiredFieldsFilled = computed(() => {
       return isSectionCompleted(1) && isSectionCompleted(2) && isSectionCompleted(3);
     });
+
+    // Field validation helpers
+    const isFieldFilled = (field) => {
+      if (Array.isArray(field)) {
+        return field.length > 0;
+      }
+      return !!field;
+    };
+
+    const getFieldClass = (field) => {
+      if (!isFieldFilled(field)) {
+        return 'border-red-300 focus:border-red-500 focus:ring-red-500';
+      }
+      return 'border-green-300 focus:border-green-500 focus:ring-green-500';
+    };
+
+    const getFieldIcon = (field) => {
+      if (isFieldFilled(field)) {
+        return 'fas fa-check-circle text-green-500';
+      }
+      return 'fas fa-exclamation-circle text-red-500';
+    };
 
     // Computed for filtered subjects
     const filteredSubjects = computed(() => {
@@ -1075,12 +1169,7 @@ export default {
         requirementsPosted.value = Number(data.requirements_posted) || 0;
         postingEligibilityMsg.value = data.message || '';
         
-        console.log('Processed eligibility values:', {
-          postingIsFree: postingIsFree.value,
-          postingCost: postingCost.value,
-          requirementsPosted: requirementsPosted.value,
-          message: postingEligibilityMsg.value
-        });
+        
       } catch (error) {
         console.error('Failed to check posting eligibility:', error);
         // Default to paid if API fails
@@ -1442,7 +1531,10 @@ export default {
       postingCost,
       requirementsPosted,
       postingEligibilityMsg,
-      checkPostingEligibility
+      checkPostingEligibility,
+      isFieldFilled,
+      getFieldClass,
+      getFieldIcon
     };
   }
 };

@@ -24,6 +24,8 @@ class WalletService
             }
 
             $lockedUser->decrement('coins', $amount);
+            // Refresh to get updated coins value
+            $lockedUser->refresh();
 
             return CoinTransaction::create([
                 'user_id' => $lockedUser->id,
@@ -46,6 +48,8 @@ class WalletService
             $lockedUser = User::where('id', $user->id)->lockForUpdate()->first();
 
             $lockedUser->increment('coins', $amount);
+            // Refresh to get updated coins value
+            $lockedUser->refresh();
 
             return CoinTransaction::create([
                 'user_id' => $lockedUser->id,

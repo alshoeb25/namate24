@@ -95,6 +95,22 @@ class CoinTransactionResource extends Resource
                     ->numeric(decimalPlaces: 0)
                     ->alignEnd()
                     ->label('Balance After')
+                    ->description(function ($record) {
+                        // Calculate balance: total credits - total debits up to this transaction
+                        $totalCredits = \App\Models\CoinTransaction::where('user_id', $record->user_id)
+                            ->where('amount', '>', 0)
+                            ->where('created_at', '<=', $record->created_at)
+                            ->sum('amount');
+                        
+                        $totalDebits = abs(\App\Models\CoinTransaction::where('user_id', $record->user_id)
+                            ->where('amount', '<', 0)
+                            ->where('created_at', '<=', $record->created_at)
+                            ->sum('amount'));
+                        
+                        $calculatedBalance = $totalCredits - $totalDebits;
+                        
+                        return "Calculated: {$calculatedBalance} (Added: {$totalCredits} - Spent: {$totalDebits})";
+                    })
                     ->sortable(),
                 TextColumn::make('addedByAdmin.name')
                     ->label('Added By')
@@ -153,8 +169,10 @@ class CoinTransactionResource extends Resource
                             ->reactive()
                             ->afterStateUpdated(function ($state, callable $set) {
                                 if ($state) {
+                                    // Fetch fresh user data from database
                                     $user = User::find($state);
-                                    $balance = $user?->coins ?? 0;
+                                    // Get coins directly from users table (same as wallet logic)
+                                    $balance = $user ? (int)$user->coins : 0;
                                     $set('current_balance', $balance);
                                     
                                     // Set helper text based on balance
@@ -190,19 +208,9 @@ class CoinTransactionResource extends Resource
                             ->numeric()
                             ->required()
                             ->minValue(1)
+                            ->maxValue(100)
                             ->suffix('coins')
-                            ->afterStateUpdated(function ($state, $set, $get) {
-                                $balance = $get('current_balance') ?? 0;
-                                if ($balance === 0) {
-                                    $set('amount', 100);
-                                } elseif ($balance < 10) {
-                                    $set('amount', 50);
-                                } elseif ($balance < 50) {
-                                    $set('amount', 20);
-                                } else {
-                                    $set('amount', 10);
-                                }
-                            })
+                            ->helperText('Maximum 100 coins per transaction')
                             ->live(),
                         Textarea::make('description')
                             ->label('Reason/Description')
@@ -212,13 +220,16 @@ class CoinTransactionResource extends Resource
                             ->helperText('This will be visible in transaction history'),
                     ])
                     ->action(function (array $data) {
+                        // Get fresh user data from database
                         $user = User::findOrFail($data['user_id']);
                         
                         // Always add positive amount
                         $amount = abs($data['amount']);
                         
-                        // Update user's coins
-                        $user->coins = ($user->coins ?? 0) + $amount;
+                        // Update user's coins (same logic as WalletService)
+                        $currentBalance = (int)($user->coins ?? 0);
+                        $newBalance = $currentBalance + $amount;
+                        $user->coins = $newBalance;
                         $user->save();
                         
                         // Create transaction record
@@ -227,7 +238,7 @@ class CoinTransactionResource extends Resource
                             'added_by_admin_id' => auth()->id(),
                             'type' => 'admin_credit',
                             'amount' => $amount,
-                            'balance_after' => $user->coins,
+                            'balance_after' => $newBalance,
                             'description' => $data['description'],
                             'meta' => [
                                 'admin_name' => auth()->user()->name,
@@ -240,7 +251,7 @@ class CoinTransactionResource extends Resource
                         Notification::make()
                             ->success()
                             ->title('Coins Added Successfully')
-                            ->body("{$amount} coins added to {$user->name}'s wallet. New balance: {$user->coins} coins")
+                            ->body("{$amount} coins added to {$user->name}'s wallet. New balance: {$newBalance} coins")
                             ->send();
                     })
                     ->modalWidth('md')

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\InsufficientBalanceException;
+use App\Jobs\NotifyTutorsOfNewRequirement;
 use App\Notifications\CoinSpentNotification;
 use App\Models\EnquiryUnlock;
 use App\Models\StudentRequirement;
@@ -63,7 +64,13 @@ class EnquiryService
                 $enquiry->subjects()->sync($subjectIds);
             }
 
-            return $enquiry->fresh(['subjects']);
+            // Reload requirement with subjects for notification
+            $enquiry = $enquiry->fresh(['subjects']);
+
+            // Dispatch job to send notifications to matching tutors
+            NotifyTutorsOfNewRequirement::dispatch($enquiry, $subjectIds);
+
+            return $enquiry;
         });
     }
 
@@ -141,11 +148,16 @@ class EnquiryService
      */
     private function notifyStudentOfNewLead(StudentRequirement $enquiry, User $teacher): void
     {
-        $student = $enquiry->student;
-        if (!$student) return;
+        $studentUser = $enquiry->student?->user;
+        if (!$studentUser || empty($studentUser->email)) {
+            return;
+        }
 
-        // Send notification (queued and broadcast)
-        $student->notify(new \App\Notifications\TeacherInterestedNotification($enquiry, $teacher));
+        \App\Jobs\SendTeacherInterestedEmail::dispatch(
+            $enquiry->id,
+            $teacher->id,
+            $studentUser->email
+        );
     }
 
     /**
@@ -153,10 +165,17 @@ class EnquiryService
      */
     private function notifyStudentLeadsFull(StudentRequirement $enquiry): void
     {
+        $studentUser = $enquiry->student?->user;
+        if ($studentUser) {
+            // Send notification (queued and broadcast)
+            $studentUser->notify(new \App\Notifications\EnquiryFullNotification($enquiry));
+            return;
+        }
+
         $student = $enquiry->student;
         if (!$student) return;
 
-        // Send notification (queued and broadcast)
+        // Fallback if student user is unavailable
         $student->notify(new \App\Notifications\EnquiryFullNotification($enquiry));
     }
 

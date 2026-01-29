@@ -37,6 +37,8 @@ class CoinSpentNotification extends Notification implements ShouldQueue
             ->subject('Coins Spent - ' . config('app.name'))
             ->view('emails.coins-spent', [
                 'userName' => $notifiable->name,
+                'userEmail' => $notifiable->email,
+                'transactionId' => $this->transaction->id,
                 'coinsSpent' => $amount,
                 'description' => $this->transaction->description,
                 'transactionType' => $this->transaction->type,

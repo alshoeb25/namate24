@@ -44,7 +44,7 @@ class EnquiryController extends Controller
                 $q->where('lead_status', 'open')->orWhereNull('lead_status');
             })
             ->whereColumn('current_leads', '<', 'max_leads')
-            ->with(['subject', 'subjects'])
+            ->with(['subject', 'subjects', 'student.user'])
             ->withExists([
                 'unlocks as has_unlocked' => function ($q) use ($user) {
                     $tutorId = $user->tutor ? $user->tutor->id : null;
@@ -105,7 +105,9 @@ class EnquiryController extends Controller
                 }
             }
             
-            if (!$enquiry->has_unlocked) {
+            if ($enquiry->has_unlocked) {
+                $enquiry->setAttribute('student_email', $enquiry->student?->user?->email);
+            } else {
                 $enquiry->makeHidden(['phone', 'alternate_phone']);
             }
             
@@ -126,7 +128,7 @@ class EnquiryController extends Controller
     public function show(Request $request, StudentRequirement $enquiry)
     {
         $user = $request->user();
-        $enquiry->load('subjects');
+        $enquiry->load(['subjects', 'student.user']);
 
         $tutorId = $user->tutor ? $user->tutor->id : null;
         $hasUnlocked = $tutorId ? EnquiryUnlock::where('enquiry_id', $enquiry->id)
@@ -145,6 +147,10 @@ class EnquiryController extends Controller
         
         $payload = $enquiry->toArray();
         $payload['has_unlocked'] = $hasUnlocked;
+
+        if ($isOwner || $hasUnlocked) {
+            $payload['student_email'] = $enquiry->student?->user?->email;
+        }
 
         if (!$isOwner && !$hasUnlocked) {
             unset($payload['phone'], $payload['alternate_phone']);
@@ -173,7 +179,7 @@ class EnquiryController extends Controller
             return response()->json(['message' => $e->getMessage()], 422);
         }
 
-        $freshEnquiry->load('subjects');
+        $freshEnquiry->load(['subjects', 'student.user']);
         
         // Add labels for display
         $freshEnquiry = $this->addLabelsToEnquiry($freshEnquiry);
@@ -191,6 +197,7 @@ class EnquiryController extends Controller
             'enquiry' => array_merge($freshEnquiry->toArray(), [
                 'has_unlocked' => true,
                 'lead_info' => $leadInfo,
+                'student_email' => $freshEnquiry->student?->user?->email,
             ]),
             'unlock' => $unlock,
             'charged' => $charged,

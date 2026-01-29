@@ -406,6 +406,7 @@ class StudentController extends Controller
                     'hourly_rate' => $tutor->price_per_hour ?? null,
                     'bio' => $tutor->about ?? null,
                     'interested_at' => $tutor->pivot?->created_at,
+                    'unlock_price' => $tutor->pivot?->unlock_price,
                 ];
             });
 

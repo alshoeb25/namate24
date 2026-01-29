@@ -260,7 +260,7 @@
                 <p class="transaction-label">{{ $transactionType }}</p>
             </div>
 
-            <p>Hello <span class="highlight">{{ $user->name }}</span>,</p>
+            <p>Hello <span class="highlight">{{ $userName }}</span>,</p>
 
             <p>This email confirms that coins have been deducted from your account for the following transaction:</p>
 
@@ -330,7 +330,7 @@
 
         <!-- Footer -->
         <div class="footer">
-            <p>This email was sent to <span class="highlight">{{ $user->email }}</span>.</p>
+            <p>This email was sent to <span class="highlight">{{ $userEmail }}</span>.</p>
 
             <div class="support">
                 <p>Questions about this transaction? <a href="{{ config('app.url') }}/support">Contact our support team</a></p>
