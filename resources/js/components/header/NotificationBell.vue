@@ -29,9 +29,8 @@
     </button>
 
     <!-- Dropdown -->
-    <div v-if="open"
-         class="absolute right-0 mt-2 w-80 bg-white shadow-lg rounded-lg
-                border overflow-hidden z-50">
+        <div v-if="open"
+          :class="dropdownClass">
 
       <div class="px-4 py-2 border-b text-sm text-gray-600 flex items-center justify-between">
         <span>Notifications</span>
@@ -58,7 +57,7 @@
 
       <ul v-else class="max-h-80 overflow-auto divide-y">
         <li
-          v-for="n in notifications"
+          v-for="n in visibleNotifications"
           :key="n.id"
           class="p-3 hover:bg-gray-50 cursor-pointer"
           @click="handleClick(n)"
@@ -84,6 +83,16 @@
           </div>
         </li>
       </ul>
+
+      <div class="px-4 py-2 border-t text-sm text-center">
+        <router-link
+          to="/notifications"
+          class="text-indigo-600 hover:underline"
+          @click="close"
+        >
+          View all
+        </router-link>
+      </div>
     </div>
   </div>
 </template>
@@ -104,6 +113,19 @@ const markingAll = ref(false)
 
 const userStore = useUserStore()
 const user = computed(() => userStore.user)
+
+const isMobile = ref(false)
+const updateIsMobile = () => {
+  isMobile.value = window.innerWidth < 768
+}
+
+const dropdownClass = computed(() => {
+  return isMobile.value
+    ? 'fixed left-1/2 -translate-x-1/2 mt-2 w-[95vw] max-w-md bg-white shadow-lg rounded-lg border overflow-hidden z-50'
+    : 'absolute right-0 mt-2 w-80 bg-white shadow-lg rounded-lg border overflow-hidden z-50'
+})
+
+const visibleNotifications = computed(() => notifications.value.slice(0, 10))
 
 let echoChannel = null
 let channelName = ''
@@ -289,13 +311,18 @@ const formatDate = (iso) => {
    Lifecycle
 -------------------------------- */
 onMounted(() => {
+  updateIsMobile()
   fetchNotifications()
   subscribeToNotifications()
+  window.addEventListener('resize', updateIsMobile)
   document.addEventListener('click', handleClickOutside)
+  window.addEventListener('notifications:refresh', fetchNotifications)
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
+  window.removeEventListener('resize', updateIsMobile)
+  window.removeEventListener('notifications:refresh', fetchNotifications)
   unsubscribeFromNotifications()
 })
 

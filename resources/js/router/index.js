@@ -24,6 +24,7 @@ import TermsAndConditions from '../pages/TermsAndConditions.vue';
 import PrivacyPolicy from '../pages/PrivacyPolicy.vue';
 import RefundPolicy from '../pages/RefundPolicy.vue';
 import ContactUs from '../pages/ContactUs.vue';
+import NotificationsPage from '../pages/NotificationsPage.vue';
 
 // Tutor Profile Components
 import PersonalDetails from '../components/tutor/profile/PersonalDetails.vue';
@@ -65,6 +66,7 @@ const routes = [
   { path: '/privacy-policy', name: 'privacy', component: PrivacyPolicy },
   { path: '/refund-policy', name: 'refund', component: RefundPolicy },
   { path: '/contact-us', name: 'contact', component: ContactUs },
+  { path: '/notifications', name: 'notifications', component: NotificationsPage },
   
   // Dynamic SEO-friendly routes: /{subject}-tutors-in-{city}
   { path: '/:subject-tutors-in-:city', name: 'tutors.subject.city', component: SearchResults },

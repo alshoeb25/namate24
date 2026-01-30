@@ -233,6 +233,18 @@ class UserResource extends Resource
                                 'disabled_at' => now(),
                             ]);
                         }
+
+                        \App\Models\AdminActivityLog::create([
+                            'admin_id' => auth()->id(),
+                            'action' => 'disable_user_account',
+                            'target_type' => 'user',
+                            'target_id' => $record->id,
+                            'notes' => $data['reason'],
+                            'metadata' => [
+                                'disabled_tutor' => (bool) $record->tutor,
+                                'disabled_student' => (bool) $record->student,
+                            ],
+                        ]);
                     }),
                 Action::make('enableAccount')
                     ->label('Enable Account')
@@ -246,6 +258,15 @@ class UserResource extends Resource
                             'disabled_reason' => null,
                             'disabled_by' => null,
                             'disabled_at' => null,
+                        ]);
+
+                        \App\Models\AdminActivityLog::create([
+                            'admin_id' => auth()->id(),
+                            'action' => 'enable_user_account',
+                            'target_type' => 'user',
+                            'target_id' => $record->id,
+                            'notes' => null,
+                            'metadata' => null,
                         ]);
                     }),
                 Action::make('disableTutor')
@@ -266,6 +287,17 @@ class UserResource extends Resource
                             'disabled_by' => auth()->id(),
                             'disabled_at' => now(),
                         ]);
+
+                        \App\Models\AdminActivityLog::create([
+                            'admin_id' => auth()->id(),
+                            'action' => 'disable_tutor_profile',
+                            'target_type' => 'tutor',
+                            'target_id' => $record->tutor->id,
+                            'notes' => $data['reason'],
+                            'metadata' => [
+                                'user_id' => $record->id,
+                            ],
+                        ]);
                     }),
                 Action::make('enableTutor')
                     ->label('Enable Tutor')
@@ -274,11 +306,42 @@ class UserResource extends Resource
                     ->visible(fn (User $record) => !$record->is_disabled && $record->tutor && $record->tutor->is_disabled)
                     ->requiresConfirmation()
                     ->action(function (User $record) {
-                        $record->tutor?->update([
+                        $tutor = $record->tutor;
+                        if (!$tutor) {
+                            return;
+                        }
+
+                        $oldStatus = $tutor->moderation_status;
+
+                        $tutor->update([
+                            'moderation_status' => 'approved',
                             'is_disabled' => false,
                             'disabled_reason' => null,
                             'disabled_by' => null,
                             'disabled_at' => null,
+                        ]);
+
+                        \App\Models\TutorModerationAction::create([
+                            'tutor_id' => $tutor->id,
+                            'admin_id' => auth()->id(),
+                            'action' => 'approve',
+                            'reason' => null,
+                            'notes' => 'Enabled via Users module',
+                            'old_status' => $oldStatus,
+                            'new_status' => 'approved',
+                        ]);
+
+                        \App\Models\AdminActivityLog::create([
+                            'admin_id' => auth()->id(),
+                            'action' => 'enable_tutor_profile',
+                            'target_type' => 'tutor',
+                            'target_id' => $tutor->id,
+                            'notes' => 'Enabled via Users module',
+                            'metadata' => [
+                                'user_id' => $record->id,
+                                'old_status' => $oldStatus,
+                                'new_status' => 'approved',
+                            ],
                         ]);
                     }),
                 Action::make('disableStudent')
@@ -299,6 +362,17 @@ class UserResource extends Resource
                             'disabled_by' => auth()->id(),
                             'disabled_at' => now(),
                         ]);
+
+                        \App\Models\AdminActivityLog::create([
+                            'admin_id' => auth()->id(),
+                            'action' => 'disable_student_profile',
+                            'target_type' => 'student',
+                            'target_id' => $record->student->id,
+                            'notes' => $data['reason'],
+                            'metadata' => [
+                                'user_id' => $record->id,
+                            ],
+                        ]);
                     }),
                 Action::make('enableStudent')
                     ->label('Enable Student')
@@ -312,6 +386,17 @@ class UserResource extends Resource
                             'disabled_reason' => null,
                             'disabled_by' => null,
                             'disabled_at' => null,
+                        ]);
+
+                        \App\Models\AdminActivityLog::create([
+                            'admin_id' => auth()->id(),
+                            'action' => 'enable_student_profile',
+                            'target_type' => 'student',
+                            'target_id' => $record->student->id,
+                            'notes' => null,
+                            'metadata' => [
+                                'user_id' => $record->id,
+                            ],
                         ]);
                     }),
             ])
