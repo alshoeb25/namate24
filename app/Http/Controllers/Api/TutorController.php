@@ -217,8 +217,8 @@ class TutorController extends Controller
 
         $requirements = StudentRequirement::with(['student.user', 'subjects', 'subject'])
             ->where('status', 'hired')
-            ->where('hired_teacher_id', $tutor->id)
-            ->orderBy('hired_at', 'desc')
+            ->where('approached_teacher_id', $tutor->id)
+            ->orderBy('approached_at', 'desc')
             ->get()
             ->map(function (StudentRequirement $requirement) {
                 $studentUser = $requirement->student?->user;
@@ -236,7 +236,7 @@ class TutorController extends Controller
                     'area' => $requirement->area,
                     'location' => $requirement->location,
                     'status' => $requirement->status,
-                    'hired_at' => $requirement->hired_at,
+                    'hired_at' => $requirement->approached_at,
                     'created_at' => $requirement->created_at,
                 ];
             });
