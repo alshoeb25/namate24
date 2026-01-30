@@ -91,9 +91,9 @@ class TeacherHiredNotification extends Notification implements ShouldQueue
     public function toBroadcast(object $notifiable): BroadcastMessage
     {
         return new BroadcastMessage([
-            'type' => 'teacher_hired',
-            'title' => 'You Have Been Hired!',
-            'message' => "{$this->student->name} has hired you.",
+            'type' => 'teacher_approached',
+            'title' => 'You Have Been Approached! 🎉',
+            'message' => "{$this->student->name} has approached you for {$this->enquiry->student_name}'s tutoring session.",
             'enquiry_id' => $this->enquiry->id,
             'student_id' => $this->student->id,
         ]);

@@ -128,7 +128,7 @@
             </div>
             <div class="flex flex-col items-start lg:items-end gap-2">
               <span class="px-3 py-1 rounded-full text-sm font-medium" 
-                    :class="req.status === 'active' ? 'bg-green-100 text-green-700' : (req.status === 'hired' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700')">
+                    :class="req.status === 'active' ? 'bg-green-100 text-green-700' : (req.status === 'approached' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700')">
                 {{ req.status_label || req.status }}
               </span>
               <div class="flex flex-wrap gap-2">
