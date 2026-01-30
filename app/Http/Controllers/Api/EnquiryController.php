@@ -38,6 +38,11 @@ class EnquiryController extends Controller
             return response()->json(['message' => 'Only tutors can view enquiries'], 403);
         }
 
+        $tutor = $user->tutor;
+        if (!$tutor || $tutor->moderation_status !== 'approved' || $tutor->is_disabled) {
+            return response()->json(['message' => 'Your profile is not verified'], 403);
+        }
+
         $query = StudentRequirement::query()
             ->where('status', 'active')
             ->where(function ($q) {
@@ -134,6 +139,13 @@ class EnquiryController extends Controller
         $user = $request->user();
         $enquiry->load(['subjects', 'student.user']);
 
+        if ($user->hasRole('tutor')) {
+            $tutor = $user->tutor;
+            if (!$tutor || $tutor->moderation_status !== 'approved' || $tutor->is_disabled) {
+                return response()->json(['message' => 'Your profile is not verified'], 403);
+            }
+        }
+
         $tutorId = $user->tutor ? $user->tutor->id : null;
         $hasUnlocked = $tutorId ? EnquiryUnlock::where('enquiry_id', $enquiry->id)
             ->where('tutor_id', $tutorId)
@@ -169,6 +181,11 @@ class EnquiryController extends Controller
 
         if (!$user->hasRole('tutor')) {
             return response()->json(['message' => 'Only tutors can unlock enquiries'], 403);
+        }
+
+        $tutor = $user->tutor;
+        if (!$tutor || $tutor->moderation_status !== 'approved' || $tutor->is_disabled) {
+            return response()->json(['message' => 'Your profile is not verified'], 403);
         }
 
         try {

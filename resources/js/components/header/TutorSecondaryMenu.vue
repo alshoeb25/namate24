@@ -220,7 +220,7 @@ export default {
       window.removeEventListener('toggle-mobile-menu', handleToggleMenu);
     });
 
-    return { mobileMenuOpen, closeMobileMenu, isTutorDisabled };
+    return { mobileMenuOpen, closeMobileMenu };
   }
 };
 </script>

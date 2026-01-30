@@ -186,6 +186,12 @@ export default {
     const loading = ref(true);
     const unlocking = ref(false);
 
+    function isProfileNotApproved(error) {
+      const status = error?.response?.status;
+      const message = String(error?.response?.data?.message || '').toLowerCase();
+      return status === 403 && (message.includes('not verified') || message.includes('not approved'));
+    }
+
     async function loadRequirement() {
       loading.value = true;
       try {
@@ -193,6 +199,10 @@ export default {
         requirement.value = res.data.enquiry || res.data;
       } catch (error) {
         console.error('Error loading requirement:', error);
+        if (isProfileNotApproved(error)) {
+          router.push('/tutor/profile/not-approved');
+          return;
+        }
         if (error.response?.status === 404) {
           router.push('/tutor-jobs');
         }
@@ -219,6 +229,10 @@ export default {
         alert(`Contact unlocked successfully! ${res.data.charged ? `${requirement.value.unlock_price || 0} coins deducted from your balance.` : 'Already unlocked.'}`);
       } catch (error) {
         console.error('Error unlocking requirement:', error);
+        if (isProfileNotApproved(error)) {
+          router.push('/tutor/profile/not-approved');
+          return;
+        }
         const message = error.response?.data?.message || 'Failed to unlock requirement';
         alert(message);
       } finally {

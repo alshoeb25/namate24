@@ -166,6 +166,12 @@ export default {
       return getSubjectName(filters.value.subject_id);
     });
 
+    function isProfileNotApproved(error) {
+      const status = error?.response?.status;
+      const message = String(error?.response?.data?.message || '').toLowerCase();
+      return status === 403 && (message.includes('not verified') || message.includes('not approved'));
+    }
+
     async function loadSubjects() {
       try {
         const res = await axios.get('/api/subjects');
@@ -185,6 +191,10 @@ export default {
           filters.value.subject_id = String(tutorSubjects.value[0].id);
         }
       } catch (error) {
+        if (isProfileNotApproved(error)) {
+          router.push('/tutor/profile/not-approved');
+          return;
+        }
         if (![401, 403].includes(error.response?.status)) {
           console.error('Error loading tutor subjects:', error);
         }
@@ -252,6 +262,10 @@ export default {
           currentPage.value = res.data.current_page;
           lastPage.value = res.data.last_page;
         } catch (authError) {
+          if (isProfileNotApproved(authError)) {
+            router.push('/tutor/profile/not-approved');
+            return;
+          }
           if (authError.response?.status === 403 || authError.response?.status === 401) {
             // Not authenticated - use public requirements endpoint
             const res = await axios.get('/api/requirements', { params });

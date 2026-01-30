@@ -2,14 +2,14 @@
   <div class="min-h-screen bg-gray-50 py-8">
     <div class="max-w-7xl mx-auto px-4">
       <div class="bg-white rounded-2xl shadow-md p-6 mb-6">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 class="text-3xl font-bold text-gray-800 mb-2">
               <i class="fas fa-clipboard-list mr-2 text-purple-600"></i>My Requirements
             </h1>
             <p class="text-gray-600">View and manage your tutor requests</p>
           </div>
-          <router-link to="/student/request-tutor" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition inline-flex items-center gap-2 whitespace-nowrap">
+          <router-link to="/student/request-tutor" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition inline-flex items-center gap-2 whitespace-nowrap w-full md:w-auto justify-center">
             <i class="fas fa-plus"></i>Request a Tutor
           </router-link>
         </div>
@@ -102,7 +102,7 @@
       <!-- Requirements List -->
       <div class="space-y-4">
         <div v-for="req in requirements" :key="req.id" class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition">
-          <div class="flex justify-between items-start mb-4">
+          <div class="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-4">
             <div class="flex-1">
               <h3 class="text-xl font-semibold text-gray-800">{{ req.student_name || 'Student' }}</h3>
               <div v-if="req.subjects && req.subjects.length" class="flex flex-wrap gap-2 mt-2">
@@ -126,32 +126,32 @@
                 </span>
               </div>
             </div>
-            <div class="flex flex-col items-end gap-2">
+            <div class="flex flex-col items-start lg:items-end gap-2">
               <span class="px-3 py-1 rounded-full text-sm font-medium" 
                     :class="req.status === 'active' ? 'bg-green-100 text-green-700' : (req.status === 'hired' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700')">
                 {{ req.status_label || req.status }}
               </span>
-              <div class="flex gap-2">
+              <div class="flex flex-wrap gap-2">
                 <button v-if="req.status === 'active' && req.current_leads > 0" 
                         @click="openInterestedModal(req.id)" 
-                        class="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition whitespace-nowrap">
+                        class="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition whitespace-nowrap w-full sm:w-auto">
                   <i class="fas fa-eye mr-1"></i>View Teachers
                 </button>
                 <button v-if="req.status === 'active' && req.current_leads === 0" 
                         @click="openRefundModal(req.id)" 
-                        class="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition whitespace-nowrap">
+                        class="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition whitespace-nowrap w-full sm:w-auto">
                   <i class="fas fa-coins mr-1"></i>Get Refund
                 </button>
                 <button v-if="req.status === 'active'" @click="closeRequirement(req.id)" 
-                        class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition">
+                        class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition w-full sm:w-auto">
                   <i class="fas fa-times-circle mr-1"></i>Close
                 </button>
                 <button @click="viewRequirement(req.id)" 
-                        class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition">
+                        class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition w-full sm:w-auto">
                   <i class="fas fa-eye mr-1"></i>Details
                 </button>
                 <button @click="editRequirement(req.id)" 
-                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition">
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition w-full sm:w-auto">
                   <i class="fas fa-edit mr-1"></i>Edit
                 </button>
               </div>

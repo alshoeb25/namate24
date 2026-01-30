@@ -20,6 +20,7 @@ import TutorDashboard from '../pages/TutorDashboard.vue';
 import TutorProfileLayout from '../pages/TutorProfileLayout.vue';
 import UploadDocuments from '../pages/tutor/UploadDocuments.vue';
 import TutorDisabled from '../pages/TutorDisabled.vue';
+import TutorNotApproved from '../pages/TutorNotApproved.vue';
 import TermsAndConditions from '../pages/TermsAndConditions.vue';
 import PrivacyPolicy from '../pages/PrivacyPolicy.vue';
 import RefundPolicy from '../pages/RefundPolicy.vue';
@@ -84,6 +85,7 @@ const routes = [
     component: TutorProfileLayout,
     children: [
       { path: 'disabled', name: 'tutor.disabled', component: TutorDisabled },
+      { path: 'not-approved', name: 'tutor.not-approved', component: TutorNotApproved },
       { path: '', name: 'tutor.profile.dashboard', component: TutorDashboard },
       { path: 'personal-details', name: 'tutor.profile.personal-details', component: PersonalDetails },
       { path: 'photo', name: 'tutor.profile.photo', component: Photo },

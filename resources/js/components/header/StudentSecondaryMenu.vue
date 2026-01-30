@@ -145,7 +145,8 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { useUserStore } from '../../store';
 
 export default {
   name: 'StudentSecondaryMenu',
@@ -169,7 +170,7 @@ export default {
       window.removeEventListener('toggle-mobile-menu', handleToggleMenu);
     });
 
-    return { mobileMenuOpen, closeMobileMenu, isStudentDisabled };
+    return { mobileMenuOpen, closeMobileMenu };
   }
 };
 </script>

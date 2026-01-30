@@ -16,17 +16,17 @@
 
     <div class="max-w-7xl mx-auto px-4">
       <!-- Header with Balance -->
-      <div class="bg-gradient-to-r from-pink-500 to-purple-600 rounded-2xl shadow-lg p-8 mb-6 text-white">
-        <div class="flex justify-between items-center flex-wrap gap-4">
+      <div class="bg-gradient-to-r from-pink-500 to-purple-600 rounded-2xl shadow-lg p-6 md:p-8 mb-6 text-white">
+        <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
           <div>
             <h1 class="text-3xl font-bold mb-2">
               <i class="fas fa-wallet mr-2"></i>My Wallet
             </h1>
             <p class="text-pink-100">Manage your coins and transactions</p>
           </div>
-          <div class="text-right">
+          <div class="text-left md:text-right">
             <p class="text-sm opacity-90">Available Coins</p>
-            <p class="text-5xl font-bold flex items-center gap-2">
+            <p class="text-4xl md:text-5xl font-bold flex items-center gap-2">
               <i class="fas fa-coins text-yellow-300"></i>{{ wallet.balance || 0 }}
             </p>
           </div>
@@ -34,7 +34,7 @@
         
         <!-- Referral Info -->
         <div v-if="wallet.referral_code" class="mt-6 pt-6 border-t border-pink-400/30">
-          <div class="flex items-center justify-between flex-wrap gap-4">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <p class="text-sm text-pink-100 mb-1">Your Referral Code</p>
               <div class="flex items-center gap-3">
@@ -44,7 +44,7 @@
                 </button>
               </div>
             </div>
-            <div class="text-right">
+            <div class="text-left md:text-right">
               <p class="text-sm text-pink-100">Referrals: {{ wallet.referral_stats?.total_referrals || 0 }}</p>
               <p class="text-lg font-semibold">Earned: {{ wallet.referral_stats?.coins_earned || 0 }} coins</p>
             </div>
@@ -54,11 +54,11 @@
 
       <!-- Tab Navigation -->
       <div class="bg-white rounded-2xl shadow-md mb-6 overflow-hidden">
-        <div class="flex border-b border-gray-200">
+        <div class="flex border-b border-gray-200 overflow-x-auto">
           <button
             @click="activeTab = 'buy'"
             :class="[
-              'flex-1 px-6 py-4 font-semibold transition-all',
+              'flex-1 min-w-[180px] px-4 md:px-6 py-3 md:py-4 font-semibold transition-all whitespace-nowrap',
               activeTab === 'buy'
                 ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white'
                 : 'text-gray-600 hover:bg-gray-50'
@@ -69,7 +69,7 @@
           <button
             @click="activeTab = 'referral'"
             :class="[
-              'flex-1 px-6 py-4 font-semibold transition-all',
+              'flex-1 min-w-[180px] px-4 md:px-6 py-3 md:py-4 font-semibold transition-all whitespace-nowrap',
               activeTab === 'referral'
                 ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white'
                 : 'text-gray-600 hover:bg-gray-50'
@@ -80,7 +80,7 @@
           <button
             @click="activeTab = 'coin-transactions'"
             :class="[
-              'flex-1 px-6 py-4 font-semibold transition-all',
+              'flex-1 min-w-[220px] px-4 md:px-6 py-3 md:py-4 font-semibold transition-all whitespace-nowrap',
               activeTab === 'coin-transactions'
                 ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white'
                 : 'text-gray-600 hover:bg-gray-50'
@@ -91,7 +91,7 @@
           <button
             @click="activeTab = 'payment-transactions'"
             :class="[
-              'flex-1 px-6 py-4 font-semibold transition-all',
+              'flex-1 min-w-[240px] px-4 md:px-6 py-3 md:py-4 font-semibold transition-all whitespace-nowrap',
               activeTab === 'payment-transactions'
                 ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white'
                 : 'text-gray-600 hover:bg-gray-50'
@@ -149,7 +149,7 @@
               <div
                 v-for="transaction in wallet.transactions.data"
                 :key="transaction.id"
-                class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+                class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
               >
                 <div class="flex items-center gap-4">
                   <div
@@ -163,7 +163,7 @@
                     <p class="text-sm text-gray-500">{{ formatDate(transaction.created_at) }}</p>
                   </div>
                 </div>
-                <div class="text-right">
+                <div class="text-left sm:text-right">
                   <p
                     class="text-lg font-bold"
                     :class="transaction.amount > 0 ? 'text-green-600' : 'text-red-600'"
@@ -205,7 +205,7 @@
                 <div
                   v-for="tx in paymentTx"
                   :key="tx.id"
-                  class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+                  class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
                 >
                   <div class="flex items-center gap-4">
                     <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
@@ -217,7 +217,7 @@
                       <p class="text-xs text-gray-500" v-if="tx.razorpay_payment_id">{{ tx.razorpay_payment_id }}</p>
                     </div>
                   </div>
-                  <div class="text-right">
+                  <div class="text-left sm:text-right">
                     <p class="text-lg font-bold text-gray-800">{{ formatCurrency(tx.amount, tx.currency) }}</p>
                     <p class="text-xs">
                       <span
@@ -235,7 +235,7 @@
                   </div>
                 </div>
               </div>
-              <div class="flex items-center justify-between">
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <p class="text-gray-600">View full payment history with status and invoices.</p>
                 <router-link to="/tutor/wallet/payment-history" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-pink-600 text-white hover:bg-pink-700">
                   <i class="fas fa-history"></i>
