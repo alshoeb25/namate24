@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tutor Hired Successfully</title>
+    <title>Tutor Approached Successfully</title>
     <style>
         /* Reset styles for email clients */
         * {
@@ -265,17 +265,17 @@
 
         <!-- Main content -->
         <div class="content">
-            <h1>🎉 Tutor Hired Successfully!</h1>
+            <h1>🎉 Tutor Approached Successfully!</h1>
 
             <div class="success-badge">
                 <span class="checkmark">✓</span>
-                <h2>You've Successfully Hired a Tutor</h2>
+                <h2>You've Successfully Approached a Tutor</h2>
                 <p style="margin: 0; color: white;">Your learning journey begins now!</p>
             </div>
 
             <p>Hello <span class="highlight">{{ $student->name }}</span>,</p>
 
-            <p>Congratulations! You've successfully hired a tutor. Your request has been accepted, and you can now coordinate with your tutor to schedule your first lesson.</p>
+            <p>Congratulations! You've successfully approached a tutor. Your request has been accepted, and you can now coordinate with your tutor to schedule your first lesson.</p>
 
             <div class="tutor-card">
                 <h3>👨‍🏫 Your Tutor Details</h3>
@@ -303,8 +303,8 @@
                     </div>
                     @endif
                     <div class="detail-row">
-                        <span>Hired On:</span>
-                        <span><strong>{{ $hiredDate }}</strong></span>
+                        <span>Approached On:</span>
+                        <span><strong>{{ $approachedDate }}</strong></span>
                     </div>
                 </div>
             </div>
@@ -364,7 +364,7 @@
             @if(isset($coinsSpent))
             <div class="info-box">
                 <p><strong>💰 Transaction Details:</strong></p>
-                <p>Coins spent for this hire: <span class="highlight">{{ $coinsSpent }} Coins</span></p>
+                <p>Coins spent for this approach: <span class="highlight">{{ $coinsSpent }} Coins</span></p>
                 <p>Your current balance: <span class="highlight">{{ $currentBalance }} Coins</span></p>
             </div>
             @endif

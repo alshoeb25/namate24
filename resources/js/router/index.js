@@ -53,7 +53,7 @@ import StudentRequirementDetail from '../pages/StudentRequirementDetail.vue';
 import StudentReviews from '../pages/StudentReviews.vue';
 import StudentWallet from '../pages/StudentWallet.vue';
 import StudentSettings from '../pages/StudentSettings.vue';
-import HiredTutors from '../pages/HiredTutors.vue';
+import ApproachedTutors from '../pages/ApproachedTutors.vue';
 
 // Profile Management
 import ProfileManagement from '../pages/ProfileManagement.vue';
@@ -134,7 +134,7 @@ const routes = [
       { path: 'requirements', name: 'student.requirements', component: RequirementsList },
       { path: 'requirement-details/:id', name: 'student.requirement-details', component: StudentRequirementDetail, props: true },
       { path: 'requirements/:id/edit', name: 'student.requirement-edit', component: RequestTutor },
-      { path: 'hired-tutors', name: 'student.hired-tutors', component: HiredTutors },
+      { path: 'approached-tutors', name: 'student.approached-tutors', component: ApproachedTutors },
       { path: 'wallet', name: 'student.wallet', component: () => import('../pages/StudentWallet.vue') },
       { path: 'wallet/payment-history', name: 'student.payment-history', component: () => import('../pages/PaymentHistory.vue') },
       { path: 'wallet/coin-transactions', name: 'student.coin-transactions', component: () => import('../pages/CoinTransactions.vue') },

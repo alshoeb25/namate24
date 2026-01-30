@@ -34,8 +34,8 @@ class RequirementObserver
                 dispatch(new IndexRequirementJob($requirement->id));
             }
 
-            // If closed/hired/cancelled, remove from Elasticsearch
-            if (in_array($requirement->status, ['closed', 'hired', 'cancelled', 'expired'])) {
+            // If closed/approached/cancelled, remove from Elasticsearch
+            if (in_array($requirement->status, ['closed', 'approached', 'cancelled', 'expired'])) {
                 dispatch(new RemoveRequirementFromIndexJob($requirement->id));
             }
         } elseif (in_array($requirement->status, ['open', 'active'])) {

@@ -182,12 +182,12 @@ Route::middleware('auth:api')->group(function() {
         Route::post('requirements/{id}/close', [\App\Http\Controllers\Api\StudentController::class, 'closeRequirement']);
         Route::delete('requirements/{id}', [\App\Http\Controllers\Api\StudentController::class, 'deleteRequirement']);
         
-        // New endpoints for refund, viewing interested teachers, and hiring
+        // New endpoints for refund, viewing interested teachers, and approaching
         Route::get('requirements/{id}/interested-teachers', [\App\Http\Controllers\Api\StudentController::class, 'getInterestedTeachers']);
-        Route::post('requirements/{id}/hire-teacher', [\App\Http\Controllers\Api\StudentController::class, 'hireTeacher']);
+        Route::post('requirements/{id}/approach-teacher', [\App\Http\Controllers\Api\StudentController::class, 'approachTeacher']);
         
-        // Hired tutors
-        Route::get('hired-tutors', [\App\Http\Controllers\Api\StudentController::class, 'hiredTutors']);
+        // Approached tutors
+        Route::get('approached-tutors', [\App\Http\Controllers\Api\StudentController::class, 'approachedTutors']);
 
         // Student Reviews
         Route::get('reviews', [ReviewController::class, 'myReviews']);

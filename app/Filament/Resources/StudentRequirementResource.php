@@ -230,8 +230,8 @@ class StudentRequirementResource extends Resource
                                 $record->loadMissing([
                                     'unlocks.tutor.user',
                                     'unlocks.tutor.subjects',
-                                    'hiredTutor.user',
-                                    'hiredTutor.subjects',
+                                    'approachedTutor.user',
+                                    'approachedTutor.subjects',
                                 ]);
 
                                 $history = [];
@@ -256,15 +256,15 @@ class StudentRequirementResource extends Resource
                                     ];
                                 }
 
-                                if ($record->hired_teacher_id && $record->hired_at && $record->hiredTutor) {
-                                    $hiredTutor = $record->hiredTutor;
-                                    $hiredUser = $hiredTutor->user;
+                                if ($record->approached_teacher_id && $record->approached_at && $record->approachedTutor) {
+                                    $approachedTutor = $record->approachedTutor;
+                                    $approachedUser = $approachedTutor->user;
                                     $history[] = [
-                                        'label' => 'Tutor Hired',
-                                        'date' => $record->hired_at,
-                                        'tutor_name' => $hiredUser?->name,
-                                        'tutor_email' => $hiredUser?->email,
-                                        'type' => 'hired',
+                                        'label' => 'Tutor Approached',
+                                        'date' => $record->approached_at,
+                                        'tutor_name' => $approachedUser?->name,
+                                        'tutor_email' => $approachedUser?->email,
+                                        'type' => 'approached',
                                     ];
                                 }
 
@@ -281,7 +281,7 @@ class StudentRequirementResource extends Resource
                                     ->color(function ($state): string {
                                         $state = is_array($state) ? $state : [];
                                         return match ($state['type'] ?? null) {
-                                        'hired' => 'success',
+                                        'approached' => 'success',
                                         'unlock' => 'info',
                                         default => 'gray',
                                         };
@@ -303,22 +303,22 @@ class StudentRequirementResource extends Resource
                     ->collapsed()
                     ->collapsible(),
 
-                Section::make('Hired Tutor Details')
+                Section::make('Approached Tutor Details')
                     ->schema([
-                        TextEntry::make('hiredTutor.user.name')
+                        TextEntry::make('approachedTutor.user.name')
                             ->label('Tutor Name'),
-                        TextEntry::make('hiredTutor.user.email')
+                        TextEntry::make('approachedTutor.user.email')
                             ->label('Tutor Email'),
-                        TextEntry::make('hiredTutor.user.phone')
+                        TextEntry::make('approachedTutor.user.phone')
                             ->label('Tutor Phone'),
-                        TextEntry::make('hiredTutor.rating_avg')
+                        TextEntry::make('approachedTutor.rating_avg')
                             ->label('Rating'),
-                        TextEntry::make('hired_at')
-                            ->label('Hired At')
+                        TextEntry::make('approached_at')
+                            ->label('Approached At')
                             ->dateTime(),
                     ])
                     ->columns(3)
-                    ->visible(fn (StudentRequirement $record): bool => !is_null($record->hired_teacher_id)),
+                    ->visible(fn (StudentRequirement $record): bool => !is_null($record->approached_teacher_id)),
                 
                 Section::make('Status & Lead Management')
                     ->schema([

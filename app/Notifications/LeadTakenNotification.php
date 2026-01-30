@@ -50,7 +50,7 @@ class LeadTakenNotification extends Notification implements ShouldQueue
             ->greeting('Hello, ' . $notifiable->name . '!')
             ->line('The tutoring lead you were interested in has been filled.')
             ->line('Student: ' . $this->enquiry->student_name)
-            ->line('Hired Teacher: ' . ($this->hiredTeacher->user->name ?? 'Tutor'))
+            ->line('Approached Teacher: ' . ($this->approachedTeacher->user->name ?? 'Tutor'))
             ->line('Your coins have been returned to your account since you did not get this lead.')
             ->action('View Other Opportunities', url('/tutor-jobs'))
             ->line('Keep an eye out for more opportunities!');
@@ -64,10 +64,10 @@ class LeadTakenNotification extends Notification implements ShouldQueue
         return [
             'type' => 'lead_taken',
             'title' => 'Lead Position Filled',
-            'message' => "The lead for {$this->enquiry->student_name} has been filled by " . ($this->hiredTeacher->user->name ?? 'a tutor') . '.',
+            'message' => "The lead for {$this->enquiry->student_name} has been filled by " . ($this->approachedTeacher->user->name ?? 'a tutor') . '.',
             'enquiry_id' => $this->enquiry->id,
-            'hired_teacher_id' => $this->hiredTeacher->id,
-            'hired_teacher_name' => $this->hiredTeacher->user->name ?? null,
+            'approached_teacher_id' => $this->approachedTeacher->id,
+            'approached_teacher_name' => $this->approachedTeacher->user->name ?? null,
         ];
     }
 
@@ -81,7 +81,7 @@ class LeadTakenNotification extends Notification implements ShouldQueue
             'title' => 'Lead Position Filled',
             'message' => "The lead for {$this->enquiry->student_name} has been filled.",
             'enquiry_id' => $this->enquiry->id,
-            'hired_teacher_id' => $this->hiredTeacher->id,
+            'approached_teacher_id' => $this->approachedTeacher->id,
         ]);
     }
 }

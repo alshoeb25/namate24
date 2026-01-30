@@ -5,7 +5,7 @@
     <main class="max-w-7xl mx-auto px-4 py-8">
       <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900">My Tutors</h1>
-        <p class="text-gray-600 mt-2">Review and manage your hired tutors</p>
+        <p class="text-gray-600 mt-2">Review and manage your approached tutors</p>
       </div>
 
       <!-- Loading State -->
@@ -23,21 +23,21 @@
       </div>
 
       <!-- Empty State -->
-      <div v-else-if="hiredTutors.length === 0" class="bg-white rounded-lg shadow-md p-12 text-center">
+      <div v-else-if="approachedTutors.length === 0" class="bg-white rounded-lg shadow-md p-12 text-center">
         <div class="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center">
           <i class="fas fa-user-tie text-gray-400 text-3xl"></i>
         </div>
-        <h3 class="text-xl font-semibold text-gray-800 mb-2">No tutors hired yet</h3>
-        <p class="text-gray-600 mb-6">Start your learning journey by hiring a tutor</p>
+        <h3 class="text-xl font-semibold text-gray-800 mb-2">No tutors approached yet</h3>
+        <p class="text-gray-600 mb-6">Start your learning journey by approaching a tutor</p>
         <router-link to="/search"
                      class="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
           <i class="fas fa-search mr-2"></i>Find Tutors
         </router-link>
       </div>
 
-      <!-- Hired Tutors Grid -->
+      <!-- Approached Tutors Grid -->
       <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div v-for="item in hiredTutors" :key="item.id"
+        <div v-for="item in approachedTutors" :key="item.id"
              class="bg-white rounded-lg shadow-md hover:shadow-lg transition-all overflow-hidden">
           
           <!-- Tutor Image -->
@@ -52,7 +52,7 @@
             <!-- Status Badge -->
             <span :class="['absolute top-3 right-3 px-3 py-1 text-xs font-semibold rounded-full',
                            item.status === 'completed' ? 'bg-green-100 text-green-800' :
-                           item.status === 'confirmed' || item.status === 'hired' ? 'bg-blue-100 text-blue-800' :
+                           item.status === 'confirmed' || item.status === 'approached' ? 'bg-blue-100 text-blue-800' :
                            'bg-yellow-100 text-yellow-800']">
               {{ item.status }}
             </span>
@@ -85,7 +85,7 @@
             <!-- Source Badge (for requirements) -->
             <div v-if="item.source === 'requirement' && item.subjects_requested" class="mt-3">
               <span class="text-xs text-gray-600">
-                <i class="fas fa-clipboard-list mr-1"></i>Hired for: {{ item.subjects_requested }}
+                <i class="fas fa-clipboard-list mr-1"></i>Approached for: {{ item.subjects_requested }}
               </span>
             </div>
             <div v-if="item.source === 'requirement' && (item.requirement_city || item.requirement_location)" class="mt-2">
@@ -206,13 +206,13 @@ import HeaderRoot from '../components/header/HeaderRoot.vue';
 import { useUserStore } from '../store';
 
 export default {
-  name: 'HiredTutors',
+  name: 'ApproachedTutors',
   components: {
     HeaderRoot,
   },
   setup() {
     const userStore = useUserStore();
-    const hiredTutors = ref([]);
+    const approachedTutors = ref([]);
     const loading = ref(false);
     const showReviewModal = ref(false);
     const selectedTutor = ref(null);
@@ -230,14 +230,14 @@ export default {
       });
     };
 
-    const fetchHiredTutors = async () => {
+    const fetchApproachedTutors = async () => {
       loading.value = true;
       try {
-        const response = await axios.get('/api/student/hired-tutors');
-        hiredTutors.value = response.data.data || [];
+        const response = await axios.get('/api/student/approached-tutors');
+        approachedTutors.value = response.data.data || [];
       } catch (error) {
-        console.error('Failed to fetch hired tutors:', error);
-        hiredTutors.value = [];
+        console.error('Failed to fetch approached tutors:', error);
+        approachedTutors.value = [];
       } finally {
         loading.value = false;
       }
@@ -279,9 +279,9 @@ export default {
         await axios.post(`/api/tutors/${selectedTutor.value.tutor_id}/reviews`, reviewPayload);
 
         // Update the tutor with review
-        const tutorIndex = hiredTutors.value.findIndex(b => b.id === selectedTutor.value.id);
+        const tutorIndex = approachedTutors.value.findIndex(b => b.id === selectedTutor.value.id);
         if (tutorIndex >= 0) {
-          hiredTutors.value[tutorIndex].review = {
+          approachedTutors.value[tutorIndex].review = {
             rating: reviewData.value.rating,
             comment: reviewData.value.comment,
             created_at: new Date()
@@ -306,12 +306,12 @@ export default {
     onMounted(async () => {
       await userStore.fetchUser();
       if (userStore.user?.id) {
-        await fetchHiredTutors();
+        await fetchApproachedTutors();
       }
     });
 
     return {
-      hiredTutors,
+      approachedTutors,
       loading,
       showReviewModal,
       selectedTutor,

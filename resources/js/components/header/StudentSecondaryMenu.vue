@@ -38,7 +38,7 @@
             </div>
           </div>
 
-          <router-link to="/student/hired-tutors" 
+          <router-link to="/student/approached-tutors" 
                        class="text-gray-700 hover:text-blue-600 font-medium transition"
                        active-class="text-blue-600 font-semibold">
             <i class="fas fa-user-tie mr-2"></i>My Tutors
@@ -107,7 +107,7 @@
           </li>
 
           <li>
-            <router-link to="/student/hired-tutors" @click="closeMobileMenu" 
+            <router-link to="/student/approached-tutors" @click="closeMobileMenu" 
                          class="block px-4 py-2 text-gray-700 font-medium hover:bg-gray-50 rounded-md">
               <i class="fas fa-user-tie mr-2"></i>My Tutors
             </router-link>

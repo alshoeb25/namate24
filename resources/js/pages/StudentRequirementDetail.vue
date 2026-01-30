@@ -73,14 +73,14 @@
                 </div>
               </div>
               <button
-                v-if="requirement?.hired_teacher_id !== teacher.id"
+                v-if="requirement?.approached_teacher_id !== teacher.id"
                 @click="selectTeacher(teacher.id)"
-                :disabled="hireLoading"
+                :disabled="approachLoading"
                 class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition disabled:bg-gray-400">
-                <i class="fas fa-check-circle mr-1"></i>{{ hireLoading ? 'Hiring...' : 'Hire' }}
+                <i class="fas fa-check-circle mr-1"></i>{{ approachLoading ? 'Approaching...' : 'Approach' }}
               </button>
               <div v-else class="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium">
-                <i class="fas fa-check-circle mr-1"></i>Hired
+                <i class="fas fa-check-circle mr-1"></i>Approached
               </div>
             </div>
 
@@ -150,8 +150,8 @@
           <div v-for="(event, idx) in history" :key="idx" class="flex items-start gap-4">
             <div class="mt-1">
               <span class="inline-flex items-center justify-center w-8 h-8 rounded-full"
-                    :class="event.type === 'hired' ? 'bg-green-100 text-green-700' : (event.type === 'unlock' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700')">
-                <i :class="event.type === 'hired' ? 'fas fa-check' : (event.type === 'unlock' ? 'fas fa-unlock' : 'fas fa-plus')"></i>
+                    :class="event.type === 'approached' ? 'bg-green-100 text-green-700' : (event.type === 'unlock' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700')">
+                <i :class="event.type === 'approached' ? 'fas fa-check' : (event.type === 'unlock' ? 'fas fa-unlock' : 'fas fa-plus')"></i>
               </span>
             </div>
             <div class="flex-1">
@@ -265,7 +265,7 @@ export default {
     // Interested teachers modal state
     const showInterestedModal = ref(false);
     const interestedTeachers = ref([]);
-    const hireLoading = ref(false);
+    const approachLoading = ref(false);
 
     const fetchRequirement = async () => {
       loading.value = true;
@@ -330,23 +330,23 @@ export default {
     };
 
     const selectTeacher = async (teacherId) => {
-      hireLoading.value = true;
+      approachLoading.value = true;
       try {
-        const response = await axios.post(`/api/student/requirements/${requirement.value.id}/hire-teacher`, {
+        const response = await axios.post(`/api/student/requirements/${requirement.value.id}/approach-teacher`, {
           teacher_id: teacherId
         });
         alert(response.data.message);
-        requirement.value.status = 'hired';
-        requirement.value.hired_teacher_id = teacherId;
+        requirement.value.status = 'approached';
+        requirement.value.approached_teacher_id = teacherId;
         interestedTeachers.value = interestedTeachers.value.map(t => ({
           ...t,
-          hired: t.id === teacherId
+          approached: t.id === teacherId
         }));
       } catch (err) {
-        console.error('Error hiring teacher:', err);
-        alert(err.response?.data?.message || 'Failed to hire teacher');
+        console.error('Error approaching teacher:', err);
+        alert(err.response?.data?.message || 'Failed to approach teacher');
       } finally {
-        hireLoading.value = false;
+        approachLoading.value = false;
       }
     };
 
@@ -395,7 +395,7 @@ export default {
 
     const statusBadgeClass = computed(() => {
       if (requirement.value.status === 'active') return 'bg-green-100 text-green-700';
-      if (requirement.value.status === 'hired') return 'bg-blue-100 text-blue-700';
+      if (requirement.value.status === 'approached') return 'bg-blue-100 text-blue-700';
       return 'bg-gray-100 text-gray-700';
     });
 
@@ -415,7 +415,7 @@ export default {
       refundAmount,
       showInterestedModal,
       interestedTeachers,
-      hireLoading,
+      approachLoading,
       subjectsDisplay,
       meetingOptionsDisplay,
       statusBadgeClass,

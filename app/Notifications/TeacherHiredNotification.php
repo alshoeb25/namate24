@@ -51,14 +51,14 @@ class TeacherHiredNotification extends Notification implements ShouldQueue
             : ($this->enquiry->subject_name ?? $this->enquiry->other_subject ?? null);
         
         return (new MailMessage)
-            ->subject('🎉 You Have Been Hired!')
+            ->subject('🎉 You Have Been Approached!')
             ->view('emails.tutor-hired-notification', [
                 'tutor' => $notifiable,
                 'student' => $this->student,
                 'subject' => $subjectLine,
                 'level' => $this->enquiry->level ?? null,
                 'learningGoals' => $this->enquiry->details ?? null,
-                'hiredDate' => $this->enquiry->hired_at?->format('M d, Y') ?? now()->format('M d, Y'),
+                'approachedDate' => $this->enquiry->approached_at?->format('M d, Y') ?? now()->format('M d, Y'),
                 'requirementPhone' => $this->enquiry->phone ?? null,
                 'requirementAlternatePhone' => $this->enquiry->alternate_phone ?? null,
                 'myLearnersUrl' => url('/tutor/profile/my-learners'),
@@ -75,9 +75,9 @@ class TeacherHiredNotification extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
-            'type' => 'teacher_hired',
-            'title' => 'You Have Been Hired! 🎉',
-            'message' => "{$this->student->name} has hired you for {$this->enquiry->student_name}'s tutoring session.",
+            'type' => 'teacher_approached',
+            'title' => 'You Have Been Approached! 🎉',
+            'message' => "{$this->student->name} has approached you for {$this->enquiry->student_name}'s tutoring session.",
             'enquiry_id' => $this->enquiry->id,
             'student_id' => $this->student->id,
             'student_name' => $this->student->name,

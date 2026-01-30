@@ -18,8 +18,8 @@ class StudentRequirement extends Model
         'availability','languages','tutor_location_preference','other_subject','status',
         // Lead/coin fields
         'post_fee','unlock_price','max_leads','current_leads','lead_status','posted_at',
-        // Hired teacher fields
-        'hired_teacher_id','hired_at'
+        // Approached teacher fields
+        'approached_teacher_id','approached_at'
     ];
 
     protected $casts = [
@@ -117,11 +117,11 @@ class StudentRequirement extends Model
     }
 
     /**
-     * Hired tutor relationship (hired_teacher_id -> tutors.id)
+     * Approached tutor relationship (approached_teacher_id -> tutors.id)
      */
-    public function hiredTutor(): BelongsTo
+    public function approachedTutor(): BelongsTo
     {
-        return $this->belongsTo(Tutor::class, 'hired_teacher_id');
+        return $this->belongsTo(Tutor::class, 'approached_teacher_id');
     }
 
     /**

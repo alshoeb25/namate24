@@ -329,15 +329,15 @@
 
             <div class="waiting-box">
                 <span class="waiting-icon">⏳</span>
-                <h3 style="color: #f57c00; margin-bottom: 10px;">Waiting for Student to Complete Hire</h3>
-                <p style="margin: 0; color: #666;">The student needs to finalize the hire process. You'll receive another notification once they complete this step.</p>
+                <h3 style="color: #f57c00; margin-bottom: 10px;">Waiting for Student to Complete Approach</h3>
+                <p style="margin: 0; color: #666;">The student needs to finalize the approach process. You'll receive another notification once they complete this step.</p>
             </div>
 
             <div class="steps-box">
                 <p><strong>📋 What Happens Next:</strong></p>
                 <ol>
-                    <li><strong>Student Finalizes Hire</strong> - They'll complete the hiring process</li>
-                    <li><strong>You Get Notified</strong> - We'll email you when you're officially hired</li>
+                    <li><strong>Student Finalizes Approach</strong> - They'll complete the approach process</li>
+                    <li><strong>You Get Notified</strong> - We'll email you when you're officially approached</li>
                     <li><strong>Start Communication</strong> - You can then message the student directly</li>
                     <li><strong>Schedule Sessions</strong> - Agree on timing and start teaching</li>
                 </ol>
@@ -351,7 +351,7 @@
                     <li>Review the student's requirements and learning goals</li>
                     <li>Prepare relevant teaching materials and resources</li>
                     <li>Think about your teaching approach for this student</li>
-                    <li>Be ready to respond quickly once hired</li>
+                    <li>Be ready to respond quickly once approached</li>
                     <li>Plan your availability for upcoming sessions</li>
                 </ul>
             </div>

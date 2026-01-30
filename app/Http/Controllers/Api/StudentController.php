@@ -207,8 +207,8 @@ class StudentController extends Controller
             'subject',
             'unlocks.tutor.user',
             'unlocks.tutor.subjects',
-            'hiredTutor.user',
-            'hiredTutor.subjects',
+            'approachedTutor.user',
+            'approachedTutor.subjects',
         ]);
 
         // Add labels for better display
@@ -245,23 +245,23 @@ class StudentController extends Controller
 
         $history = array_merge($history, $unlocks);
 
-        if ($requirement->hired_teacher_id && $requirement->hired_at && $requirement->hiredTutor) {
-            $hiredTutor = $requirement->hiredTutor;
-            $hiredUser = $hiredTutor->user;
+        if ($requirement->approached_teacher_id && $requirement->approached_at && $requirement->approachedTutor) {
+            $approachedTutor = $requirement->approachedTutor;
+            $approachedUser = $approachedTutor->user;
 
             $history[] = [
-                'type' => 'hired',
-                'label' => 'Tutor Hired',
-                'date' => $requirement->hired_at,
+                'type' => 'approached',
+                'label' => 'Tutor Approached',
+                'date' => $requirement->approached_at,
                 'tutor' => [
-                    'id' => $hiredTutor->id,
-                    'user_id' => $hiredTutor->user_id,
-                    'name' => $hiredUser?->name,
-                    'email' => $hiredUser?->email,
-                    'phone' => $hiredUser?->phone,
-                    'photo' => $hiredTutor->photo_url ?? $hiredUser?->avatar_url,
-                    'subjects' => $hiredTutor->subjects?->pluck('name')->values()->all() ?? [],
-                    'rating' => $hiredTutor->rating_avg,
+                    'id' => $approachedTutor->id,
+                    'user_id' => $approachedTutor->user_id,
+                    'name' => $approachedUser?->name,
+                    'email' => $approachedUser?->email,
+                    'phone' => $approachedUser?->phone,
+                    'photo' => $approachedTutor->photo_url ?? $approachedUser?->avatar_url,
+                    'subjects' => $approachedTutor->subjects?->pluck('name')->values()->all() ?? [],
+                    'rating' => $approachedTutor->rating_avg,
                 ],
             ];
         }
@@ -492,10 +492,10 @@ class StudentController extends Controller
     }
 
     /**
-     * Hire a specific teacher for an enquiry
-     * Marks enquiry as hired and notifies all teachers
+     * Approach a specific teacher for an enquiry
+     * Marks enquiry as approached and notifies all teachers
      */
-    public function hireTeacher(Request $request, $id)
+    public function approachTeacher(Request $request, $id)
     {
         $user = $request->user();
         $studentId = $user->student->id ?? $user->id;
@@ -529,18 +529,18 @@ class StudentController extends Controller
             ], 422);
         }
 
-        // Update enquiry status to hired
+        // Update enquiry status to approached
         $requirement->update([
-            'status' => 'hired',
+            'status' => 'approached',
             'lead_status' => 'closed',
-            // Store hired tutor as tutors.id
-            'hired_teacher_id' => $tutorId,
-            'hired_at' => now(),
+            // Store approached tutor as tutors.id
+            'approached_teacher_id' => $tutorId,
+            'approached_at' => now(),
         ]);
 
         $requirement->loadMissing('subjects', 'subject');
 
-        // Notify hired teacher
+        // Notify approached teacher
         if ($tutor && $tutor->user) {
             $tutor->user->notify(new \App\Notifications\TeacherHiredNotification($requirement, $user));
         }
@@ -558,9 +558,9 @@ class StudentController extends Controller
         }
 
         return response()->json([
-            'message' => 'You have successfully hired ' . ($tutor->user->name ?? 'Tutor') . '!',
+            'message' => 'You have successfully approached ' . ($tutor->user->name ?? 'Tutor') . '!',
             'requirement' => $requirement->fresh(),
-            'hired_teacher' => [
+            'approached_teacher' => [
                 'id' => $tutor->id,
                 'name' => $tutor->user->name ?? null,
                 'email' => $tutor->user->email ?? null,
@@ -570,10 +570,10 @@ class StudentController extends Controller
     }
 
     /**
-     * Get hired tutors with bookings and reviews
-     * GET /api/student/hired-tutors
+     * Get approached tutors with bookings and reviews
+     * GET /api/student/approached-tutors
      */
-    public function hiredTutors(Request $request)
+    public function approachedTutors(Request $request)
     {
         $user = $request->user();
         $studentId = $user->student->id ?? $user->id;
@@ -605,16 +605,16 @@ class StudentController extends Controller
                 ];
             });
 
-        // Get hired tutors from requirements
-        $hiredFromRequirements = StudentRequirement::where('student_id', $studentId)
-            ->where('status', 'hired')
-            ->whereNotNull('hired_teacher_id')
+        // Get approached tutors from requirements
+        $approachedFromRequirements = StudentRequirement::where('student_id', $studentId)
+            ->where('status', 'approached')
+            ->whereNotNull('approached_teacher_id')
             ->with(['subject', 'subjects'])
-            ->orderBy('hired_at', 'desc')
+            ->orderBy('approached_at', 'desc')
             ->get()
             ->map(function ($requirement) {
-                // Get the hired tutor (hired_teacher_id is tutor_id from tutors table)
-                $tutor = \App\Models\Tutor::with(['user', 'subjects'])->find($requirement->hired_teacher_id);
+                // Get the approached tutor (approached_teacher_id is tutor_id from tutors table)
+                $tutor = \App\Models\Tutor::with(['user', 'subjects'])->find($requirement->approached_teacher_id);
                 
                 if (!$tutor || !$tutor->user) {
                     return null;
@@ -656,13 +656,13 @@ class StudentController extends Controller
                         ],
                         'subjects' => $tutor->subjects,
                     ],
-                    'start_at' => $requirement->hired_at,
+                    'start_at' => $requirement->approached_at,
                     'end_at' => null,
                     'session_price' => $requirement->budget ?? 0,
                     'session_price_display' => $requirement->budget_display ?? null,
-                    'status' => 'hired',
+                    'status' => 'approached',
                     'payment_status' => 'pending',
-                    'created_at' => $requirement->hired_at,
+                    'created_at' => $requirement->approached_at,
                     'subjects_requested' => $subjectsRequested,
                     'requirement_details' => $requirement->details,
                     'requirement_city' => $requirement->city,
@@ -679,13 +679,13 @@ class StudentController extends Controller
             ->filter(); // Remove null entries
 
         // Merge both collections and sort by created_at
-        $allHiredTutors = $bookings->concat($hiredFromRequirements)
+        $allApproachedTutors = $bookings->concat($approachedFromRequirements)
             ->sortByDesc('created_at')
             ->values();
 
         return response()->json([
-            'data' => $allHiredTutors,
-            'total' => $allHiredTutors->count(),
+            'data' => $allApproachedTutors,
+            'total' => $allApproachedTutors->count(),
         ]);
     }
 }

@@ -72,7 +72,7 @@ class ViewUser extends ViewRecord
                 ->requiresConfirmation()
                 ->action(function () use ($record) {
                     $record->update([
-                        'is_disabled' => false,
+                        'is_disabled' => null,
                         'disabled_reason' => null,
                         'disabled_by' => null,
                         'disabled_at' => null,
@@ -127,25 +127,29 @@ class ViewUser extends ViewRecord
                         return;
                     }
 
-                    $oldStatus = $tutor->moderation_status;
-
                     $tutor->update([
-                        'moderation_status' => 'approved',
-                        'is_disabled' => false,
+                        'is_disabled' => null,
                         'disabled_reason' => null,
                         'disabled_by' => null,
                         'disabled_at' => null,
                     ]);
 
-                    \App\Models\TutorModerationAction::create([
-                        'tutor_id' => $tutor->id,
-                        'admin_id' => auth()->id(),
-                        'action' => 'approve',
-                        'reason' => null,
-                        'notes' => 'Enabled via Users module',
-                        'old_status' => $oldStatus,
-                        'new_status' => 'approved',
-                    ]);
+                    // Reindex if approved
+                    if ($tutor->moderation_status === 'approved') {
+                        try {
+                            $elasticService = app(\App\Services\ElasticService::class);
+                            $client = $elasticService->client();
+                            $tutor->load('user', 'subjects');
+                            $client->index([
+                                'index' => 'tutors',
+                                'id' => $tutor->id,
+                                'body' => $tutor->toElasticArray(),
+                                'refresh' => true
+                            ]);
+                        } catch (\Exception $e) {
+                            \Log::error('Failed to reindex tutor in Elasticsearch: ' . $e->getMessage());
+                        }
+                    }
 
                     dispatch(new \App\Jobs\AdminLogActivityJob(
                         auth()->id(),
@@ -155,8 +159,6 @@ class ViewUser extends ViewRecord
                         'Enabled via Users module',
                         [
                             'user_id' => $record->id,
-                            'old_status' => $oldStatus,
-                            'new_status' => 'approved',
                         ]
                     ));
                 }),
@@ -198,7 +200,7 @@ class ViewUser extends ViewRecord
                 ->requiresConfirmation()
                 ->action(function () use ($record) {
                     $record->student?->update([
-                        'is_disabled' => false,
+                        'is_disabled' => null,
                         'disabled_reason' => null,
                         'disabled_by' => null,
                         'disabled_at' => null,

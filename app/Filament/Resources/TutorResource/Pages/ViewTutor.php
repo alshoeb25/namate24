@@ -1116,18 +1116,35 @@ class ViewTutor extends ViewRecord
                     $record = $this->record;
 
                     $record->update([
-                        'is_disabled' => false,
+                        'is_disabled' => null,
                         'disabled_reason' => null,
                         'disabled_by' => null,
                         'disabled_at' => null,
                     ]);
 
                     $record->user?->update([
-                        'is_disabled' => false,
+                        'is_disabled' => null,
                         'disabled_reason' => null,
                         'disabled_by' => null,
                         'disabled_at' => null,
                     ]);
+
+                    // Reindex tutor if approved
+                    if ($record->moderation_status === 'approved') {
+                        try {
+                            $elasticService = app(ElasticService::class);
+                            $client = $elasticService->client();
+                            $record->load('user', 'subjects');
+                            $client->index([
+                                'index' => 'tutors',
+                                'id' => $record->id,
+                                'body' => $record->toElasticArray(),
+                                'refresh' => true
+                            ]);
+                        } catch (\Exception $e) {
+                            \Log::error('Failed to reindex tutor in Elasticsearch: ' . $e->getMessage());
+                        }
+                    }
 
                     $this->dispatch('notify', message: 'Tutor re-enabled.');
                 }),

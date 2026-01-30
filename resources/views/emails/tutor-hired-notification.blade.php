@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>You've Been Hired!</title>
+    <title>You've Been Approached!</title>
     <style>
         /* Reset styles for email clients */
         * {
@@ -281,7 +281,7 @@
 
         <!-- Main content -->
         <div class="content">
-            <h1>🎊 Congratulations! You've Been Hired!</h1>
+            <h1>🎊 Congratulations! You've Been Approached!</h1>
 
             <div class="celebration-banner">
                 <span class="celebration-icon">🎉</span>
@@ -291,7 +291,7 @@
 
             <p>Hello <span class="highlight">{{ $tutor->name }}</span>,</p>
 
-            <p>Fantastic news! A student has accepted your application and hired you as their tutor. This is a great opportunity to make a positive impact on their learning journey!</p>
+            <p>Fantastic news! A student has accepted your application and approached you as their tutor. This is a great opportunity to make a positive impact on their learning journey!</p>
 
             <div class="student-card">
                 <div class="student-header">
@@ -321,8 +321,8 @@
                 </div>
                 @endif
                 <div class="detail-row">
-                    <span class="detail-label">Hired On:</span>
-                    <span class="detail-value">{{ $hiredDate }}</span>
+                    <span class="detail-label">Approached On:</span>
+                    <span class="detail-value">{{ $approachedDate }}</span>
                 </div>
             </div>
 
@@ -396,11 +396,11 @@
 
             <div class="info-box">
                 <p><strong>🆘 Need Help?</strong></p>
-                <p>If you have any questions about this hire or need assistance with anything, our support team is here to help you succeed.</p>
+                <p>If you have any questions about this approach or need assistance with anything, our support team is here to help you succeed.</p>
                 <p style="margin-top: 15px;"><a href="{{ config('app.url') }}/support">Contact Support Team</a></p>
             </div>
 
-            <p>Congratulations again on being hired! We're confident you'll provide an excellent learning experience. Good luck with your new student!</p>
+            <p>Congratulations again on being approached! We're confident you'll provide an excellent learning experience. Good luck with your new student!</p>
         </div>
 
         <!-- Footer -->

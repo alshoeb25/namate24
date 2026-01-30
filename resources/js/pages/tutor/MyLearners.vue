@@ -7,7 +7,7 @@
             <h1 class="text-3xl font-bold text-gray-800 mb-2">
               <i class="fas fa-user-graduate mr-2 text-indigo-600"></i>My Learners
             </h1>
-            <p class="text-gray-600">Students who hired you via requirements</p>
+            <p class="text-gray-600">Students who approached you via requirements</p>
           </div>
         </div>
       </div>
@@ -16,7 +16,7 @@
       <div v-else-if="learners.length === 0" class="bg-white rounded-xl shadow-md p-12 text-center">
         <i class="fas fa-user-graduate text-gray-300 text-6xl mb-4"></i>
         <h3 class="text-xl font-semibold text-gray-700 mb-2">No learners yet</h3>
-        <p class="text-gray-600">Once a student hires you, they will appear here.</p>
+        <p class="text-gray-600">Once a student approaches you, they will appear here.</p>
       </div>
 
       <div v-else class="space-y-4">
@@ -36,7 +36,7 @@
                 <span v-if="learner.area" class="ml-1">• {{ learner.area }}</span>
               </p>
               <p class="text-xs text-gray-500 mt-2">
-                Hired on {{ formatDate(learner.hired_at) }}
+                Approached on {{ formatDate(learner.approached_at) }}
               </p>
             </div>
             <div class="flex flex-col gap-2 text-sm">

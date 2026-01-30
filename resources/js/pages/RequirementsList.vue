@@ -78,14 +78,14 @@
                   </div>
                 </div>
                 <button 
-                  v-if="selectedRequirement?.hired_teacher_id !== teacher.id"
+                  v-if="selectedRequirement?.approached_teacher_id !== teacher.id"
                   @click="selectTeacher(teacher.id)"
-                  :disabled="hireLoading"
+                  :disabled="approachLoading"
                   class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition disabled:bg-gray-400">
-                  <i class="fas fa-check-circle mr-1"></i>{{ hireLoading ? 'Hiring...' : 'Hire' }}
+                  <i class="fas fa-check-circle mr-1"></i>{{ approachLoading ? 'Approaching...' : 'Approach' }}
                 </button>
                 <div v-else class="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium">
-                  <i class="fas fa-check-circle mr-1"></i>Hired
+                  <i class="fas fa-check-circle mr-1"></i>Approached
                 </div>
               </div>
               
@@ -271,7 +271,7 @@ export default {
     const showInterestedModal = ref(false);
     const interestedTeachers = ref([]);
     const selectedRequirement = ref(null);
-    const hireLoading = ref(false);
+    const approachLoading = ref(false);
 
     const fetchRequirements = async (page = 1) => {
       loading.value = true;
@@ -363,9 +363,9 @@ export default {
     const selectTeacher = async (teacherId) => {
       if (!selectedRequirement.value) return;
       
-      hireLoading.value = true;
+      approachLoading.value = true;
       try {
-        const response = await axios.post(`/api/student/requirements/${selectedRequirement.value.id}/hire-teacher`, {
+        const response = await axios.post(`/api/student/requirements/${selectedRequirement.value.id}/approach-teacher`, {
           teacher_id: teacherId
         });
         
@@ -374,21 +374,21 @@ export default {
         // Update selected requirement
         const req = requirements.value.find(r => r.id === selectedRequirement.value.id);
         if (req) {
-          req.status = 'hired';
-          req.hired_teacher_id = teacherId;
+          req.status = 'approached';
+          req.approached_teacher_id = teacherId;
           selectedRequirement.value = { ...req };
         }
         
         // Update teachers list
         interestedTeachers.value = interestedTeachers.value.map(t => ({
           ...t,
-          hired: t.id === teacherId
+          approached: t.id === teacherId
         }));
       } catch (err) {
-        console.error('Error hiring teacher:', err);
-        alert(err.response?.data?.message || 'Failed to hire teacher');
+        console.error('Error approaching teacher:', err);
+        alert(err.response?.data?.message || 'Failed to approach teacher');
       } finally {
-        hireLoading.value = false;
+        approachLoading.value = false;
       }
     };
 
@@ -475,7 +475,7 @@ export default {
       showInterestedModal,
       interestedTeachers,
       selectedRequirement,
-      hireLoading,
+      approachLoading,
       editRequirement,
       viewRequirement,
       closeRequirement,

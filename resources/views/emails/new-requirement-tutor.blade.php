@@ -123,7 +123,7 @@
             <h1> New Student Requirement</h1>
 
             <p>Hello <span class="highlight">{{ $tutorName }}</span>,</p>
-            <p>A new student requirement matches your subjects. Review the details and respond quickly to improve your chances of being hired.</p>
+            <p>A new student requirement matches your subjects. Review the details and respond quickly to improve your chances of being approached.</p>
 
             <div class="info-box">
                 <p><strong>Student:</strong> {{ $requirement->student_name }}</p>
