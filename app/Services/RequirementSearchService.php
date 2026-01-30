@@ -32,6 +32,10 @@ class RequirementSearchService
         // Active/posted requirements only
         $must[] = ['terms' => ['status' => ['active', 'posted', 'open']]];
 
+        // Exclude disabled students/users
+        $must[] = ['term' => ['student_is_disabled' => false]];
+        $must[] = ['term' => ['student_user_is_disabled' => false]];
+
         // 🔍 Main full-text search
         if (!empty($query)) {
             $must[] = [

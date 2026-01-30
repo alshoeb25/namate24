@@ -32,6 +32,10 @@ class TutorSearchService
         // ✅ Always approved tutors
         $must[] = ['term' => ['moderation_status.keyword' => 'approved']];
 
+        // ✅ Exclude disabled tutors/users
+        $must[] = ['term' => ['is_disabled' => false]];
+        $must[] = ['term' => ['user_is_disabled' => false]];
+
         // 🔍 Full-text search
         if (!empty($query)) {
             $must[] = [
@@ -146,6 +150,8 @@ class TutorSearchService
                 'user',
             ])
             ->whereIn('id', $ids)
+            ->where('is_disabled', false)
+            ->whereHas('user', fn($q) => $q->where('is_disabled', false))
             ->get()
             ->sortBy(fn ($tutor) => array_search($tutor->id, $ids))
             ->values();

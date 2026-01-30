@@ -195,7 +195,8 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
+
 
 export default {
   name: 'TutorSecondaryMenu',
@@ -219,7 +220,7 @@ export default {
       window.removeEventListener('toggle-mobile-menu', handleToggleMenu);
     });
 
-    return { mobileMenuOpen, closeMobileMenu };
+    return { mobileMenuOpen, closeMobileMenu, isTutorDisabled };
   }
 };
 </script>

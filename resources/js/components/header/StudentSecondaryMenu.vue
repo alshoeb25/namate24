@@ -169,7 +169,7 @@ export default {
       window.removeEventListener('toggle-mobile-menu', handleToggleMenu);
     });
 
-    return { mobileMenuOpen, closeMobileMenu };
+    return { mobileMenuOpen, closeMobileMenu, isStudentDisabled };
   }
 };
 </script>

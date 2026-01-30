@@ -114,6 +114,8 @@ class TutorController extends Controller
         // Get featured tutors - highest rated, verified tutors
         $tutors = Tutor::with('user', 'subjects')
             ->where('moderation_status', 'approved')
+            ->where('is_disabled', false)
+            ->whereHas('user', fn($q) => $q->where('is_disabled', false))
             ->where('verified', true)
             ->whereNotNull('rating_avg')
             ->where('rating_avg', '>=', 4.5)
@@ -311,7 +313,10 @@ class TutorController extends Controller
 
     public function show($id)
     {
-        $tutor = Tutor::with('user','subjects')->findOrFail($id);
+        $tutor = Tutor::with('user','subjects')
+            ->where('is_disabled', false)
+            ->whereHas('user', fn($q) => $q->where('is_disabled', false))
+            ->findOrFail($id);
         if ($tutor->moderation_status !== 'approved') {
             return response()->json(['message'=>'Tutor not available'], 404);
         }
@@ -324,6 +329,8 @@ class TutorController extends Controller
     public function publicShow($id)
     {
         $tutor = Tutor::with(['user','subjects','documents'])
+            ->where('is_disabled', false)
+            ->whereHas('user', fn($q) => $q->where('is_disabled', false))
             ->findOrFail($id);
 
         if ($tutor->moderation_status !== 'approved') {
@@ -361,7 +368,10 @@ class TutorController extends Controller
      */
     protected function fallbackSearch(Request $request)
     {
-        $query = Tutor::with('user','subjects')->where('moderation_status','approved');
+        $query = Tutor::with('user','subjects')
+            ->where('moderation_status','approved')
+            ->where('is_disabled', false)
+            ->whereHas('user', fn($q) => $q->where('is_disabled', false));
 
         // Featured filter
         if ($request->input('featured') === 'true') {

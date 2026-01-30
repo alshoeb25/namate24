@@ -79,5 +79,6 @@ class Kernel extends HttpKernel
         'decrypt.search' => \App\Http\Middleware\DecryptSearchQuery::class,
         'check.student.profile' => \App\Http\Middleware\CheckStudentProfileStatus::class,
         'check.tutor.profile' => \App\Http\Middleware\CheckTutorProfileStatus::class,
+        'check.user.active' => \App\Http\Middleware\CheckUserAccountStatus::class,
     ];
 }

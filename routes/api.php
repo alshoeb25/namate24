@@ -95,7 +95,8 @@ Route::middleware('auth:api')->group(function() {
                 'id', 'user_id', 'headline', 'about', 'experience_years', 
                 'price_per_hour', 'teaching_mode', 'city', 'verified', 
                 'rating_avg', 'rating_count', 'gender', 'photo', 'moderation_status',
-                'current_role', 'speciality', 'strength'
+                'current_role', 'speciality', 'strength',
+                'is_disabled', 'disabled_reason', 'disabled_at'
             ]);
             $tutor['photo_url'] = $user->tutor->photo_url;
         }
@@ -103,7 +104,8 @@ Route::middleware('auth:api')->group(function() {
         $student = null;
         if ($user->student) {
             $student = $user->student->only([
-                'id', 'user_id', 'grade_level', 'learning_goals', 'preferred_subjects', 'budget_range'
+                'id', 'user_id', 'grade_level', 'learning_goals', 'preferred_subjects', 'budget_range',
+                'is_disabled', 'disabled_reason', 'disabled_at'
             ]);
         }
         
@@ -151,18 +153,18 @@ Route::middleware('auth:api')->group(function() {
     // User Management & Enrollment
     Route::post('user/enroll-teacher', [\App\Http\Controllers\Api\UserController::class, 'enrollAsTeacher']);
     Route::post('user/enroll-student', [\App\Http\Controllers\Api\UserController::class, 'enrollAsStudent']);
-    Route::put('user/profile', [\App\Http\Controllers\Api\UserController::class, 'updateProfile']);
-    Route::post('user/photo', [\App\Http\Controllers\Api\UserController::class, 'uploadPhoto']);
-    Route::post('user/phone/send-otp', [\App\Http\Controllers\Api\UserController::class, 'sendPhoneOtp']);
-    Route::post('user/phone/verify-otp', [\App\Http\Controllers\Api\UserController::class, 'verifyPhoneOtp']);
+    Route::put('user/profile', [\App\Http\Controllers\Api\UserController::class, 'updateProfile'])->middleware('check.user.active');
+    Route::post('user/photo', [\App\Http\Controllers\Api\UserController::class, 'uploadPhoto'])->middleware('check.user.active');
+    Route::post('user/phone/send-otp', [\App\Http\Controllers\Api\UserController::class, 'sendPhoneOtp'])->middleware('check.user.active');
+    Route::post('user/phone/verify-otp', [\App\Http\Controllers\Api\UserController::class, 'verifyPhoneOtp'])->middleware('check.user.active');
 
     // Profile Management (aliases for frontend compatibility)
-    Route::put('profile', [\App\Http\Controllers\Api\UserController::class, 'updateProfile']);
-    Route::post('profile/photo', [\App\Http\Controllers\Api\UserController::class, 'uploadPhoto']);
-    Route::post('profile/phone/otp', [\App\Http\Controllers\Api\UserController::class, 'sendPhoneOtp']);
-    Route::post('profile/phone/verify', [\App\Http\Controllers\Api\UserController::class, 'verifyPhoneOtp']);
-    Route::post('profile/email/verification', [\App\Http\Controllers\Api\UserController::class, 'sendEmailVerification']);
-    Route::put('profile/location', [\App\Http\Controllers\Api\UserController::class, 'updateLocation']);
+    Route::put('profile', [\App\Http\Controllers\Api\UserController::class, 'updateProfile'])->middleware('check.user.active');
+    Route::post('profile/photo', [\App\Http\Controllers\Api\UserController::class, 'uploadPhoto'])->middleware('check.user.active');
+    Route::post('profile/phone/otp', [\App\Http\Controllers\Api\UserController::class, 'sendPhoneOtp'])->middleware('check.user.active');
+    Route::post('profile/phone/verify', [\App\Http\Controllers\Api\UserController::class, 'verifyPhoneOtp'])->middleware('check.user.active');
+    Route::post('profile/email/verification', [\App\Http\Controllers\Api\UserController::class, 'sendEmailVerification'])->middleware('check.user.active');
+    Route::put('profile/location', [\App\Http\Controllers\Api\UserController::class, 'updateLocation'])->middleware('check.user.active');
 
     // Student Routes - Protected by student profile check
     Route::prefix('student')->middleware('check.student.profile')->group(function () {
@@ -206,12 +208,12 @@ Route::middleware('auth:api')->group(function() {
     Route::post('tutors', [TutorController::class,'store']);
 
     // Student requirements - specific routes MUST come before {id} route
-    Route::get('requirements/posting-eligibility', [RequirementController::class,'postingEligibility']);
-    Route::get('requirements/nearby', [RequirementController::class,'nearby']);
-    Route::get('requirements/by-location', [RequirementController::class,'byLocation']);
-    Route::get('requirements/for-me', [RequirementController::class,'forMe']);
+    Route::get('requirements/posting-eligibility', [RequirementController::class,'postingEligibility'])->middleware('check.student.profile');
+    Route::get('requirements/nearby', [RequirementController::class,'nearby'])->middleware('check.tutor.profile');
+    Route::get('requirements/by-location', [RequirementController::class,'byLocation'])->middleware('check.tutor.profile');
+    Route::get('requirements/for-me', [RequirementController::class,'forMe'])->middleware('check.tutor.profile');
     Route::get('requirements', [RequirementController::class,'index']);
-    Route::post('requirements', [RequirementController::class,'store']);
+    Route::post('requirements', [RequirementController::class,'store'])->middleware('check.student.profile');
     Route::get('requirements/{id}', [RequirementController::class,'show']);
 
     // Enquiry (lead-based) routes
@@ -276,7 +278,7 @@ Route::middleware('auth:api')->group(function() {
     Route::post('payouts', [PayoutController::class,'store']);
 
     // Tutor Profile API Routes
-    Route::middleware('role:tutor')->prefix('tutor/profile')->name('api.tutor.profile.')->group(function () {
+    Route::middleware(['role:tutor', 'check.tutor.profile'])->prefix('tutor/profile')->name('api.tutor.profile.')->group(function () {
         // Personal Details
         Route::get('personal-details', [TutorProfileController::class, 'getPersonalDetails'])->name('personal-details');
         Route::post('personal-details', [TutorProfileController::class, 'updatePersonalDetails'])->name('update-personal-details');

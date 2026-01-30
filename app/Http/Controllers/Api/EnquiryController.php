@@ -44,6 +44,10 @@ class EnquiryController extends Controller
                 $q->where('lead_status', 'open')->orWhereNull('lead_status');
             })
             ->whereColumn('current_leads', '<', 'max_leads')
+            ->whereHas('student', function ($q) {
+                $q->where('is_disabled', false)
+                  ->whereHas('user', fn($u) => $u->where('is_disabled', false));
+            })
             ->with(['subject', 'subjects', 'student.user'])
             ->withExists([
                 'unlocks as has_unlocked' => function ($q) use ($user) {

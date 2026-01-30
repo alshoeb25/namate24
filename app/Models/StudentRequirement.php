@@ -129,7 +129,7 @@ class StudentRequirement extends Model
      */
     public function toElasticArray(): array
     {
-        $this->loadMissing('student', 'subject', 'subjects');
+        $this->loadMissing('student', 'student.user', 'subject', 'subjects');
 
         $lat = is_numeric($this->lat) ? (float) $this->lat : null;
         $lng = is_numeric($this->lng) ? (float) $this->lng : null;
@@ -184,6 +184,8 @@ class StudentRequirement extends Model
             'spots_available' => ($this->max_leads ?? 0) - ($this->current_leads ?? 0),
             'posted_at' => $this->posted_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
+            'student_is_disabled' => (bool) ($this->student?->is_disabled ?? false),
+            'student_user_is_disabled' => (bool) ($this->student?->user?->is_disabled ?? false),
         ];
 
         // Add budget display

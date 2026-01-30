@@ -14,9 +14,9 @@ class TutorObserver
      */
     public function created(Tutor $tutor): void
     {
-        Log::info("TutorObserver: created event for tutor ID {$tutor->id}, status: {$tutor->status}");
+        Log::info("TutorObserver: created event for tutor ID {$tutor->id}, status: {$tutor->moderation_status}");
         // When a new tutor is created and already approved, index immediately
-        if ($tutor->status === 'approved') {
+        if ($tutor->moderation_status === 'approved' && !$tutor->is_disabled) {
             dispatch(new IndexTutorJob($tutor->id));
         }
     }
@@ -26,19 +26,33 @@ class TutorObserver
      */
     public function updated(Tutor $tutor): void
     {
-        Log::info("TutorObserver: updated event for tutor ID {$tutor->id}, status: {$tutor->status}");
-        // Only react to status changes
-        if ($tutor->isDirty('status')) {
+        Log::info("TutorObserver: updated event for tutor ID {$tutor->id}, status: {$tutor->moderation_status}");
+
+        // Remove from index when disabled
+        if ($tutor->isDirty('is_disabled') && $tutor->is_disabled) {
+            dispatch(new RemoveTutorFromIndexJob($tutor->id));
+            return;
+        }
+
+        // Re-index when enabled
+        if ($tutor->isDirty('is_disabled') && !$tutor->is_disabled) {
+            if ($tutor->moderation_status === 'approved') {
+                dispatch(new IndexTutorJob($tutor->id));
+            }
+        }
+
+        // Only react to moderation status changes
+        if ($tutor->isDirty('moderation_status')) {
             // If approved, add/update in Elasticsearch
-            if ($tutor->status === 'approved') {
+            if ($tutor->moderation_status === 'approved' && !$tutor->is_disabled) {
                 dispatch(new IndexTutorJob($tutor->id));
             }
 
-            // If blocked or rejected, remove from Elasticsearch
-            if (in_array($tutor->status, ['blocked', 'rejected'])) {
+            // If rejected, remove from Elasticsearch
+            if (in_array($tutor->moderation_status, ['rejected'])) {
                 dispatch(new RemoveTutorFromIndexJob($tutor->id));
             }
-        } elseif ($tutor->status === 'approved') {
+        } elseif ($tutor->moderation_status === 'approved' && !$tutor->is_disabled) {
             // If status is still approved but other fields changed, re-index
             dispatch(new IndexTutorJob($tutor->id));
         }
@@ -59,9 +73,9 @@ class TutorObserver
      */
     public function restored(Tutor $tutor): void
     {
-        Log::info("TutorObserver: restored event for tutor ID {$tutor->id}, status: {$tutor->status}");
+        Log::info("TutorObserver: restored event for tutor ID {$tutor->id}, status: {$tutor->moderation_status}");
         // If restored and approved, re-index
-        if ($tutor->status === 'approved') {
+        if ($tutor->moderation_status === 'approved' && !$tutor->is_disabled) {
             dispatch(new IndexTutorJob($tutor->id));
         }
     }

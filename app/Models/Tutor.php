@@ -167,6 +167,8 @@ class Tutor extends Model
             'travel_willing' => $this->travel_willing,
             'travel_distance_km' => $this->travel_distance_km,
             'moderation_status' => $this->moderation_status,
+            'is_disabled' => (bool) $this->is_disabled,
+            'user_is_disabled' => (bool) ($this->user?->is_disabled ?? false),
         ];
 
         // Only set geo fields when both coordinates are valid numbers

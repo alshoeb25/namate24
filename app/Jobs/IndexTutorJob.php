@@ -35,9 +35,9 @@ class IndexTutorJob implements ShouldQueue
         try {
             $tutor = Tutor::with(['subjects', 'user'])->find($this->tutorId);
 
-            // If tutor not found or not approved, skip indexing
-            if (!$tutor || $tutor->status !== 'approved') {
-                Log::info("Tutor {$this->tutorId} not found or not approved. Skipping index.");
+            // If tutor not found, not approved, or disabled, skip indexing
+            if (!$tutor || $tutor->moderation_status !== 'approved' || $tutor->is_disabled || $tutor->user?->is_disabled) {
+                Log::info("Tutor {$this->tutorId} not found, not approved, or disabled. Skipping index.");
                 return;
             }
 

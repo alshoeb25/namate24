@@ -19,6 +19,7 @@ import BookingCalendar from '../pages/BookingCalendar.vue';
 import TutorDashboard from '../pages/TutorDashboard.vue';
 import TutorProfileLayout from '../pages/TutorProfileLayout.vue';
 import UploadDocuments from '../pages/tutor/UploadDocuments.vue';
+import TutorDisabled from '../pages/TutorDisabled.vue';
 import TermsAndConditions from '../pages/TermsAndConditions.vue';
 import PrivacyPolicy from '../pages/PrivacyPolicy.vue';
 import RefundPolicy from '../pages/RefundPolicy.vue';
@@ -42,6 +43,7 @@ import MyLearners from '../pages/tutor/MyLearners.vue';
 // Student Components
 import StudentLayout from '../components/layout/StudentLayout.vue';
 import StudentDashboard from '../pages/StudentDashboard.vue';
+import StudentDisabled from '../pages/StudentDisabled.vue';
 import RequestTutor from '../pages/RequestTutor.vue';
 import RequirementsList from '../pages/RequirementsList.vue';
 import RequirementDetail from '../pages/RequirementDetail.vue';
@@ -79,6 +81,7 @@ const routes = [
     path: '/tutor/profile',
     component: TutorProfileLayout,
     children: [
+      { path: 'disabled', name: 'tutor.disabled', component: TutorDisabled },
       { path: '', name: 'tutor.profile.dashboard', component: TutorDashboard },
       { path: 'personal-details', name: 'tutor.profile.personal-details', component: PersonalDetails },
       { path: 'photo', name: 'tutor.profile.photo', component: Photo },
@@ -121,6 +124,7 @@ const routes = [
     path: '/student',
     component: StudentLayout,
     children: [
+      { path: 'disabled', name: 'student.disabled', component: StudentDisabled },
       { path: 'dashboard', name: 'student.dashboard', component: StudentDashboard },
       { path: 'request-tutor', name: 'student.request-tutor', component: RequestTutor },
       { path: 'requirements', name: 'student.requirements', component: RequirementsList },
@@ -170,6 +174,16 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
+  // Always refresh user state on tutor/student routes to catch disable changes
+  if (userStore.token && (to.path.startsWith('/tutor/') || to.path.startsWith('/student/'))) {
+    try {
+      await userStore.fetchUser();
+    } catch (e) {
+      userStore.logout();
+      return next({ path: '/login', query: { redirect: to.fullPath } });
+    }
+  }
+
   const user = userStore.user;
 
   // After login, redirect based on query param or available roles
@@ -193,6 +207,11 @@ router.beforeEach(async (to, from, next) => {
     if (!user.tutor) {
       return next('/');
     }
+
+    // Redirect disabled tutors to the disabled page
+    if (user.tutor?.is_disabled && to.path !== '/tutor/profile/disabled') {
+      return next('/tutor/profile/disabled');
+    }
   }
 
   // Requirement detail requires authentication and tutor role
@@ -212,6 +231,11 @@ router.beforeEach(async (to, from, next) => {
     }
     if (!user.student) {
       return next('/');
+    }
+
+    // Redirect disabled students to the disabled page
+    if (user.student?.is_disabled && to.path !== '/student/disabled') {
+      return next('/student/disabled');
     }
   }
 

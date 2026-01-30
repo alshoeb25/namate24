@@ -35,9 +35,12 @@ class IndexRequirementJob implements ShouldQueue
         try {
             $requirement = StudentRequirement::with(['student', 'subject'])->find($this->requirementId);
 
-            // If requirement not found or not open/active, skip indexing
-            if (!$requirement || !in_array($requirement->status, ['open', 'active'])) {
-                Log::info("Requirement {$this->requirementId} not found or not open/active. Skipping index.");
+            $studentDisabled = $requirement?->student?->is_disabled ?? false;
+            $studentUserDisabled = $requirement?->student?->user?->is_disabled ?? false;
+
+            // If requirement not found, not open/active, or student disabled, skip indexing
+            if (!$requirement || !in_array($requirement->status, ['open', 'active']) || $studentDisabled || $studentUserDisabled) {
+                Log::info("Requirement {$this->requirementId} not found, not open/active, or student disabled. Skipping index.");
                 return;
             }
 

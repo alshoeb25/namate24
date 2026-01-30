@@ -7,6 +7,8 @@ use App\Models\Tutor;
 use App\Models\StudentRequirement;
 use App\Observers\TutorObserver;
 use App\Observers\RequirementObserver;
+use App\Observers\StudentObserver;
+use App\Models\Student;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -57,5 +59,6 @@ class AppServiceProvider extends ServiceProvider
         // Register Elasticsearch observers for automatic sync
         Tutor::observe(TutorObserver::class);
         StudentRequirement::observe(RequirementObserver::class);
+        Student::observe(StudentObserver::class);
     }
 }

@@ -277,7 +277,10 @@ class RequirementController extends Controller
 
     public function show($id)
     {
-        $requirement = StudentRequirement::with('subject', 'subjects', 'student')->findOrFail($id);
+        $requirement = StudentRequirement::with('subject', 'subjects', 'student.user')->findOrFail($id);
+        if ($requirement->student && ($requirement->student->is_disabled || $requirement->student->user?->is_disabled)) {
+            return response()->json(['message' => 'Requirement not available'], 404);
+        }
         $requirement = $this->labelService->addLabels($requirement);
 
         return response()->json($requirement);
@@ -333,7 +336,11 @@ class RequirementController extends Controller
         $query = StudentRequirement::query()
             ->with('subject','student')
             ->where('visible', true)
-            ->whereIn('status', ['active', 'posted', 'open']);
+            ->whereIn('status', ['active', 'posted', 'open'])
+            ->whereHas('student', function ($q) {
+                $q->where('is_disabled', false)
+                  ->whereHas('user', fn($u) => $u->where('is_disabled', false));
+            });
 
         // Subject search
         if ($subjectId = $request->input('subject_id')) {
