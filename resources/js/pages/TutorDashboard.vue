@@ -358,23 +358,19 @@ export default {
     const user = computed(() => userStore.user);
 
     // Calculate profile completion percentage
-    const profileCompletion = computed(() => {
-      if (!user.value) return 0;
+        const profileCompletion = computed(() => {
+            if (!user.value) return 0;
 
-      const fields = [
-        user.value.name,
-        user.value.email,
-        user.value.phone,
-        user.value.photo,
-        user.value.video,
-        user.value.bio || user.value.description,
-        user.value.address || user.value.city,
-        user.value.subjects?.length > 0,
-        user.value.education?.length > 0,
-        user.value.experience?.length > 0,
-        user.value.teaching_mode,
-        user.value.hourly_rate
-      ];
+            const tutor = user.value.tutor || {};
+
+            const fields = [
+                user.value.name,
+                user.value.email,
+                tutor.subjects_count > 0,
+                Array.isArray(tutor.languages) ? tutor.languages.length > 0 : !!tutor.languages,
+                tutor.documents_count > 0,
+                tutor.headline || tutor.description || tutor.speciality,
+            ];
 
       const filledFields = fields.filter(field => {
         if (typeof field === 'boolean') return field;
@@ -382,7 +378,7 @@ export default {
         return field && field !== '';
       }).length;
 
-      return Math.round((filledFields / fields.length) * 100);
+            return Math.round((filledFields / fields.length) * 100);
     });
 
     onMounted(async () => {

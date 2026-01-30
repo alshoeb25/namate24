@@ -87,18 +87,24 @@ Route::middleware('auth:api')->group(function() {
     // Return authenticated user with relationships (used by frontend `fetchUser`)
     Route::get('user', function (Request $request) {
         $user = $request->user();
+        $user->load([
+            'tutor.subjects:id,name',
+            'tutor.documents:id,tutor_id',
+        ]);
         
         // Manually load relationships without causing circular references
         $tutor = null;
         if ($user->tutor) {
             $tutor = $user->tutor->only([
-                'id', 'user_id', 'headline', 'about', 'experience_years', 
+                'id', 'user_id', 'headline', 'about', 'description', 'experience_years', 
                 'price_per_hour', 'teaching_mode', 'city', 'verified', 
                 'rating_avg', 'rating_count', 'gender', 'photo', 'moderation_status',
-                'current_role', 'speciality', 'strength',
+                'current_role', 'speciality', 'strength', 'languages',
                 'is_disabled', 'disabled_reason', 'disabled_at'
             ]);
             $tutor['photo_url'] = $user->tutor->photo_url;
+            $tutor['subjects_count'] = $user->tutor->subjects?->count() ?? 0;
+            $tutor['documents_count'] = $user->tutor->documents?->count() ?? 0;
         }
         
         $student = null;
