@@ -25,4 +25,7 @@ return [
 
     // Cost for student to approach a teacher
     'approach_teacher_cost' => env('COIN_APPROACH_TEACHER_COST', 10),
+
+    // Cost to unlock tutor contact details
+    'contact_unlock' => env('CONTACT_UNLOCK_COINS', 50),
 ];
