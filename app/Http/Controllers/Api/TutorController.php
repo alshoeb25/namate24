@@ -215,13 +215,22 @@ class TutorController extends Controller
             return response()->json(['message' => 'Tutor profile not found.'], 404);
         }
 
-        $requirements = StudentRequirement::with(['student.user', 'subjects', 'subject'])
-            ->where('status', 'hired')
-            ->where('approached_teacher_id', $tutor->id)
-            ->orderBy('approached_at', 'desc')
-            ->get()
-            ->map(function (StudentRequirement $requirement) {
-                $studentUser = $requirement->student?->user;
+        // Get all approached requirements for this tutor
+        $approachedRecords = \DB::table('student_requirement_approached_tutors')
+            ->where('tutor_id', $tutor->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $requirements = $approachedRecords->map(function ($approached) {
+            $requirement = StudentRequirement::with(['student.user', 'subjects', 'subject'])
+                ->where('status', 'hired')
+                ->find($approached->student_requirement_id);
+            
+            if (!$requirement) {
+                return null;
+            }
+            
+            $studentUser = $requirement->student?->user;
                 $subjects = $requirement->subjects?->pluck('name')->values()->all() ?? [];
 
                 return [
@@ -236,10 +245,10 @@ class TutorController extends Controller
                     'area' => $requirement->area,
                     'location' => $requirement->location,
                     'status' => $requirement->status,
-                    'hired_at' => $requirement->approached_at,
-                    'created_at' => $requirement->created_at,
-                ];
-            });
+                'hired_at' => $approached->created_at,
+                'created_at' => $requirement->created_at,
+            ];
+        })->filter()->values();
 
         return response()->json([
             'data' => $requirements,

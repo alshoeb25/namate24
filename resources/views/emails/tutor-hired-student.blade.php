@@ -265,20 +265,20 @@
 
         <!-- Main content -->
         <div class="content">
-            <h1>🎉 Tutor Approached Successfully!</h1>
+            <h1> You Approached a Tutor!</h1>
 
             <div class="success-badge">
                 <span class="checkmark">✓</span>
-                <h2>You've Successfully Approached a Tutor</h2>
-                <p style="margin: 0; color: white;">Your learning journey begins now!</p>
+                <h2>You've Unlocked Tutor Contact Details</h2>
+                <p style="margin: 0; color: white;">Connect with your tutor now!</p>
             </div>
 
             <p>Hello <span class="highlight">{{ $student->name }}</span>,</p>
 
-            <p>Congratulations! You've successfully approached a tutor. Your request has been accepted, and you can now coordinate with your tutor to schedule your first lesson.</p>
+            <p>Great news! You've successfully unlocked this tutor's contact details. You can now reach out to them directly to discuss your learning needs and schedule your first lesson.</p>
 
             <div class="tutor-card">
-                <h3>👨‍🏫 Your Tutor Details</h3>
+                <h3>Your Tutor Details</h3>
                 <div class="tutor-details">
                     <div class="detail-row">
                         <span>Tutor Name:</span>
@@ -303,16 +303,16 @@
                     </div>
                     @endif
                     <div class="detail-row">
-                        <span>Approached On:</span>
+                        <span>Contact Unlocked:</span>
                         <span><strong>{{ $approachedDate }}</strong></span>
                     </div>
                 </div>
             </div>
 
-            <a href="{{ $chatUrl ?? $dashboardUrl }}" class="action-button">Message Your Tutor</a>
+            <a href="{{ $chatUrl ?? $dashboardUrl }}" class="action-button">Contact Tutor Now</a>
 
             <div class="contact-box">
-                <h3 style="color: #d81b60; margin-bottom: 15px;">📞 Tutor Contact Information</h3>
+                <h3 style="color: #d81b60; margin-bottom: 15px;"> Contact This Tutor</h3>
                 <div class="contact-item">
                     <span class="contact-icon">📧</span>
                     <div>
@@ -341,17 +341,17 @@
             </div>
 
             <div class="steps-box">
-                <p><strong>📚 Next Steps:</strong></p>
+                <p><strong>What to Do Next:</strong></p>
                 <ol>
-                    <li><strong>Connect with Your Tutor</strong> - Send a message to introduce yourself</li>
-                    <li><strong>Schedule Your First Lesson</strong> - Discuss timing, location, and learning goals</li>
-                    <li><strong>Prepare for Success</strong> - Share any materials or topics you want to cover</li>
-                    <li><strong>Start Learning</strong> - Attend your first session and begin your journey</li>
+                    <li><strong>Reach Out to the Tutor</strong> - Use the contact details above to introduce yourself</li>
+                    <li><strong>Discuss Your Requirements</strong> - Explain what you want to learn and your goals</li>
+                    <li><strong>Schedule Your First Session</strong> - Agree on timing, location, and lesson format</li>
+                    <li><strong>Start Learning</strong> - Begin your educational journey!</li>
                 </ol>
             </div>
 
             <div class="info-box">
-                <p><strong>💡 Tips for a Great Learning Experience:</strong></p>
+                <p><strong>Tips for a Great Learning Experience:</strong></p>
                 <ul style="margin: 10px 0; padding-left: 20px;">
                     <li>Be clear about your learning goals and expectations</li>
                     <li>Maintain regular communication with your tutor</li>
@@ -363,14 +363,14 @@
 
             @if(isset($coinsSpent))
             <div class="info-box">
-                <p><strong>💰 Transaction Details:</strong></p>
+                <p><strong> Transaction Details:</strong></p>
                 <p>Coins spent for this approach: <span class="highlight">{{ $coinsSpent }} Coins</span></p>
                 <p>Your current balance: <span class="highlight">{{ $currentBalance }} Coins</span></p>
             </div>
             @endif
 
             <div class="info-box">
-                <p><strong>📝 Need to Make Changes?</strong></p>
+                <p><strong> Need to Make Changes?</strong></p>
                 <p>If you need to reschedule or have any concerns, please communicate directly with your tutor. For any issues or disputes, our support team is here to help.</p>
             </div>
 

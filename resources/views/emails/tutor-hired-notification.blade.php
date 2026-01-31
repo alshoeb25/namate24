@@ -350,7 +350,7 @@
             @endif
 
             <div class="contact-box">
-                <p><strong>📞 Requirement Contact Details:</strong></p>
+                <p><strong> Requirement Contact Details:</strong></p>
                 @if(isset($requirementPhone))
                 <p style="margin-top: 10px;"><strong>Phone:</strong> {{ $requirementPhone }}</p>
                 @endif
@@ -372,7 +372,7 @@
             </div>
 
             <div class="info-box">
-                <p><strong>💡 Tips for Success:</strong></p>
+                <p><strong> Tips for Success:</strong></p>
                 <ul style="margin: 10px 0; padding-left: 20px;">
                     <li>Respond promptly to student messages</li>
                     <li>Be professional and punctual</li>
@@ -395,7 +395,7 @@
             </div>
 
             <div class="info-box">
-                <p><strong>🆘 Need Help?</strong></p>
+                <p><strong> Need Help?</strong></p>
                 <p>If you have any questions about this approach or need assistance with anything, our support team is here to help you succeed.</p>
                 <p style="margin-top: 15px;"><a href="{{ config('app.url') }}/support">Contact Support Team</a></p>
             </div>

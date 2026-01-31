@@ -22,4 +22,7 @@ return [
 
     // Free requirements count for students
     'free_requirements_count' => env('FREE_REQUIREMENTS_COUNT', 3),
+
+    // Cost for student to approach a teacher
+    'approach_teacher_cost' => env('COIN_APPROACH_TEACHER_COST', 10),
 ];

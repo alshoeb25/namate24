@@ -256,16 +256,25 @@ class StudentRequirementResource extends Resource
                                     ];
                                 }
 
-                                if ($record->approached_teacher_id && $record->approached_at && $record->approachedTutor) {
-                                    $approachedTutor = $record->approachedTutor;
-                                    $approachedUser = $approachedTutor->user;
-                                    $history[] = [
-                                        'label' => 'Tutor Approached',
-                                        'date' => $record->approached_at,
-                                        'tutor_name' => $approachedUser?->name,
-                                        'tutor_email' => $approachedUser?->email,
-                                        'type' => 'approached',
-                                    ];
+                                // Get all approached tutors from the dedicated table
+                                $approachedRecords = \DB::table('student_requirement_approached_tutors')
+                                    ->where('student_requirement_id', $record->id)
+                                    ->orderBy('created_at', 'asc')
+                                    ->get();
+
+                                foreach ($approachedRecords as $approached) {
+                                    $approachedTutor = \App\Models\Tutor::with('user')->find($approached->tutor_id);
+                                    if ($approachedTutor && $approachedTutor->user) {
+                                        $approachedUser = $approachedTutor->user;
+                                        $history[] = [
+                                            'label' => 'Tutor Approached',
+                                            'date' => $approached->created_at,
+                                            'tutor_name' => $approachedUser?->name,
+                                            'tutor_email' => $approachedUser?->email,
+                                            'type' => 'approached',
+                                            'coins_spent' => $approached->coins_spent,
+                                        ];
+                                    }
                                 }
 
                                 usort($history, function ($a, $b) {
@@ -303,22 +312,31 @@ class StudentRequirementResource extends Resource
                     ->collapsed()
                     ->collapsible(),
 
-                Section::make('Approached Tutor Details')
+                Section::make('Approached Tutors Details')
                     ->schema([
-                        TextEntry::make('approachedTutor.user.name')
-                            ->label('Tutor Name'),
-                        TextEntry::make('approachedTutor.user.email')
-                            ->label('Tutor Email'),
-                        TextEntry::make('approachedTutor.user.phone')
-                            ->label('Tutor Phone'),
-                        TextEntry::make('approachedTutor.rating_avg')
-                            ->label('Rating'),
-                        TextEntry::make('approached_at')
-                            ->label('Approached At')
-                            ->dateTime(),
+                        RepeatableEntry::make('approachedTutors')
+                            ->label('')
+                            ->schema([
+                                TextEntry::make('user.name')
+                                    ->label('Tutor Name'),
+                                TextEntry::make('user.email')
+                                    ->label('Tutor Email'),
+                                TextEntry::make('user.phone')
+                                    ->label('Tutor Phone'),
+                                TextEntry::make('rating_avg')
+                                    ->label('Rating'),
+                                TextEntry::make('pivot.created_at')
+                                    ->label('Approached At')
+                                    ->dateTime(),
+                                TextEntry::make('pivot.coins_spent')
+                                    ->label('Coins Spent'),
+                            ])
+                            ->columns(6)
+                            ->columnSpanFull(),
                     ])
-                    ->columns(3)
-                    ->visible(fn (StudentRequirement $record): bool => !is_null($record->approached_teacher_id)),
+                    ->collapsed()
+                    ->collapsible()
+                    ->visible(fn (StudentRequirement $record): bool => $record->approachedTutors()->exists()),
                 
                 Section::make('Status & Lead Management')
                     ->schema([

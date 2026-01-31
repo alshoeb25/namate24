@@ -207,8 +207,8 @@ class StudentController extends Controller
             'subject',
             'unlocks.tutor.user',
             'unlocks.tutor.subjects',
-            'approachedTutor.user',
-            'approachedTutor.subjects',
+            'approachedTutors.user',
+            'approachedTutors.subjects',
         ]);
 
         // Add labels for better display
@@ -245,25 +245,33 @@ class StudentController extends Controller
 
         $history = array_merge($history, $unlocks);
 
-        if ($requirement->approached_teacher_id && $requirement->approached_at && $requirement->approachedTutor) {
-            $approachedTutor = $requirement->approachedTutor;
-            $approachedUser = $approachedTutor->user;
+        // Add all approached tutors from the dedicated table
+        $approachedTutorsData = \DB::table('student_requirement_approached_tutors')
+            ->where('student_requirement_id', $requirement->id)
+            ->orderBy('created_at', 'asc')
+            ->get();
 
-            $history[] = [
-                'type' => 'approached',
-                'label' => 'Tutor Approached',
-                'date' => $requirement->approached_at,
-                'tutor' => [
-                    'id' => $approachedTutor->id,
-                    'user_id' => $approachedTutor->user_id,
-                    'name' => $approachedUser?->name,
-                    'email' => $approachedUser?->email,
-                    'phone' => $approachedUser?->phone,
-                    'photo' => $approachedTutor->photo_url ?? $approachedUser?->avatar_url,
-                    'subjects' => $approachedTutor->subjects?->pluck('name')->values()->all() ?? [],
-                    'rating' => $approachedTutor->rating_avg,
-                ],
-            ];
+        foreach ($approachedTutorsData as $approached) {
+            $approachedTutor = \App\Models\Tutor::with('user')->find($approached->tutor_id);
+            if ($approachedTutor && $approachedTutor->user) {
+                $approachedUser = $approachedTutor->user;
+                $history[] = [
+                    'type' => 'approached',
+                    'label' => 'Tutor Approached',
+                    'date' => $approached->created_at,
+                    'tutor' => [
+                        'id' => $approachedTutor->id,
+                        'user_id' => $approachedTutor->user_id,
+                        'name' => $approachedUser?->name,
+                        'email' => $approachedUser?->email,
+                        'phone' => $approachedUser?->phone,
+                        'photo' => $approachedTutor->photo_url ?? $approachedUser?->avatar_url,
+                        'subjects' => $approachedTutor->subjects?->pluck('name')->values()->all() ?? [],
+                        'rating' => $approachedTutor->rating_avg,
+                    ],
+                    'coins_spent' => $approached->coins_spent,
+                ];
+            }
         }
 
         usort($history, function ($a, $b) {
@@ -453,34 +461,65 @@ class StudentController extends Controller
     /**
      * Get list of interested teachers for an enquiry
      * Returns teachers who have unlocked the enquiry
+     * Contact details are hidden until student approaches the teacher
      */
     public function getInterestedTeachers(Request $request, $id)
     {
         $user = $request->user();
-        $studentId = $user->student->id ?? $user->id;
+        $student = $user->student;
+        
+        if (!$student) {
+            return response()->json(['message' => 'Student profile not found.'], 404);
+        }
 
-        $requirement = StudentRequirement::where('student_id', $studentId)
+        $requirement = StudentRequirement::where('student_id', $student->id)
             ->where('id', $id)
             ->firstOrFail();
+
+        // Get list of all approached tutor IDs from dedicated table
+        $approachedTutorIds = \DB::table('student_requirement_approached_tutors')
+            ->where('student_requirement_id', $requirement->id)
+            ->where('student_id', $student->id)
+            ->pluck('tutor_id')
+            ->toArray();
+        
+        \Log::info('Checking approached tutors', [
+            'requirement_id' => $requirement->id,
+            'student_id' => $student->id,
+            'user_id' => $user->id,
+            'approached_tutor_ids' => $approachedTutorIds,
+        ]);
 
         // Get all tutors who unlocked this enquiry
         $teachers = $requirement->unlockBy()
             ->with('user')
             ->get()
-            ->map(function ($tutor) {
+            ->map(function ($tutor) use ($requirement, $approachedTutorIds) {
                 $user = $tutor->user;
+                
+                // Show contact details if this tutor has been approached
+                $hasApproached = in_array($tutor->id, $approachedTutorIds);
+                
+                \Log::info('Teacher mapping', [
+                    'tutor_id' => $tutor->id,
+                    'approached_tutor_ids' => $approachedTutorIds,
+                    'hasApproached' => $hasApproached,
+                    'email' => $user->email ?? null,
+                    'phone' => $user->phone ?? null,
+                ]);
 
                 return [
                     'id' => $tutor->id, // tutors.id
                     'name' => $user->name ?? null,
-                    'email' => $user->email ?? null,
-                    'phone' => $user->phone ?? null,
+                    'email' => $hasApproached ? ($user->email ?? null) : null,
+                    'phone' => $hasApproached ? ($user->phone ?? null) : null,
                     'photo' => $tutor->photo_url ?? ($user->avatar_url ?? null),
                     'rating' => $tutor->rating_avg ?? null,
                     'hourly_rate' => $tutor->price_per_hour ?? null,
                     'bio' => $tutor->about ?? null,
                     'interested_at' => $tutor->pivot?->created_at,
                     'unlock_price' => $tutor->pivot?->unlock_price,
+                    'has_approached' => $hasApproached,
                 ];
             });
 
@@ -488,28 +527,48 @@ class StudentController extends Controller
             'enquiry_id' => $requirement->id,
             'total_interested' => count($teachers),
             'teachers' => $teachers,
+            'approach_coin_cost' => config('coins.approach_teacher_cost', 10),
         ]);
     }
 
     /**
      * Approach a specific teacher for an enquiry
-     * Marks enquiry as approached and notifies all teachers
+     * Deducts coins and marks enquiry as approached
+     * Returns teacher contact details after successful approach
      */
     public function approachTeacher(Request $request, $id)
     {
         $user = $request->user();
-        $studentId = $user->student->id ?? $user->id;
+        $student = $user->student;
+        
+        if (!$student) {
+            return response()->json(['message' => 'Student profile not found.'], 404);
+        }
 
         $data = $request->validate([
             'teacher_id' => 'required|integer|exists:tutors,id',
         ]);
 
-        $requirement = StudentRequirement::where('student_id', $studentId)
+        $requirement = StudentRequirement::where('student_id', $student->id)
             ->where('id', $id)
             ->firstOrFail();
 
         // teacher_id now references tutors.id (not users.id)
         $tutorId = $data['teacher_id'];
+        
+        // Check if already approached this specific tutor using dedicated table
+        $alreadyApproached = \DB::table('student_requirement_approached_tutors')
+            ->where('student_requirement_id', $requirement->id)
+            ->where('tutor_id', $tutorId)
+            ->where('student_id', $student->id)
+            ->exists();
+            
+        if ($alreadyApproached) {
+            return response()->json([
+                'message' => 'You have already approached this tutor for this requirement.',
+            ], 422);
+        }
+
         $tutor = \App\Models\Tutor::with('user')->find($tutorId);
         
         if (!$tutor || !$tutor->user) {
@@ -529,14 +588,44 @@ class StudentController extends Controller
             ], 422);
         }
 
-        // Update enquiry status to approached
-        $requirement->update([
-            'status' => 'approached',
-            'lead_status' => 'closed',
-            // Store approached tutor as tutors.id
-            'approached_teacher_id' => $tutorId,
-            'approached_at' => now(),
+        // Get approach cost from config
+        $approachCost = config('coins.approach_teacher_cost', 10);
+        
+        // Check if user has enough coins
+        if ($user->coins < $approachCost) {
+            return response()->json([
+                'message' => 'Insufficient coins to approach teacher. You need ' . $approachCost . ' coins.',
+                'required_coins' => $approachCost,
+                'current_balance' => $user->coins,
+            ], 402);
+        }
+        
+        // Deduct coins
+        $user->decrement('coins', $approachCost);
+        
+        // Record transaction
+        \App\Models\CoinTransaction::create([
+            'user_id' => $user->id,
+            'type' => 'debit',
+            'amount' => $approachCost,
+            'description' => 'Approached teacher ' . ($tutor->user->name ?? 'Tutor') . ' for requirement #' . $requirement->id,
+            'balance_after' => $user->fresh()->coins,
         ]);
+
+        // Save approached tutor record
+        \DB::table('student_requirement_approached_tutors')->insert([
+            'student_requirement_id' => $requirement->id,
+            'tutor_id' => $tutorId,
+            'student_id' => $student->id,
+            'coins_spent' => $approachCost,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // Update enquiry status to approached on first approach
+        if ($requirement->status !== 'approached') {
+            $requirement->update(['status' => 'approached']);
+        }
 
         $requirement->loadMissing('subjects', 'subject');
 
@@ -558,8 +647,10 @@ class StudentController extends Controller
         }
 
         return response()->json([
-            'message' => 'You have successfully approached ' . ($tutor->user->name ?? 'Tutor') . '!',
+            'message' => 'You have successfully approached ' . ($tutor->user->name ?? 'Tutor') . ' for ' . $approachCost . ' coins!',
             'requirement' => $requirement->fresh(),
+            'coins_deducted' => $approachCost,
+            'current_balance' => $user->fresh()->coins,
             'approached_teacher' => [
                 'id' => $tutor->id,
                 'name' => $tutor->user->name ?? null,
@@ -605,16 +696,21 @@ class StudentController extends Controller
                 ];
             });
 
-        // Get approached tutors from requirements
-        $approachedFromRequirements = StudentRequirement::where('student_id', $studentId)
-            ->where('status', 'approached')
-            ->whereNotNull('approached_teacher_id')
-            ->with(['subject', 'subjects'])
-            ->orderBy('approached_at', 'desc')
+        // Get approached tutors from student_requirement_approached_tutors table
+        $approachedFromRequirements = \DB::table('student_requirement_approached_tutors')
+            ->where('student_id', $studentId)
+            ->orderBy('created_at', 'desc')
             ->get()
-            ->map(function ($requirement) {
-                // Get the approached tutor (approached_teacher_id is tutor_id from tutors table)
-                $tutor = \App\Models\Tutor::with(['user', 'subjects'])->find($requirement->approached_teacher_id);
+            ->map(function ($approached) {
+                $requirement = StudentRequirement::with(['subject', 'subjects'])
+                    ->find($approached->student_requirement_id);
+                
+                if (!$requirement) {
+                    return null;
+                }
+                
+                // Get the approached tutor
+                $tutor = \App\Models\Tutor::with(['user', 'subjects'])->find($approached->tutor_id);
                 
                 if (!$tutor || !$tutor->user) {
                     return null;
@@ -656,13 +752,14 @@ class StudentController extends Controller
                         ],
                         'subjects' => $tutor->subjects,
                     ],
-                    'start_at' => $requirement->approached_at,
+                    'start_at' => $approached->created_at,
                     'end_at' => null,
                     'session_price' => $requirement->budget ?? 0,
                     'session_price_display' => $requirement->budget_display ?? null,
                     'status' => 'approached',
                     'payment_status' => 'pending',
-                    'created_at' => $requirement->approached_at,
+                    'created_at' => $approached->created_at,
+                    'coins_spent' => $approached->coins_spent,
                     'subjects_requested' => $subjectsRequested,
                     'requirement_details' => $requirement->details,
                     'requirement_city' => $requirement->city,

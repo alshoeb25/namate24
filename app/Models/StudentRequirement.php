@@ -18,8 +18,8 @@ class StudentRequirement extends Model
         'availability','languages','tutor_location_preference','other_subject','status',
         // Lead/coin fields
         'post_fee','unlock_price','max_leads','current_leads','lead_status','posted_at',
-        // Approached teacher fields
-        'approached_teacher_id','approached_at'
+        // Teachers view tracking
+        'teachers_viewed_at','teachers_view_coins'
     ];
 
     protected $casts = [
@@ -28,6 +28,7 @@ class StudentRequirement extends Model
         'languages' => 'array',
         'posted_at' => 'datetime',
         'hired_at' => 'datetime',
+        'teachers_viewed_at' => 'datetime',
     ];
 
     protected $appends = ['subject_name', 'subject_names'];
@@ -117,11 +118,19 @@ class StudentRequirement extends Model
     }
 
     /**
-     * Approached tutor relationship (approached_teacher_id -> tutors.id)
+     * Tutors approached for this requirement (via student_requirement_approached_tutors table)
      */
-    public function approachedTutor(): BelongsTo
+    public function approachedTutors(): BelongsToMany
     {
-        return $this->belongsTo(Tutor::class, 'approached_teacher_id');
+        return $this->belongsToMany(
+            Tutor::class,
+            'student_requirement_approached_tutors',
+            'student_requirement_id',
+            'tutor_id'
+        )
+        ->withPivot(['coins_spent', 'created_at'])
+        ->withTimestamps()
+        ->orderByDesc('student_requirement_approached_tutors.created_at');
     }
 
     /**

@@ -10,16 +10,16 @@ return new class extends Migration
     {
         Schema::table('enquiry_unlocks', function (Blueprint $table) {
             // Drop the teacher_id foreign key constraint first
-            if (Schema::hasColumn('enquiry_unlocks', 'teacher_id')) {
-                // Drop foreign key constraint - try multiple possible names
-                try {
-                    $table->dropForeign('enquiry_unlocks_teacher_id_foreign');
-                } catch (\Exception $e) {
-                    // Ignore if doesn't exist
-                }
-                // Then drop the column
-                $table->dropColumn('teacher_id');
-            }
+            // if (Schema::hasColumn('enquiry_unlocks', 'teacher_id')) {
+            //     // Drop foreign key constraint - try multiple possible names
+            //     try {
+            //         $table->dropForeign('enquiry_unlocks_teacher_id_foreign');
+            //     } catch (\Exception $e) {
+            //         // Ignore if doesn't exist
+            //     }
+            //     // Then drop the column
+            //     $table->dropColumn('teacher_id');
+            // }
         });
     }
 

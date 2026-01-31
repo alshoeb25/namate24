@@ -15,9 +15,25 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            // Core data
             SubjectSeeder::class,
+            LevelSeeder::class,
+            InstituteSeeder::class,
+            
+            // Admin system
             AdminRolesAndPermissionsSeeder::class,
             AdminUsersSeeder::class,
+            
+            // Coin packages
+            CoinPackageSeeder::class,
+            ApproachTeacherCostSeeder::class,
+            
+            // Field labels
+            FieldLabelSeeder::class,
+            
+            // Sample/Featured data (optional)
+            // FeaturedTutorsSeeder::class,
+            RoleSeeder::class,
         ]);
     }
 }

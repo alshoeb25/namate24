@@ -58,7 +58,7 @@ class TeacherHiredNotification extends Notification implements ShouldQueue
                 'subject' => $subjectLine,
                 'level' => $this->enquiry->level ?? null,
                 'learningGoals' => $this->enquiry->details ?? null,
-                'approachedDate' => $this->enquiry->approached_at?->format('M d, Y') ?? now()->format('M d, Y'),
+                'approachedDate' => now()->format('M d, Y'),
                 'requirementPhone' => $this->enquiry->phone ?? null,
                 'requirementAlternatePhone' => $this->enquiry->alternate_phone ?? null,
                 'myLearnersUrl' => url('/tutor/profile/my-learners'),

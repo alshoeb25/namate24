@@ -37,24 +37,31 @@
       <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-96 overflow-y-auto">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-2xl font-bold text-gray-800">
-            <i class="fas fa-users mr-2 text-blue-600"></i>Interested Teachers
+            <i class="fas fa-users mr-2 text-blue-600"></i>Interested Tutors
           </h2>
           <button @click="closeInterestedModal" class="text-gray-500 hover:text-gray-700">
             <i class="fas fa-times text-2xl"></i>
           </button>
         </div>
 
-        <div v-if="interestedTeachers.length === 0" class="text-center py-8">
-          <i class="fas fa-inbox text-gray-300 text-5xl mb-4"></i>
-          <p class="text-gray-600">No teachers have expressed interest yet.</p>
-        </div>
+          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+            <p class="text-sm text-yellow-800">
+              <i class="fas fa-info-circle mr-2"></i>
+              <strong>Note:</strong> Approaching a tutor will cost <strong>10 coins</strong>. You'll be able to see their contact details after approaching.
+            </p>
+          </div>
 
-        <div v-else class="space-y-4">
-          <p class="text-sm text-gray-600 mb-4">
-            <strong>{{ interestedTeachers.length }}</strong> teacher{{ interestedTeachers.length > 1 ? 's' : '' }} want{{ interestedTeachers.length > 1 ? '' : 's' }} to work with you.
-          </p>
+          <div v-if="interestedTeachers.length === 0" class="text-center py-8">
+            <i class="fas fa-inbox text-gray-300 text-5xl mb-4"></i>
+            <p class="text-gray-600">No tutors have expressed interest yet.</p>
+          </div>
 
-          <div v-for="teacher in interestedTeachers" :key="teacher.id" class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+          <div v-else class="space-y-4">
+            <p class="text-sm text-gray-600 mb-4">
+              <strong>{{ interestedTeachers.length }}</strong> tutor{{ interestedTeachers.length > 1 ? 's' : '' }} want{{ interestedTeachers.length > 1 ? '' : 's' }} to work with you.
+            </p>
+
+            <div v-for="teacher in interestedTeachers" :key="teacher.id" class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
             <div class="flex items-start justify-between mb-3">
               <div class="flex items-start gap-3 flex-1">
                 <img v-if="teacher.photo" :src="teacher.photo" :alt="teacher.name" class="w-12 h-12 rounded-full object-cover">
@@ -63,7 +70,24 @@
                 </div>
                 <div class="flex-1">
                   <h3 class="font-bold text-gray-800">{{ teacher.name }}</h3>
-                  <p class="text-sm text-gray-600">{{ teacher.email }}</p>
+                  
+                  <!-- Show contact details if approached -->
+                  <div v-if="teacher.email || teacher.phone" class="mt-2 space-y-1 bg-green-50 p-2 rounded">
+                    <p v-if="teacher.email" class="text-sm text-gray-800 font-medium">
+                      <i class="fas fa-envelope mr-1 text-blue-600"></i>{{ teacher.email }}
+                    </p>
+                    <p v-if="teacher.phone" class="text-sm text-gray-800 font-medium">
+                      <i class="fas fa-phone mr-1 text-green-600"></i>{{ teacher.phone }}
+                    </p>
+                  </div>
+                  
+                  <!-- Show message if not approached yet -->
+                  <div v-else class="mt-2 bg-gray-50 p-2 rounded">
+                    <p class="text-xs text-gray-500 italic">
+                      <i class="fas fa-lock mr-1"></i>Contact details will be shown after approaching
+                    </p>
+                  </div>
+                  
                   <div class="flex items-center gap-3 mt-2">
                     <span v-if="teacher.rating" class="text-sm">
                       <i class="fas fa-star text-yellow-500"></i> {{ teacher.rating }}/5
@@ -72,20 +96,22 @@
                   </div>
                 </div>
               </div>
-              <button
-                v-if="requirement?.approached_teacher_id !== teacher.id"
-                @click="selectTeacher(teacher.id)"
-                :disabled="approachLoading"
-                class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition disabled:bg-gray-400">
-                <i class="fas fa-check-circle mr-1"></i>{{ approachLoading ? 'Approaching...' : 'Approach' }}
-              </button>
-              <div v-else class="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium">
-                <i class="fas fa-check-circle mr-1"></i>Approached
+              <div>
+                <button
+                  v-if="!teacher.has_approached"
+                  @click="selectTeacher(teacher.id)"
+                  :disabled="approachLoading"
+                  class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition disabled:bg-gray-400">
+                  <i class="fas fa-check-circle mr-1"></i>{{ approachLoading ? 'Processing...' : 'Approach (10 coins)' }}
+                </button>
+                <div v-else class="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium">
+                  <i class="fas fa-check-circle mr-1"></i>Approached
+                </div>
               </div>
             </div>
-
+            
             <p v-if="teacher.bio" class="text-sm text-gray-700 mb-3">{{ teacher.bio }}</p>
-
+            
             <div v-if="teacher.interested_at" class="text-xs text-gray-500">
               <i class="fas fa-clock mr-1"></i>Interested on {{ formatDate(teacher.interested_at) }}
             </div>
@@ -164,13 +190,20 @@
                 <div v-else class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
                   <i class="fas fa-user text-blue-600"></i>
                 </div>
-                <div>
+                <div class="flex-1">
                   <p class="text-sm font-medium text-gray-800">{{ event.tutor.name || 'Tutor' }}</p>
-                  <p class="text-xs text-gray-600" v-if="event.tutor.email">{{ event.tutor.email }}</p>
-                  <p class="text-xs text-gray-600" v-if="event.tutor.phone">{{ event.tutor.phone }}</p>
                   <p class="text-xs text-gray-500" v-if="event.tutor.subjects && event.tutor.subjects.length">
                     {{ event.tutor.subjects.join(', ') }}
                   </p>
+                  <!-- Show contact details if available -->
+                  <div v-if="event.type === 'approached' && (event.tutor.email || event.tutor.phone)" class="mt-2 space-y-1 bg-green-50 p-2 rounded">
+                    <p v-if="event.tutor.email" class="text-xs text-gray-800 font-medium">
+                      <i class="fas fa-envelope mr-1 text-blue-600"></i>{{ event.tutor.email }}
+                    </p>
+                    <p v-if="event.tutor.phone" class="text-xs text-gray-800 font-medium">
+                      <i class="fas fa-phone mr-1 text-green-600"></i>{{ event.tutor.phone }}
+                    </p>
+                  </div>
                 </div>
               </div>
               <div v-if="event.type === 'unlock' && event.unlock_price" class="mt-1 text-xs text-gray-600">
@@ -222,7 +255,7 @@
         <button v-if="canViewTeachers"
                 @click="openInterestedModal(requirement.id)"
                 class="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition whitespace-nowrap">
-          <i class="fas fa-eye mr-1"></i>View Teachers
+          <i class="fas fa-eye mr-1"></i>View Tutors
         </button>
         <button v-if="canRefund"
                 @click="openRefundModal(requirement.id)"
@@ -234,7 +267,8 @@
                 class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition">
           <i class="fas fa-times-circle mr-1"></i>Close
         </button>
-        <button @click="editRequirement(requirement.id)"
+        <button v-if="canEdit"
+                @click="editRequirement(requirement.id)"
                 class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition">
           <i class="fas fa-edit mr-1"></i>Edit
         </button>
@@ -301,15 +335,27 @@ export default {
 
     const confirmRefund = async () => {
       try {
-        await axios.post(`/api/student/requirements/${refundRequirementId.value}/close`);
+        const response = await axios.post(`/api/student/requirements/${refundRequirementId.value}/close`);
+        
         showRefundModal.value = false;
+        const refundedCoins = refundAmount.value;
         refundAmount.value = 0;
         refundRequirementId.value = null;
-        await fetchRequirement();
-        alert('Refund processed successfully!');
+        
+        // Show success message with refund details
+        alert(`✅ Refund Successful!\n\n${refundedCoins} coins have been refunded to your wallet.\n\nYour requirement has been closed and removed from the list.\n\nCurrent balance: ${response.data.current_balance || 'Updated'} coins`);
+        
+        // Navigate back to requirements list
+        router.push('/student/requirements');
       } catch (err) {
         console.error('Error processing refund:', err);
-        alert('Failed to process refund');
+        showRefundModal.value = false;
+        
+        if (err.response?.data?.message) {
+          alert(`❌ Refund Failed\n\n${err.response.data.message}`);
+        } else {
+          alert('❌ Failed to process refund. Please try again.');
+        }
       }
     };
 
@@ -330,36 +376,68 @@ export default {
     };
 
     const selectTeacher = async (teacherId) => {
+      // Confirm before approaching
+      if (!confirm('Are you sure you want to approach this tutor?\n\nThis will cost 10 coins and you will receive their contact details.')) {
+        return;
+      }
+      
       approachLoading.value = true;
       try {
         const response = await axios.post(`/api/student/requirements/${requirement.value.id}/approach-teacher`, {
           teacher_id: teacherId
         });
-        alert(response.data.message);
+        
+        console.log('Approach response:', response.data);
+        
+        // Show success message with coin deduction info
+        alert(`✅ Success!\n\n${response.data.coins_deducted} coins deducted\n${response.data.message}\n\nCurrent balance: ${response.data.current_balance} coins`);
+        
+        // Reload interested teachers from database to show updated contact details
+        const teachersResponse = await axios.get(`/api/student/requirements/${requirement.value.id}/interested-teachers`);
+        interestedTeachers.value = teachersResponse.data.teachers || [];
+        
+        // Update requirement status
         requirement.value.status = 'approached';
-        requirement.value.approached_teacher_id = teacherId;
-        interestedTeachers.value = interestedTeachers.value.map(t => ({
-          ...t,
-          approached: t.id === teacherId
-        }));
+        
+        // Refresh requirement details to update status
+        await fetchRequirement();
       } catch (err) {
         console.error('Error approaching teacher:', err);
-        alert(err.response?.data?.message || 'Failed to approach teacher');
+        if (err.response?.status === 402) {
+          alert(`❌ Insufficient Coins\n\n${err.response.data.message}\n\nPlease purchase more coins to continue.`);
+        } else if (err.response?.status === 422) {
+          alert(`❌ Error\n\n${err.response?.data?.message || 'You have already approached this tutor.'}`);
+        } else {
+          alert(`❌ Error\n\n${err.response?.data?.message || 'Failed to approach teacher'}`);
+        }
       } finally {
         approachLoading.value = false;
       }
     };
 
     const closeRequirement = async (id) => {
-      if (!confirm('Are you sure you want to close this requirement?')) {
+      if (!confirm('Are you sure you want to close this requirement?\n\nThis action cannot be undone.')) {
         return;
       }
       try {
-        await axios.post(`/api/student/requirements/${id}/close`);
-        await fetchRequirement();
+        const response = await axios.post(`/api/student/requirements/${id}/close`);
+        
+        // Show success message
+        if (response.data.refund_amount && response.data.refund_amount > 0) {
+          alert(`✅ Requirement Closed!\n\n${response.data.refund_amount} coins have been refunded to your wallet.\n\nYour requirement has been removed from the list.\n\nCurrent balance: ${response.data.current_balance || 'Updated'} coins`);
+        } else {
+          alert('✅ Requirement closed successfully!\n\nYour requirement has been removed from the list.');
+        }
+        
+        // Navigate back to requirements list
+        router.push('/student/requirements');
       } catch (err) {
         console.error('Error closing requirement:', err);
-        alert('Failed to close requirement');
+        if (err.response?.data?.message) {
+          alert(`❌ Failed to Close\n\n${err.response.data.message}`);
+        } else {
+          alert('❌ Failed to close requirement. Please try again.');
+        }
       }
     };
 
@@ -402,6 +480,12 @@ export default {
     const canViewTeachers = computed(() => requirement.value.status === 'active' && (requirement.value.current_leads || 0) > 0);
     const canRefund = computed(() => requirement.value.status === 'active' && (requirement.value.current_leads || 0) === 0 && (requirement.value.post_fee || 0) > 0);
     const canClose = computed(() => requirement.value.status === 'active');
+    const canEdit = computed(() => {
+      // Hide edit button if requirement is approached or has approached tutors in history
+      if (requirement.value.status === 'approached') return false;
+      const hasApproachedTutors = history.value.some(event => event.type === 'approached');
+      return !hasApproachedTutors;
+    });
 
     onMounted(() => {
       fetchRequirement();
@@ -422,6 +506,7 @@ export default {
       canViewTeachers,
       canRefund,
       canClose,
+      canEdit,
       editRequirement,
       openRefundModal,
       cancelRefund,
