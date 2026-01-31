@@ -46,15 +46,15 @@ Route::get('/tutors-in-{city}', function () {
     return view('welcome');
 })->where('city', '[a-z0-9\-]+');
 
-// Tutor profile view routes - PUBLIC (numeric id only)
-Route::get('/tutors/{id}', [\App\Http\Controllers\Tutor\ProfileController::class, 'viewProfile'])
-    ->whereNumber('id')
-    ->name('tutor.public.view');
+// // Tutor profile view routes - PUBLIC (numeric id only)
+// Route::get('/tutors/{id}', [\App\Http\Controllers\Tutor\ProfileController::class, 'viewProfile'])
+//     ->whereNumber('id')
+//     ->name('tutor.public.view');
 
-// Legacy /tutor/{id}
-Route::get('/tutor/{id}', [\App\Http\Controllers\Tutor\ProfileController::class, 'viewProfile'])
-    ->whereNumber('id')
-    ->name('tutor.public.view.legacy');
+// Public tutor profile view (SPA - handled by Vue Router)
+Route::get('/tutor/{id}', function () {
+    return view('welcome');
+})->whereNumber('id')->name('tutor.public.view.legacy');
 
 // Conversations routes (SPA)
 Route::get('/conversations', function () {

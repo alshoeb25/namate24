@@ -247,22 +247,67 @@
         </div>
 
         <div class="bg-gray-100 rounded-lg p-6">
-          <div class="grid grid-cols-2 gap-3 mb-6">
-            <button @click="requireLogin('message')" class="bg-green-500 hover:bg-green-600 text-white py-2.5 px-4 rounded text-sm font-medium flex items-center justify-center">
-              <i class="far fa-envelope mr-2"></i>Message
+          <!-- ACTION BUTTONS - Only show for logged in students viewing other tutors -->
+          <div v-if="isLoggedInStudent && !isOwnProfile" class="grid grid-cols-2 gap-3 mb-6">
+            <button 
+              @click="openContactModal"
+              :disabled="hasContactAccess"
+              :class="hasContactAccess ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-600'"
+              class="text-white py-2.5 px-4 rounded text-sm font-medium flex items-center justify-center transition">
+              <i class="fas fa-phone mr-2"></i>
+              {{ hasContactAccess ? 'Contact Unlocked' : 'Contact' }}
             </button>
-            <button @click="requireLogin('phone')" class="bg-blue-500 hover:bg-blue-600 text-white py-2.5 px-4 rounded text-sm font-medium flex items-center justify-center">
-              <i class="fas fa-phone mr-2"></i>Phone
-            </button>
-            <button @click="requireLogin('pay')" class="bg-purple-500 hover:bg-purple-600 text-white py-2.5 px-4 rounded text-sm font-medium flex items-center justify-center">
-              <i class="far fa-credit-card mr-2"></i>Pay
-            </button>
-            <button @click="requireLogin('review')" class="bg-orange-500 hover:bg-orange-600 text-white py-2.5 px-4 rounded text-sm font-medium flex items-center justify-center">
+            <button 
+              @click="openReviewModal"
+              :disabled="!canReview"
+              :class="canReview ? 'bg-orange-500 hover:bg-orange-600' : 'bg-gray-400'"
+              class="text-white py-2.5 px-4 rounded text-sm font-medium flex items-center justify-center transition">
               <i class="far fa-star mr-2"></i>Review
             </button>
           </div>
+          
+          <!-- Message for tutors viewing their own profile -->
+          <div v-if="isOwnProfile" class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <p class="text-blue-800 text-sm text-center">
+              <i class="fas fa-info-circle mr-2"></i>
+              This is your profile. Use the "Edit Profile" button to make changes.
+            </p>
+          </div>
+          
+          <!-- Login prompt for guests -->
+          <div v-if="!isLoggedIn" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <p class="text-yellow-800 text-sm text-center mb-3">
+              <i class="fas fa-lock mr-2"></i>
+              Please log in to contact this tutor or leave a review
+            </p>
+            <router-link :to="{ name: 'login', query: { redirect: $route.fullPath } }"
+                         class="block w-full bg-blue-600 text-white text-center py-2 rounded hover:bg-blue-700 transition">
+              Log In
+            </router-link>
+          </div>
 
           <div class="space-y-4 text-sm">
+            <!-- Contact Information - Only show if access granted -->
+            <div v-if="hasContactAccess" class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+              <h3 class="font-semibold text-green-800 mb-3 flex items-center">
+                <i class="fas fa-unlock mr-2"></i>Contact Details
+              </h3>
+              <div class="space-y-2 text-gray-700">
+                <div v-if="profile?.user?.phone" class="flex items-center">
+                  <i class="fas fa-phone text-green-600 w-5 flex-shrink-0"></i>
+                  <span class="ml-3 font-medium">{{ profile.user.phone }}</span>
+                </div>
+                <div v-if="profile?.user?.email" class="flex items-center">
+                  <i class="fas fa-envelope text-green-600 w-5 flex-shrink-0"></i>
+                  <span class="ml-3">{{ profile.user.email }}</span>
+                </div>
+                <div v-if="profile?.whatsapp" class="flex items-center">
+                  <i class="fab fa-whatsapp text-green-600 w-5 flex-shrink-0"></i>
+                  <span class="ml-3">{{ profile.whatsapp }}</span>
+                </div>
+              </div>
+            </div>
+
             <div class="flex items-start">
               <i class="fas fa-map-marker-alt text-gray-600 w-5 mt-1 flex-shrink-0"></i>
               <span class="text-gray-700 ml-3">{{ getLocation() }}</span>
@@ -321,6 +366,186 @@
         </div>
       </aside>
     </main>
+
+    <!-- Contact Terms & Conditions Modal -->
+    <div v-if="showContactModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-2xl font-bold text-gray-800">Unlock Contact Details</h2>
+            <button @click="closeContactModal" class="text-gray-500 hover:text-gray-700">
+              <i class="fas fa-times text-xl"></i>
+            </button>
+          </div>
+
+          <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+            <div class="flex items-center">
+              <i class="fas fa-coins text-yellow-600 text-2xl mr-3"></i>
+              <div>
+                <p class="font-semibold text-yellow-800">{{ contactUnlockCoins }} Coins Required</p>
+                <p class="text-sm text-yellow-700">Your current balance: {{ userCoins }} coins</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
+              <i class="fas fa-shield-alt text-blue-600 mr-2"></i>Safety Guidelines
+            </h3>
+            <ul class="space-y-2 text-sm text-gray-700">
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
+                <span>Always meet in public places for the first meeting</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
+                <span>Verify the tutor's credentials and experience</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
+                <span>Share your class schedule with family/friends</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
+                <span>Report any suspicious behavior to our support team</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="mb-6">
+            <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
+              <i class="fas fa-file-contract text-purple-600 mr-2"></i>Terms & Conditions
+            </h3>
+            <div class="bg-gray-50 rounded-lg p-4 max-h-48 overflow-y-auto text-sm text-gray-700">
+              <ol class="space-y-2 list-decimal list-inside">
+                <li>Once you unlock contact details, {{ contactUnlockCoins }} coins will be deducted from your account.</li>
+                <li>Contact details are provided as-is and the platform is not responsible for the accuracy.</li>
+                <li>You agree to use contact information only for educational purposes.</li>
+                <li>Any misuse of contact information may result in account suspension.</li>
+                <li>Coins are non-refundable once contact details are unlocked.</li>
+                <li>The platform does not guarantee response from the tutor.</li>
+                <li>All transactions through the platform should be documented for your safety.</li>
+                <li>You agree to our privacy policy and data protection guidelines.</li>
+              </ol>
+            </div>
+          </div>
+
+          <div v-if="userCoins < contactUnlockCoins" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p class="text-red-800 font-medium">
+              <i class="fas fa-exclamation-triangle mr-2"></i>
+              Insufficient coins. Please purchase more coins to continue.
+            </p>
+            <router-link to="/student/coins/purchase" 
+                         class="inline-block mt-3 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm">
+              Purchase Coins
+            </router-link>
+          </div>
+
+          <div class="flex gap-3">
+            <button 
+              @click="closeContactModal" 
+              class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-3 rounded-lg font-medium transition">
+              Reject
+            </button>
+            <button 
+              @click="acceptAndUnlock"
+              :disabled="userCoins < contactUnlockCoins || unlocking"
+              :class="userCoins < contactUnlockCoins || unlocking ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'"
+              class="flex-1 text-white py-3 rounded-lg font-medium transition">
+              <span v-if="unlocking">
+                <i class="fas fa-spinner fa-spin mr-2"></i>Processing...
+              </span>
+              <span v-else>Accept & Unlock ({{ contactUnlockCoins }} coins)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Review Modal -->
+    <div v-if="showReviewModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-lg max-w-lg w-full">
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-2xl font-bold text-gray-800">
+              {{ isEditingReview ? 'Edit Review' : 'Write a Review' }}
+            </h2>
+            <button @click="closeReviewModal" class="text-gray-500 hover:text-gray-700">
+              <i class="fas fa-times text-xl"></i>
+            </button>
+          </div>
+
+          <!-- Review Status Badge -->
+          <div v-if="existingReview" class="mb-4">
+            <div :class="existingReview.status === 'approved' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-yellow-50 border-yellow-200 text-yellow-800'" 
+                 class="border rounded-lg p-3 text-sm">
+              <div class="flex items-center">
+                <i :class="existingReview.status === 'approved' ? 'fa-check-circle text-green-600' : 'fa-clock text-yellow-600'" 
+                   class="fas mr-2"></i>
+                <div>
+                  <span class="font-semibold">Status: {{ existingReview.status.toUpperCase() }}</span>
+                  <p v-if="existingReview.status === 'pending'" class="mt-1">
+                    Your review is pending approval. You can edit it until it's approved.
+                  </p>
+                  <p v-else-if="existingReview.status === 'approved'" class="mt-1">
+                    Your review is visible on the tutor's profile. Contact support to make changes.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+            <div class="flex gap-2">
+              <button 
+                v-for="star in 5" 
+                :key="star"
+                @click="reviewRating = star"
+                :disabled="existingReview?.status === 'approved'"
+                class="text-3xl transition-colors"
+                :class="[
+                  star <= reviewRating ? 'text-yellow-400' : 'text-gray-300',
+                  existingReview?.status === 'approved' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+                ]">
+                ★
+              </button>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Your Review</label>
+            <textarea 
+              v-model="reviewComment"
+              :disabled="existingReview?.status === 'approved'"
+              rows="4"
+              placeholder="Share your experience with this tutor..."
+              :class="existingReview?.status === 'approved' ? 'bg-gray-100 cursor-not-allowed' : ''"
+              class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </textarea>
+          </div>
+
+          <div class="flex gap-3">
+            <button 
+              @click="closeReviewModal" 
+              class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-3 rounded-lg font-medium transition">
+              {{ existingReview?.status === 'approved' ? 'Close' : 'Cancel' }}
+            </button>
+            <button 
+              v-if="existingReview?.status !== 'approved'"
+              @click="submitReview"
+              :disabled="!reviewRating || !reviewComment.trim() || submittingReview"
+              :class="!reviewRating || !reviewComment.trim() || submittingReview ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'"
+              class="flex-1 text-white py-3 rounded-lg font-medium transition">
+              <span v-if="submittingReview">
+                <i class="fas fa-spinner fa-spin mr-2"></i>{{ isEditingReview ? 'Updating...' : 'Submitting...' }}
+              </span>
+              <span v-else>{{ isEditingReview ? 'Update Review' : 'Submit Review' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -339,7 +564,32 @@ export default {
     const user = computed(() => userStore.user);
     const isLoggedIn = computed(() => !!user.value);
     const profile = ref(null);
-    const loading = ref(true);
+    const loading = ref(true);    
+    // Contact modal
+    const showContactModal = ref(false);
+    const unlocking = ref(false);
+    const hasContactAccess = ref(false);
+    const userCoins = ref(0);
+    const contactUnlockCoins = ref(0);
+    
+    // Review modal
+    const showReviewModal = ref(false);
+    const reviewRating = ref(0);
+    const reviewComment = ref('');
+    const submittingReview = ref(false);
+    const canReview = ref(false);
+    const existingReview = ref(null);
+    const isEditingReview = ref(false);
+
+    const isLoggedInStudent = computed(() => {
+      return user.value && user.value.role === 'student';
+    });
+
+    const isOwnProfile = computed(() => {
+      if (!user.value || !profile.value) return false;
+      // Check if the logged-in user is viewing their own profile
+      return user.value.id === profile.value.user_id;
+    });    
     const approvedVideoUrl = computed(() => {
       const p = profile.value;
       if (!p) return null;
@@ -371,10 +621,230 @@ export default {
       try {
         const res = await axios.get(`/api/public/tutors/${route.params.id}`);
         profile.value = res.data;
+        // Check if student has already unlocked this tutor's contact
+        if (isLoggedInStudent.value && profile.value?.user_id) {
+          await checkContactAccess();
+          await loadUserCoins();
+        }
       } catch (error) {
         console.error('Error loading tutor profile:', error);
       } finally {
         loading.value = false;
+      }
+    }
+
+    async function checkContactAccess() {
+      try {
+        const tutorId = profile.value?.id;
+        if (!tutorId) return;
+        
+        const response = await axios.get(`/api/student/contacted-tutors/check/${tutorId}`);
+        hasContactAccess.value = response.data.has_access || false;
+        canReview.value = response.data.can_review || false;
+      } catch (error) {
+        console.error('Error checking contact access:', error);
+      }
+    }
+
+    async function loadUserCoins() {
+      try {
+        const response = await axios.get('/api/student/coins/balance');
+        userCoins.value = response.data.balance || 0;
+      } catch (error) {
+        console.error('Error loading coins:', error);
+        userCoins.value = 0;
+      }
+    }
+
+    async function loadContactUnlockCoins() {
+      try {
+        const response = await axios.get('/api/settings/contact-unlock-coins');
+        if (response.data?.contact_unlock_coins !== undefined) {
+          contactUnlockCoins.value = Number(response.data.contact_unlock_coins);
+        }
+      } catch (error) {
+        console.error('Error loading contact unlock coins:', error);
+      }
+    }
+
+    async function openContactModal() {
+      if (!isLoggedInStudent.value) {
+        alert('Please login as a student to contact tutors');
+        router.push({ name: 'login', query: { redirect: route.fullPath } });
+        return;
+      }
+      
+      if (isOwnProfile.value) {
+        alert('You cannot contact your own profile. This is your tutor profile.');
+        return;
+      }
+      
+      if (!contactUnlockCoins.value) {
+        await loadContactUnlockCoins();
+      }
+      showContactModal.value = true;
+    }
+
+    function closeContactModal() {
+      showContactModal.value = false;
+    }
+
+    async function acceptAndUnlock() {
+      if (userCoins.value < contactUnlockCoins.value) {
+        alert('Insufficient coins. Please purchase more coins.');
+        return;
+      }
+
+      unlocking.value = true;
+      try {
+        const tutorId = profile.value?.id;
+        const studentId = user.value?.student?.id;
+        
+        if (!studentId) {
+          alert('Student profile not found. Please create a student profile first.');
+          return;
+        }
+        
+        const response = await axios.post('/api/student/unlock-tutor-contact', {
+          tutor_id: tutorId,
+          student_id: studentId
+        });
+
+        if (response.data.success) {
+          hasContactAccess.value = true;
+          canReview.value = true;
+          userCoins.value = response.data.remaining_balance || (userCoins.value - contactUnlockCoins.value);
+          
+          // Reload profile to get contact details
+          await loadProfile();
+          
+          closeContactModal();
+          alert('Contact details unlocked successfully! This tutor is now added to your "My Tutors" section.');
+        }
+      } catch (error) {
+        console.error('Error unlocking contact:', error);
+        if (error.response?.data?.message) {
+          alert(error.response.data.message);
+        } else {
+          alert('Failed to unlock contact. Please try again.');
+        }
+      } finally {
+        unlocking.value = false;
+      }
+    }
+
+    function openReviewModal() {
+      if (!isLoggedInStudent.value) {
+        alert('Please login as a student to write reviews');
+        router.push({ name: 'login', query: { redirect: route.fullPath } });
+        return;
+      }
+      
+      if (isOwnProfile.value) {
+        alert('You cannot review your own profile. This is your tutor profile.');
+        return;
+      }
+      
+      if (!canReview.value) {
+        alert('You can only review tutors whose contact you have unlocked.');
+        return;
+      }
+      
+      // Load existing review if available
+      loadExistingReview();
+      
+      showReviewModal.value = true;
+    }
+
+    async function loadExistingReview() {
+      try {
+        const tutorId = profile.value?.id;
+        const studentId = user.value?.student?.id;
+        
+        if (!tutorId || !studentId) return;
+        
+        const response = await axios.get(`/api/student/review/${tutorId}?student_id=${studentId}`);
+        if (response.data.success && response.data.review) {
+          existingReview.value = response.data.review;
+          reviewRating.value = existingReview.value.rating;
+          reviewComment.value = existingReview.value.comment;
+          isEditingReview.value = true;
+        }
+      } catch (error) {
+        // No existing review, that's fine
+        existingReview.value = null;
+        isEditingReview.value = false;
+      }
+    }
+
+    function closeReviewModal() {
+      showReviewModal.value = false;
+      if (!isEditingReview.value) {
+        reviewRating.value = 0;
+        reviewComment.value = '';
+      }
+      isEditingReview.value = false;
+    }
+
+    async function submitReview() {
+      if (!reviewRating.value || !reviewComment.value.trim()) {
+        alert('Please provide both rating and comment');
+        return;
+      }
+
+      submittingReview.value = true;
+      try {
+        const tutorId = profile.value?.id;
+        const studentId = user.value?.student?.id;
+        
+        if (!studentId) {
+          alert('Student profile not found.');
+          return;
+        }
+        
+        let response;
+        if (isEditingReview.value && existingReview.value) {
+          // Update existing review
+          response = await axios.put(`/api/student/review/${existingReview.value.id}`, {
+            rating: reviewRating.value,
+            comment: reviewComment.value.trim()
+          });
+        } else {
+          // Submit new review
+          response = await axios.post('/api/student/submit-review', {
+            tutor_id: tutorId,
+            student_id: studentId,
+            rating: reviewRating.value,
+            comment: reviewComment.value.trim()
+          });
+        }
+
+        if (response.data.success) {
+          existingReview.value = response.data.review;
+          
+          // Show status modal
+          const status = existingReview.value.status;
+          const statusMessage = status === 'approved' 
+            ? 'Your review is now visible on the tutor\'s profile.' 
+            : 'Your review has been submitted and is pending approval. You can edit it until it\'s approved.';
+          
+          alert(`Review ${isEditingReview.value ? 'updated' : 'submitted'} successfully!\n\nStatus: ${status.toUpperCase()}\n${statusMessage}`);
+          
+          closeReviewModal();
+          // Reload profile to show new review if approved
+          if (status === 'approved') {
+            await loadProfile();
+          }
+        }
+      } catch (error) {
+        console.error('Error submitting review:', error);
+        if (error.response?.data?.message) {
+          alert(error.response.data.message);
+        } else {
+          alert('Failed to submit review. Please try again.');
+        }
+      } finally {
+        submittingReview.value = false;
       }
     }
 
@@ -455,6 +925,7 @@ export default {
       if (!userStore.user && userStore.token) {
         await userStore.fetchUser();
       }
+      await loadContactUnlockCoins();
       await loadProfile();
     });
 
@@ -462,7 +933,29 @@ export default {
       user,
       profile,
       loading,
+      isLoggedIn,
+      isLoggedInStudent,
+      isOwnProfile,
       approvedVideoUrl,
+      showContactModal,
+      unlocking,
+      hasContactAccess,
+      userCoins,
+      contactUnlockCoins,
+      showReviewModal,
+      reviewRating,
+      reviewComment,
+      submittingReview,
+      canReview,
+      existingReview,
+      isEditingReview,
+      openContactModal,
+      closeContactModal,
+      acceptAndUnlock,
+      openReviewModal,
+      closeReviewModal,
+      submitReview,
+      loadExistingReview,
       formatDate,
       getTotalExperience,
       getLocation,

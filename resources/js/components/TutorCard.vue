@@ -151,32 +151,8 @@
           </div>
         </div>
       </div>
-      
-      <!-- Action Buttons -->
-      <div class="flex gap-3">
-        <button 
-          @click="message" 
-          class="flex-1 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-        >
-          <i class="fas fa-envelope"></i>
-          Contact
-        </button>
-        <router-link 
-          :to="{ name: 'tutor.show', params: { id: tutor.id } }"
-          class="flex-1 py-2.5 border border-blue-600 text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
-        >
-          <i class="fas fa-eye"></i>
-          View Profile
-        </router-link>
-        <button 
-          @click="toggleFavorite" 
-          class="px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-          :class="{ 'text-red-500 border-red-300': isFavorite }"
-        >
-          <i class="fas fa-heart"></i>
-        </button>
-      </div>
     </div>
+
   </div>
 </template>
 
@@ -241,11 +217,6 @@ export default {
     }
   },
   methods: {
-    message() {
-      // TODO: open messaging / contact flow
-      this.$emit('contact', this.tutor);
-      alert('Open messaging flow - not implemented');
-    },
     toggleFavorite() {
       this.isFavorite = !this.isFavorite;
       this.$emit('favorite', this.tutor);

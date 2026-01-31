@@ -79,14 +79,14 @@
                 <p class="text-sm text-gray-500 text-center mt-1">Rate your tutors</p>
             </router-link>
 
-            <!-- Approached Tutors -->
-            <router-link to="/student/approached-tutors"
+            <!-- Contacted Tutors -->
+            <router-link to="/student/contacted-tutors"
                 class="dashboard-card flex flex-col items-center justify-center gap-4 bg-white rounded-2xl p-6 shadow-md hover:shadow-xl">
                 <div class="icon-container bg-gradient-to-br from-orange-500 to-red-600">
                     <i class="fas fa-users text-white text-2xl"></i>
                 </div>
-                <h3 class="text-xl font-semibold text-gray-800 text-center">Approached Tutors</h3>
-                <p class="text-sm text-gray-500 text-center mt-1">View your tutors</p>
+                <h3 class="text-xl font-semibold text-gray-800 text-center">Contacted Tutors</h3>
+                <p class="text-sm text-gray-500 text-center mt-1">View contacted tutors</p>
             </router-link>
 
             <!-- Profile -->
@@ -165,7 +165,7 @@
             </router-link>
 
             <!-- Approached Tutors -->
-            <router-link to="/student/approached-tutors" class="dashboard-card flex items-center gap-4 bg-white rounded-2xl p-4 shadow-md">
+            <router-link to="/student/contacted-tutors" class="dashboard-card flex items-center gap-4 bg-white rounded-2xl p-4 shadow-md">
                 <div class="icon-container-mobile bg-gradient-to-br from-orange-500 to-red-600">
                     <i class="fas fa-users text-white"></i>
                 </div>

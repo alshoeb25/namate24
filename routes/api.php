@@ -36,6 +36,7 @@ Route::get('tutors', [TutorController::class,'index']);
 Route::get('tutors/featured', [TutorController::class,'featured']);
 Route::get('tutors/{id}', [TutorController::class,'show']);
 Route::get('public/tutors/{id}', [TutorController::class,'publicShow']);
+Route::get('settings/contact-unlock-coins', [\App\Http\Controllers\Api\PublicTutorProfileController::class, 'getContactUnlockCoins']);
 
 // Advanced search endpoints for tutors
 Route::get('tutors/nearby', [TutorController::class,'nearby']);
@@ -171,6 +172,17 @@ Route::middleware('auth:api')->group(function() {
     Route::post('profile/phone/verify', [\App\Http\Controllers\Api\UserController::class, 'verifyPhoneOtp'])->middleware('check.user.active');
     Route::post('profile/email/verification', [\App\Http\Controllers\Api\UserController::class, 'sendEmailVerification'])->middleware('check.user.active');
     Route::put('profile/location', [\App\Http\Controllers\Api\UserController::class, 'updateLocation'])->middleware('check.user.active');
+
+    // Tutor Contact & Review Routes (accessible to all authenticated users)
+    Route::prefix('student')->group(function () {
+        Route::get('contacted-tutors', [\App\Http\Controllers\Api\PublicTutorProfileController::class, 'getContactedTutors']);
+        Route::get('contacted-tutors/check/{tutorId}', [\App\Http\Controllers\Api\PublicTutorProfileController::class, 'checkContactAccess']);
+        Route::post('unlock-tutor-contact', [\App\Http\Controllers\Api\PublicTutorProfileController::class, 'unlockTutorContact']);
+        Route::post('submit-review', [\App\Http\Controllers\Api\PublicTutorProfileController::class, 'submitReview']);
+        Route::get('review/{tutorId}', [\App\Http\Controllers\Api\PublicTutorProfileController::class, 'getReview']);
+        Route::put('review/{reviewId}', [\App\Http\Controllers\Api\PublicTutorProfileController::class, 'updateReview']);
+        Route::get('coins/balance', [\App\Http\Controllers\Api\PublicTutorProfileController::class, 'getCoinBalance']);
+    });
 
     // Student Routes - Protected by student profile check
     Route::prefix('student')->middleware('check.student.profile')->group(function () {

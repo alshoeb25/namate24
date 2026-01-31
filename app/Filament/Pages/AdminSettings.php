@@ -23,6 +23,7 @@ class AdminSettings extends Page
         $this->form->fill([
             'enquiry_post_fee' => AdminSetting::get('enquiry_post_fee', 10),
             'enquiry_unlock_fee' => AdminSetting::get('enquiry_unlock_fee', 5),
+            'contact_unlock_coins' => AdminSetting::get('contact_unlock_coins', 50),
             'referral_reward_coins' => AdminSetting::get('referral_reward_coins', 50),
             'referral_bonus_coins' => AdminSetting::get('referral_bonus_coins', 25),
             'max_leads_per_enquiry' => AdminSetting::get('max_leads_per_enquiry', 5),
@@ -42,6 +43,9 @@ class AdminSettings extends Page
                             ->numeric(),
                         TextInput::make('enquiry_unlock_fee')
                             ->label('Enquiry Unlock Fee (coins)')
+                            ->numeric(),
+                        TextInput::make('contact_unlock_coins')
+                            ->label('Contact Unlock Fee (coins)')
                             ->numeric(),
                         TextInput::make('referral_reward_coins')
                             ->label('Referral Reward Coins')
