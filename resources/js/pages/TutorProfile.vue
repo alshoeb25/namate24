@@ -478,7 +478,7 @@
               <i class="fas fa-exclamation-triangle mr-2"></i>
               Insufficient coins. Please purchase more coins to continue.
             </p>
-            <router-link to="/student/coins/purchase" 
+            <router-link to="/student/wallet" 
                          class="inline-block mt-3 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm">
               Purchase Coins
             </router-link>

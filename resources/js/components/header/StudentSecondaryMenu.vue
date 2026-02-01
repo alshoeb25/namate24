@@ -38,12 +38,6 @@
             </div>
           </div>
 
-          <router-link to="/student/contacted-tutors" 
-                       class="text-gray-700 hover:text-blue-600 font-medium transition"
-                       active-class="text-blue-600 font-semibold">
-            <i class="fas fa-user-tie mr-2"></i>My Tutors
-          </router-link>
-
           <router-link to="/search" 
                        class="text-gray-700 hover:text-blue-600 font-medium transition"
                        active-class="text-blue-600 font-semibold">
@@ -78,10 +72,10 @@
             </div>
           </div>
 
-          <router-link to="/student/reviews" 
+          <router-link to="/student/contacted-tutors" 
                        class="text-gray-700 hover:text-blue-600 font-medium transition"
                        active-class="text-blue-600 font-semibold">
-            <i class="fas fa-star mr-2"></i>Reviews
+            <i class="fas fa-user-tie mr-2"></i>My Tutors
           </router-link>
         </nav>
       </div>
@@ -107,13 +101,6 @@
           </li>
 
           <li>
-            <router-link to="/student/contacted-tutors" @click="closeMobileMenu" 
-                         class="block px-4 py-2 text-gray-700 font-medium hover:bg-gray-50 rounded-md">
-              <i class="fas fa-user-tie mr-2"></i>My Tutors
-            </router-link>
-          </li>
-
-          <li>
             <router-link to="/search" @click="closeMobileMenu" 
                          class="block px-4 py-2 text-gray-700 font-medium hover:bg-gray-50 rounded-md">
               <i class="fas fa-search mr-2"></i>Find Tutor
@@ -133,9 +120,9 @@
           </li>
 
           <li>
-            <router-link to="/student/reviews" @click="closeMobileMenu" 
+            <router-link to="/student/contacted-tutors" @click="closeMobileMenu" 
                          class="block px-4 py-2 text-gray-700 font-medium hover:bg-gray-50 rounded-md">
-              <i class="fas fa-star mr-2"></i>Reviews
+              <i class="fas fa-user-tie mr-2"></i>My Tutors
             </router-link>
           </li>
         </ul>

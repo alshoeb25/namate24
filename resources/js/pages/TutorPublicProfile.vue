@@ -10,8 +10,8 @@
         <span class="text-gray-500 font-light ml-2">Teaching</span>
       </h1>
       <div class="flex items-center justify-center text-gray-500 text-lg">
-        <i class="fas fa-star mr-2"></i>
-        <span>{{ profile?.rating_avg ? `${profile.rating_avg}/5 (${profile.rating_count || 0} reviews)` : 'No reviews yet' }}</span>
+        <i class="fas fa-star mr-2 text-pink-600"></i>
+        <span>{{ ratingSummaryText }}</span>
       </div>
     </div>
 
@@ -192,33 +192,33 @@
             <i class="fas fa-thumbs-up mr-3"></i>
             Reviews
           </h2>
-          <div v-if="(profile?.rating_count && profile.rating_count > 0) || (profile?.reviews && profile.reviews.length > 0)" class="space-y-4">
+          <div v-if="(ratingSummary?.total_reviews && ratingSummary.total_reviews > 0) || (approvedReviews && approvedReviews.length > 0)" class="space-y-4">
             <div class="bg-yellow-50 p-4 rounded-lg">
               <div class="flex items-center gap-4">
-                <div class="text-4xl font-bold text-yellow-600">{{ profile.rating_avg }}</div>
+                <div class="text-4xl font-bold text-pink-600">{{ ratingSummary?.average ?? 'N/A' }}</div>
                 <div>
                   <div class="flex items-center gap-1 mb-1">
-                    <span v-for="n in 5" :key="n" class="text-yellow-400">
-                      {{ n <= Math.round(profile.rating_avg) ? '★' : '☆' }}
+                    <span v-for="n in 5" :key="n" :class="n <= Math.round(ratingSummary?.average || 0) ? 'text-pink-600' : 'text-gray-300'">
+                      {{ n <= Math.round(ratingSummary?.average || 0) ? '★' : '☆' }}
                     </span>
                   </div>
-                  <p class="text-sm text-gray-600">Based on {{ profile.rating_count }} reviews</p>
+                  <p class="text-sm text-gray-600">Based on {{ ratingSummary?.total_reviews || 0 }} reviews</p>
                 </div>
               </div>
             </div>
 
-            <div v-if="profile?.reviews && profile.reviews.length > 0" class="space-y-3">
-              <div v-for="(review, index) in profile.reviews" :key="index" class="border rounded-lg p-4 bg-gray-50">
+            <div v-if="approvedReviews && approvedReviews.length > 0" class="space-y-3">
+              <div v-for="(review, index) in approvedReviews" :key="index" class="border rounded-lg p-4 bg-gray-50">
                 <div class="flex items-start justify-between mb-2">
                   <div>
-                    <p class="font-medium">{{ review.student_name || 'Anonymous' }}</p>
+                    <p class="font-medium">{{ review.name || 'Anonymous' }}</p>
                     <div class="flex items-center gap-1">
-                      <span v-for="n in 5" :key="n" class="text-yellow-400 text-sm">
+                      <span v-for="n in 5" :key="n" :class="n <= review.rating ? 'text-pink-600' : 'text-gray-300'" class="text-sm">
                         {{ n <= review.rating ? '★' : '☆' }}
                       </span>
                     </div>
                   </div>
-                  <p class="text-sm text-gray-500">{{ formatDate(review.created_at) }}</p>
+                  <p class="text-sm text-gray-500">{{ review.date ? formatDate(review.date) : formatDate(review.created_at) }}</p>
                 </div>
                 <p class="text-gray-600 text-sm">{{ review.comment }}</p>
               </div>
@@ -435,7 +435,7 @@
               <i class="fas fa-exclamation-triangle mr-2"></i>
               Insufficient coins. Please purchase more coins to continue.
             </p>
-            <router-link to="/student/coins/purchase" 
+            <router-link to="/student/wallet" 
                          class="inline-block mt-3 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm">
               Purchase Coins
             </router-link>
@@ -590,6 +590,23 @@ export default {
       // Check if the logged-in user is viewing their own profile
       return user.value.id === profile.value.user_id;
     });    
+    const approvedReviews = computed(() => {
+      if (!profile.value?.reviews) return [];
+      return profile.value.reviews;
+    });
+
+    const ratingSummary = computed(() => profile.value?.rating_summary || null);
+
+    const ratingSummaryText = computed(() => {
+      if (ratingSummary.value?.average) {
+        return `${ratingSummary.value.average}/5 (${ratingSummary.value.total_reviews || 0} reviews)`;
+      }
+      if (profile.value?.rating_avg) {
+        return `${profile.value.rating_avg}/5 (${profile.value.rating_count || 0} reviews)`;
+      }
+      return 'No reviews yet';
+    });
+
     const approvedVideoUrl = computed(() => {
       const p = profile.value;
       if (!p) return null;
@@ -936,6 +953,9 @@ export default {
       isLoggedIn,
       isLoggedInStudent,
       isOwnProfile,
+      approvedReviews,
+      ratingSummary,
+      ratingSummaryText,
       approvedVideoUrl,
       showContactModal,
       unlocking,

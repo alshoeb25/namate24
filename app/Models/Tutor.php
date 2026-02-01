@@ -160,6 +160,7 @@ class Tutor extends Model
             'experience_years' => $this->experience_years,
             'experience_total_years' => $this->experience_total_years,
             'rating_avg' => $this->rating_avg,
+            'rating_count' => $this->rating_count,
             'verified' => $this->verified,
             'gender' => $this->gender,
             'badges' => $this->badges ?? [],

@@ -20,7 +20,10 @@
         <div class="flex items-center gap-4 text-gray-600 text-sm mb-3">
           <span class="flex items-center gap-1">
             <i class="fas fa-star text-yellow-400"></i>
-            {{ tutor.rating_avg || '0.0' }} ({{ tutor.reviews_count || 0 }} reviews)
+            <span v-if="tutor.rating_avg">
+              {{ tutor.rating_avg }} ({{ tutor.rating_count ?? tutor.reviews_count ?? 0 }} reviews)
+            </span>
+            <span v-else>No reviews</span>
           </span>
           <span class="flex items-center gap-1">
             <i :class="modeIcon"></i>

@@ -346,6 +346,43 @@ class TutorController extends Controller
             return response()->json(['message' => 'Tutor not available'], 404);
         }
 
+        $approvedReviews = \DB::table('tutor_reviews')
+            ->join('students', 'tutor_reviews.student_id', '=', 'students.id')
+            ->join('users', 'students.user_id', '=', 'users.id')
+            ->where('tutor_reviews.tutor_id', $tutor->id)
+            ->where('tutor_reviews.status', 'approved')
+            ->orderByDesc('tutor_reviews.created_at')
+            ->select([
+                'tutor_reviews.id',
+                'tutor_reviews.rating',
+                'tutor_reviews.comment',
+                'tutor_reviews.status',
+                'tutor_reviews.created_at',
+                'users.name as student_name',
+                'users.avatar as student_photo',
+            ])
+            ->get();
+
+        $reviews = $approvedReviews->map(function ($review) {
+            return [
+                'name' => $review->student_name,
+                'photo' => $review->student_photo,
+                'rating' => (int) $review->rating,
+                'date' => optional($review->created_at)->toDateString(),
+                'comment' => $review->comment,
+                'status' => $review->status,
+                'created_at' => $review->created_at,
+            ];
+        });
+
+        $ratingSummary = [
+            'average' => $approvedReviews->avg('rating') ? round((float) $approvedReviews->avg('rating'), 2) : null,
+            'total_reviews' => $approvedReviews->count(),
+        ];
+
+        $tutor->setAttribute('rating_summary', $ratingSummary);
+        $tutor->setAttribute('reviews', $reviews);
+
         // Eager-loaded JSON columns are already cast on the model
         return response()->json($tutor);
     }
