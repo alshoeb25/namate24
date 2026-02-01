@@ -212,7 +212,7 @@ class PublicTutorProfileController extends Controller
         }
 
         // Prevent tutors from reviewing themselves
-        if ($user->tutors->id === $tutorId) {
+        if (($user->tutor?->id) === (int) $tutorId) {
             return response()->json([
                 'success' => false,
                 'message' => 'You cannot review your own profile'
