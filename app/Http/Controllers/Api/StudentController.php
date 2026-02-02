@@ -423,6 +423,8 @@ class StudentController extends Controller
             ->firstOrFail();
 
         $requirement->update(['status' => 'closed']);
+        // Remove from Elasticsearch index immediately
+        dispatch(new \App\Jobs\RemoveRequirementFromIndexJob($requirement->id));
 
         $refundAmount = 0;
         $freePostRestored = false;
@@ -465,6 +467,8 @@ class StudentController extends Controller
         }
 
         $requirement->delete();
+        // Ensure Elasticsearch removal on delete
+        dispatch(new \App\Jobs\RemoveRequirementFromIndexJob($requirement->id));
 
         return response()->json([
             'message' => 'Requirement deleted successfully.'
