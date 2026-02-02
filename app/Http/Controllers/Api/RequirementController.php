@@ -41,7 +41,12 @@ class RequirementController extends Controller
         }
         
         // Count existing requirements for this student
-        $requirementCount = StudentRequirement::where('student_id', $studentId)->count();
+        $requirementCount = StudentRequirement::where('student_id', $studentId)
+            ->whereNot(function ($query) {
+                $query->where('post_fee', '<=', 0)
+                    ->where('lead_status', 'cancelled');
+            })
+            ->count();
         
         // First 3 requirements are free, then payment required
         if ($requirementCount >= 3) {

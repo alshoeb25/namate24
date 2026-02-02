@@ -29,7 +29,12 @@ class EnquiryService
         return DB::transaction(function () use ($data, $student, $studentId, $subjectIds, $postFee, $unlockPrice, $maxLeads) {
 
             // Check if this is a free post (first 3 requirements)
-            $requirementCount = StudentRequirement::where('student_id', $studentId)->count();
+            $requirementCount = StudentRequirement::where('student_id', $studentId)
+                ->whereNot(function ($query) {
+                    $query->where('post_fee', '<=', 0)
+                        ->where('lead_status', 'cancelled');
+                })
+                ->count();
             $freeCount = config('coins.free_requirements_count', 3);
             $isFreePost = $requirementCount < $freeCount;
             

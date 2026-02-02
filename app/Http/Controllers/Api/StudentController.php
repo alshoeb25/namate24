@@ -424,14 +424,27 @@ class StudentController extends Controller
 
         $requirement->update(['status' => 'closed']);
 
-        if ($requirement->current_leads === 0 && $requirement->post_fee > 0) {
-            $this->enquiryService->refundIfNoUnlocks($requirement, $user);
-            $requirement->update(['lead_status' => 'cancelled']);
+        $refundAmount = 0;
+        $freePostRestored = false;
+
+        if ($requirement->current_leads === 0) {
+            if ($requirement->post_fee > 0) {
+                $refund = $this->enquiryService->refundIfNoUnlocks($requirement, $user);
+                $refundAmount = (int)($refund['refunded_amount'] ?? 0);
+                $requirement->update(['lead_status' => 'cancelled']);
+            } else {
+                // Free post requirement: no coin refund, restore free-post eligibility
+                $requirement->update(['lead_status' => 'cancelled']);
+                $freePostRestored = true;
+            }
         }
 
         return response()->json([
             'message' => 'Requirement closed successfully.',
-            'requirement' => $requirement->fresh()
+            'requirement' => $requirement->fresh(),
+            'refund_amount' => $refundAmount,
+            'free_post_restored' => $freePostRestored,
+            'current_balance' => $user->fresh()->coins,
         ]);
     }
 

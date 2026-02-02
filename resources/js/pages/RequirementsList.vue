@@ -22,9 +22,11 @@
             <i class="fas fa-coins text-5xl text-yellow-500 mb-4"></i>
             <h2 class="text-2xl font-bold text-gray-800 mb-2">Refund Available</h2>
           </div>
-          <p class="text-gray-700 mb-4">You will receive a refund of <strong class="text-lg text-green-600">{{ refundAmount }} coins</strong> since no teacher has unlocked your enquiry yet.</p>
+          <p v-if="!refundIsFreePost" class="text-gray-700 mb-4">You will receive a refund of <strong class="text-lg text-green-600">{{ refundAmount }} coins</strong> since no teacher has unlocked your enquiry yet.</p>
+          <p v-else class="text-gray-700 mb-4">This was a free post. No coins will be refunded, but your free post will be restored once you close this requirement.</p>
           <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <p class="text-sm text-blue-800"><i class="fas fa-info-circle mr-2"></i>This is the amount you paid when posting this enquiry.</p>
+            <p v-if="!refundIsFreePost" class="text-sm text-blue-800"><i class="fas fa-info-circle mr-2"></i>This is the amount you paid when posting this enquiry.</p>
+            <p v-else class="text-sm text-blue-800"><i class="fas fa-info-circle mr-2"></i>You can use the restored free post for your next requirement.</p>
           </div>
           <div class="flex gap-3">
             <button @click="cancelRefund" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium">
@@ -147,8 +149,18 @@
                   {{ req.current_leads || 0 }}/{{ req.max_leads || 0 }} tutors
                 </span>
                 <span class="px-3 py-1 rounded-full text-xs font-semibold"
-                      :class="req.lead_status === 'full' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'">
-                  {{ req.lead_status_label || req.lead_status || 'Open' }}
+                      :class="req.status === 'active'
+                        ? 'bg-green-50 text-green-700'
+                        : (req.status === 'closed' || req.status === 'cancelled'
+                          ? 'bg-red-50 text-red-700'
+                          : 'bg-gray-50 text-gray-700')">
+                  {{ req.status === 'active'
+                    ? 'Active'
+                    : (req.status === 'closed'
+                      ? 'Closed'
+                      : (req.status === 'cancelled'
+                        ? 'Cancelled'
+                        : (req.status || 'Open'))) }}
                 </span>
               </div>
             </div>
@@ -173,7 +185,7 @@
                         class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition w-full sm:w-auto">
                   <i class="fas fa-eye mr-1"></i>Details
                 </button>
-                <button v-if="req.current_leads === 0" @click="editRequirement(req.id)" 
+                <button v-if="req.current_leads === 0 && req.status === 'active'" @click="editRequirement(req.id)" 
                         class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition w-full sm:w-auto">
                   <i class="fas fa-edit mr-1"></i>Edit
                 </button>
@@ -289,6 +301,7 @@ export default {
     const showRefundModal = ref(false);
     const refundAmount = ref(0);
     const refundRequirementId = ref(null);
+    const refundIsFreePost = ref(false);
     
     // Interested teachers modal state
     const showInterestedModal = ref(false);
@@ -338,11 +351,12 @@ export default {
       const req = requirements.value.find(r => r.id === id);
       console.log('Opening refund modal for requirement:', req);
       
-      if (req && req.post_fee > 0) {
-        refundAmount.value = req.post_fee;
+      if (req && req.current_leads === 0) {
+        refundAmount.value = req.post_fee || 0;
+        refundIsFreePost.value = !req.post_fee || req.post_fee <= 0;
         refundRequirementId.value = id;
         showRefundModal.value = true;
-        console.log('Refund modal opened with amount:', req.post_fee);
+        console.log('Refund modal opened with amount:', req.post_fee, 'isFreePost:', refundIsFreePost.value);
       } else {
         console.log('Cannot open refund modal - conditions not met:', {
           requirement_found: !!req,
@@ -357,6 +371,7 @@ export default {
       showRefundModal.value = false;
       refundAmount.value = 0;
       refundRequirementId.value = null;
+      refundIsFreePost.value = false;
     };
 
     const confirmRefund = async () => {
@@ -367,9 +382,16 @@ export default {
         showRefundModal.value = false;
         refundAmount.value = 0;
         refundRequirementId.value = null;
+        refundIsFreePost.value = false;
         
         // Show success message with refund details
-        alert(`✅ Refund Successful!\n\n${refundedCoins} coins have been refunded to your wallet.\n\nYour requirement has been closed and removed from the list.\n\nCurrent balance: ${response.data.current_balance || 'Updated'} coins`);
+        if (response.data.free_post_restored) {
+          alert(`✅ Requirement Closed!\n\nNo coins were refunded because this was a free post.\nYour free post has been restored.\n\nCurrent balance: ${response.data.current_balance || 'Updated'} coins`);
+        } else if (response.data.refund_amount && response.data.refund_amount > 0) {
+          alert(`✅ Refund Successful!\n\n${response.data.refund_amount} coins have been refunded to your wallet.\n\nYour requirement has been closed and removed from the list.\n\nCurrent balance: ${response.data.current_balance || 'Updated'} coins`);
+        } else {
+          alert('✅ Requirement closed successfully!');
+        }
         
         // Refresh requirements list
         await fetchRequirements(pagination.value?.current_page || 1);
@@ -458,7 +480,9 @@ export default {
         const response = await axios.post(`/api/student/requirements/${id}/close`);
         
         // Show success message
-        if (response.data.refund_amount && response.data.refund_amount > 0) {
+        if (response.data.free_post_restored) {
+          alert(`✅ Requirement Closed!\n\nNo coins were refunded because this was a free post.\nYour free post has been restored.\n\nCurrent balance: ${response.data.current_balance || 'Updated'} coins`);
+        } else if (response.data.refund_amount && response.data.refund_amount > 0) {
           alert(`✅ Requirement Closed!\n\n${response.data.refund_amount} coins have been refunded to your wallet.\n\nYour requirement has been removed from the list.\n\nCurrent balance: ${response.data.current_balance || 'Updated'} coins`);
         } else {
           alert('✅ Requirement closed successfully!\n\nYour requirement has been removed from the list.');
@@ -541,6 +565,7 @@ export default {
       pagination,
       showRefundModal,
       refundAmount,
+      refundIsFreePost,
       showInterestedModal,
       interestedTeachers,
       selectedRequirement,
