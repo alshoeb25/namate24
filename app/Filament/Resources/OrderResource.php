@@ -3,6 +3,8 @@
 namespace App\Filament\Resources;
 
 use App\Models\Order;
+use App\Models\PaymentTransaction;
+use App\Jobs\CheckPendingPaymentStatus;
 use App\Filament\Traits\RoleBasedAccess;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
@@ -10,6 +12,8 @@ use Filament\Resources\Resource;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Filament\Tables\Actions\Action;
+use Filament\Notifications\Notification;
 use App\Filament\Resources\OrderResource\Pages;
 
 class OrderResource extends Resource
@@ -53,10 +57,16 @@ class OrderResource extends Resource
                 TextColumn::make('status')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
-                        'created' => 'info',
-                        'attempted' => 'warning',
+                        'pending' => 'warning',
+                        'initiated' => 'warning',
+                        'PENDING' => 'warning',
+                        'INITIATED' => 'warning',
+                        'completed' => 'success',
                         'paid' => 'success',
                         'failed' => 'danger',
+                        'FAILED' => 'danger',
+                        'cancelled' => 'danger',
+                        'CANCELLED' => 'danger',
                         default => 'gray',
                     }),
                 TextColumn::make('created_at')
@@ -65,11 +75,47 @@ class OrderResource extends Resource
             ->filters([
                 SelectFilter::make('status')
                     ->options([
-                        'created' => 'Created',
-                        'attempted' => 'Attempted',
+                        'pending' => 'Pending',
+                        'initiated' => 'Initiated',
+                        'completed' => 'Completed',
                         'paid' => 'Paid',
                         'failed' => 'Failed',
+                        'cancelled' => 'Cancelled',
                     ]),
+            ])
+            ->actions([
+                Action::make('checkPaymentStatus')
+                    ->label('Check Payment Status')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('info')
+                    ->visible(function (Order $record): bool {
+                        return in_array($record->status, [
+                            'pending', 'initiated', 'PENDING', 'INITIATED',
+                            'failed', 'FAILED', 'cancelled', 'CANCELLED',
+                            'created', 'attempted',
+                        ], true);
+                    })
+                    ->requiresConfirmation()
+                    ->action(function (Order $record): void {
+                        $transaction = PaymentTransaction::where('order_id', $record->id)->first();
+
+                        if (!$transaction) {
+                            Notification::make()
+                                ->title('Transaction not found')
+                                ->body('No payment transaction is linked to this order.')
+                                ->danger()
+                                ->send();
+                            return;
+                        }
+
+                        CheckPendingPaymentStatus::dispatchSync($record->id, $transaction->id, true);
+
+                        Notification::make()
+                            ->title('Payment check completed')
+                            ->body('Status checked. Refresh the list to see updates.')
+                            ->success()
+                            ->send();
+                    }),
             ])
             ->defaultSort('created_at', 'desc');
     }

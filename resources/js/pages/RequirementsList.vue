@@ -22,11 +22,20 @@
             <i class="fas fa-coins text-5xl text-yellow-500 mb-4"></i>
             <h2 class="text-2xl font-bold text-gray-800 mb-2">Refund Available</h2>
           </div>
-          <p v-if="!refundIsFreePost" class="text-gray-700 mb-4">You will receive a refund of <strong class="text-lg text-green-600">{{ refundAmount }} coins</strong> since no teacher has unlocked your enquiry yet.</p>
-          <p v-else class="text-gray-700 mb-4">This was a free post. No coins will be refunded, but your free post will be restored once you close this requirement.</p>
+          <p v-if="!refundIsFreePost" class="text-gray-700 mb-4">
+            You’re eligible for a refund of <strong class="text-lg text-green-600">{{ refundAmount }} coins</strong> because no tutor has unlocked this requirement.
+          </p>
+          <p v-else class="text-gray-700 mb-4">
+            This was a free post. No coins will be refunded, but your free post will be restored after you close this requirement.
+          </p>
           <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <p v-if="!refundIsFreePost" class="text-sm text-blue-800"><i class="fas fa-info-circle mr-2"></i>This is the amount you paid when posting this enquiry.</p>
-            <p v-else class="text-sm text-blue-800"><i class="fas fa-info-circle mr-2"></i>You can use the restored free post for your next requirement.</p>
+            <p class="text-sm text-blue-800 font-semibold mb-2"><i class="fas fa-file-contract mr-2"></i>Terms & Conditions</p>
+            <ul class="text-sm text-blue-800 list-disc pl-5 space-y-1">
+              <li>Refunds are available only if no tutor has unlocked your requirement.</li>
+              <li>Closing a requirement is final and cannot be undone.</li>
+              <li>Coins (or free post credit) will be restored to your wallet and can’t be withdrawn as cash.</li>
+              <li>Refund processing is immediate and will reflect in your balance.</li>
+            </ul>
           </div>
           <div class="flex gap-3">
             <button @click="cancelRefund" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium">
@@ -172,12 +181,12 @@
                         class="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition whitespace-nowrap w-full sm:w-auto">
                   <i class="fas fa-eye mr-1"></i>View Tutors
                 </button>
-                <button v-if="req.status === 'active' && req.current_leads === 0" 
+                <button v-if="canModifyRequirement(req)" 
                         @click="openRefundModal(req.id)" 
                         class="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition whitespace-nowrap w-full sm:w-auto">
-                  <i class="fas fa-coins mr-1"></i>Get Refund
+                  <i class="fas fa-coins mr-1"></i>Cancel & Refund
                 </button>
-                <button v-if="req.status === 'active' && req.current_leads === 0" @click="closeRequirement(req.id)" 
+                <button v-if="canModifyRequirement(req)" @click="closeRequirement(req.id)" 
                         class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition w-full sm:w-auto">
                   <i class="fas fa-times-circle mr-1"></i>Close
                 </button>
@@ -185,7 +194,7 @@
                         class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition w-full sm:w-auto">
                   <i class="fas fa-eye mr-1"></i>Details
                 </button>
-                <button v-if="req.current_leads === 0 && req.status === 'active'" @click="editRequirement(req.id)" 
+                <button v-if="canModifyRequirement(req)" @click="editRequirement(req.id)" 
                         class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition w-full sm:w-auto">
                   <i class="fas fa-edit mr-1"></i>Edit
                 </button>
@@ -349,21 +358,16 @@ export default {
 
     const openRefundModal = (id) => {
       const req = requirements.value.find(r => r.id === id);
-      console.log('Opening refund modal for requirement:', req);
+      
       
       if (req && req.current_leads === 0) {
         refundAmount.value = req.post_fee || 0;
         refundIsFreePost.value = !req.post_fee || req.post_fee <= 0;
         refundRequirementId.value = id;
         showRefundModal.value = true;
-        console.log('Refund modal opened with amount:', req.post_fee, 'isFreePost:', refundIsFreePost.value);
+        
       } else {
-        console.log('Cannot open refund modal - conditions not met:', {
-          requirement_found: !!req,
-          post_fee: req?.post_fee,
-          current_leads: req?.current_leads
-        });
-        alert('This requirement is not eligible for a refund.');
+        alert('Refund not available: Tutors have already unlocked this requirement.');
       }
     };
 
@@ -386,17 +390,13 @@ export default {
         
         // Show success message with refund details
         if (response.data.free_post_restored) {
-          alert(`✅ Requirement Closed!\n\nNo coins were refunded because this was a free post.\nYour free post has been restored.\n\nCurrent balance: ${response.data.current_balance || 'Updated'} coins`);
+          alert(`✅ Refund Accepted!\n\nRequirement closed.\nNo coins were refunded because this was a free post.\nYour free post has been restored.\n\nCurrent balance: ${response.data.current_balance || 'Updated'} coins`);
         } else if (response.data.refund_amount && response.data.refund_amount > 0) {
-          alert(`✅ Refund Successful!\n\n${response.data.refund_amount} coins have been refunded to your wallet.\n\nYour requirement has been closed and removed from the list.\n\nCurrent balance: ${response.data.current_balance || 'Updated'} coins`);
+          alert(`✅ Refund Accepted!\n\n${response.data.refund_amount} coins have been credited to your wallet.\n\nYour requirement has been closed and removed from the list.\n\nCurrent balance: ${response.data.current_balance || 'Updated'} coins`);
         } else {
-          alert('✅ Requirement closed successfully!');
+          alert('✅ Refund Accepted! Requirement closed successfully.');
         }
-        
-        // Refresh requirements list
-        await fetchRequirements(pagination.value?.current_page || 1);
       } catch (err) {
-        console.error('Error processing refund:', err);
         showRefundModal.value = false;
         
         if (err.response?.data?.message) {
@@ -404,6 +404,8 @@ export default {
         } else {
           alert('❌ Failed to process refund. Please try again.');
         }
+      } finally {
+        await fetchRequirements(pagination.value?.current_page || 1);
       }
     };
 
@@ -414,7 +416,6 @@ export default {
         selectedRequirement.value = requirements.value.find(r => r.id === id);
         showInterestedModal.value = true;
       } catch (err) {
-        console.error('Error loading interested teachers:', err);
         alert('Failed to load interested teachers');
       }
     };
@@ -439,8 +440,6 @@ export default {
           teacher_id: teacherId
         });
         
-        console.log('Approach response:', response.data);
-        
         // Show success message with coin deduction info
         alert(`✅ Success!\n\n${response.data.coins_deducted} coins deducted\n${response.data.message}\n\nCurrent balance: ${response.data.current_balance} coins`);
         
@@ -458,7 +457,6 @@ export default {
         // Refresh main requirements list to update status
         await fetchRequirements(pagination.value?.current_page || 1);
       } catch (err) {
-        console.error('Error approaching teacher:', err);
         if (err.response?.status === 402) {
           alert(`❌ Insufficient Coins\n\n${err.response.data.message}\n\nPlease purchase more coins to continue.`);
         } else if (err.response?.status === 422) {
@@ -491,7 +489,6 @@ export default {
         // Refresh requirements list
         await fetchRequirements(pagination.value?.current_page || 1);
       } catch (err) {
-        console.error('Error closing requirement:', err);
         if (err.response?.data?.message) {
           alert(`❌ Failed to Close\n\n${err.response.data.message}`);
         } else {
@@ -554,6 +551,13 @@ export default {
       return pages;
     });
 
+    const canModifyRequirement = (req) => {
+      const leads = Number(req.current_leads || 0);
+      const interested = Number(req.interested_tutors_count || req.interested_count || 0);
+      const hasInterest = leads > 0 || interested > 0;
+      return req.status === 'active' && !hasInterest;
+    };
+
     onMounted(() => {
       fetchRequirements(1);
     });
@@ -576,6 +580,7 @@ export default {
       formatDate,
       changePage,
       visiblePages,
+      canModifyRequirement,
       openRefundModal,
       cancelRefund,
       confirmRefund,

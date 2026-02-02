@@ -26,14 +26,16 @@ class CheckPendingPaymentStatus implements ShouldQueue
 
     public $orderId;
     public $transactionId;
+    public $force;
 
     /**
      * Create a new job instance.
      */
-    public function __construct($orderId, $transactionId)
+    public function __construct($orderId, $transactionId, $force = false)
     {
         $this->orderId = $orderId;
         $this->transactionId = $transactionId;
+        $this->force = $force;
     }
 
     /**
@@ -60,7 +62,7 @@ class CheckPendingPaymentStatus implements ShouldQueue
             }
 
             // Check if already processed
-            if (!in_array($order->status, ['pending', 'initiated', 'PENDING', 'INITIATED'])) {
+            if (!$this->force && !in_array($order->status, ['pending', 'initiated', 'PENDING', 'INITIATED'])) {
                 Log::info('Order already processed', [
                     'order_id' => $this->orderId,
                     'status' => $order->status,
