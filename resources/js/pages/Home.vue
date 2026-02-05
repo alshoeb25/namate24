@@ -28,7 +28,7 @@
       </section>
 
       <!-- Featured Teachers -->
-      <section class="max-w-7xl mx-auto px-4 mt-10">
+      <section v-if="showFeaturedSection" class="max-w-7xl mx-auto px-4 mt-10">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Featured Teachers</h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -66,6 +66,40 @@
                    shadow-sm text-sm font-medium hover:bg-gray-50 transition">
             View More Tutors
           </button>
+        </div>
+      </section>
+
+      <!-- Latest Tutors -->
+      <section class="max-w-7xl mx-auto px-4 mt-10">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-gray-900">Latest Tutors</h2>
+          <router-link to="/tutors" class="text-blue-600 text-sm font-medium hover:underline">See All</router-link>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div v-for="teacher in latestTeachers" :key="teacher.id"
+            @click="$router.push(`/tutor/${teacher.id}`)"
+            class="bg-white rounded-2xl shadow-md p-4 flex items-center gap-4 border border-gray-100 cursor-pointer hover:shadow-lg transition">
+            <img :src="teacher.photo" class="w-16 h-16 rounded-xl object-cover">
+
+            <div class="flex-1">
+              <h3 class="font-bold text-gray-900 text-lg">{{ teacher.name }}</h3>
+              <p class="text-sm text-gray-500">{{ teacher.mode }}</p>
+
+              <div class="flex gap-2 mt-1">
+                <span v-for="subject in teacher.subjects" :key="subject"
+                  class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-lg">
+                  {{ subject }}
+                </span>
+              </div>
+            </div>
+
+            <div class="flex flex-col items-end">
+              <div class="flex items-center text-pink-600 text-sm font-semibold">
+                ⭐ {{ teacher.rating }}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -135,6 +169,7 @@ export default {
     const searchLocation = ref('');
 
     const categories = ref([]);
+    const showFeaturedSection = ref(false);
 
     // Icon mapping for subjects with colors
     const subjectIconMap = {
@@ -162,6 +197,7 @@ export default {
     };
 
     const featuredTeachers = ref([]);
+    const latestTeachers = ref([]);
 
     const isAuthenticated = computed(() => userStore.token !== null);
     const user = computed(() => userStore.user);
@@ -213,6 +249,24 @@ export default {
       }
     };
 
+    // Fetch latest tutors from API
+    const fetchLatestTeachers = async () => {
+      try {
+        const response = await axios.get('/api/tutors/latest');
+        latestTeachers.value = response.data.data.map(tutor => ({
+          id: tutor.user?.id || tutor.user_id || tutor.id,
+          name: tutor.user?.name || 'Teacher',
+          photo: tutor.user?.avatar_url || tutor.photo_url || 'https://via.placeholder.com/150',
+          mode: tutor.teaching_mode === 'both' ? 'Online, Offline' : tutor.teaching_mode === 'online' ? 'Online' : 'Offline',
+          subjects: (tutor.subjects || []).slice(0, 2).map(s => s.name),
+          rating: tutor.rating_avg || 0
+        }));
+      } catch (error) {
+        console.error('Failed to fetch latest tutors:', error);
+        latestTeachers.value = [];
+      }
+    };
+
     const performSearch = () => {
       router.push({
         name: 'search',
@@ -248,6 +302,7 @@ export default {
       await userStore.fetchUser();
       await fetchSubjects();
       await fetchFeaturedTeachers();
+      await fetchLatestTeachers();
     });
 
     return {
@@ -256,7 +311,9 @@ export default {
       searchSubject,
       searchLocation,
       categories,
+      showFeaturedSection,
       featuredTeachers,
+      latestTeachers,
       isAuthenticated,
       user,
       performSearch,

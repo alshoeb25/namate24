@@ -22,6 +22,7 @@ import UploadDocuments from '../pages/tutor/UploadDocuments.vue';
 import TutorDisabled from '../pages/TutorDisabled.vue';
 import TutorNotApproved from '../pages/TutorNotApproved.vue';
 import TermsAndConditions from '../pages/TermsAndConditions.vue';
+import SafetyDocuments from '../pages/SafetyDocuments.vue';
 import PrivacyPolicy from '../pages/PrivacyPolicy.vue';
 import RefundPolicy from '../pages/RefundPolicy.vue';
 import ContactUs from '../pages/ContactUs.vue';
@@ -64,6 +65,7 @@ const routes = [
   { path: '/tutors', name: 'tutors', component: SearchResults },
   { path: '/tutor-jobs', name: 'tutor-jobs', component: TutorJobs },
   { path: '/terms-and-conditions', name: 'terms', component: TermsAndConditions },
+  { path: '/safety-documents', name: 'safety-documents', component: SafetyDocuments },
   { path: '/privacy-policy', name: 'privacy', component: PrivacyPolicy },
   { path: '/refund-policy', name: 'refund', component: RefundPolicy },
   { path: '/contact-us', name: 'contact', component: ContactUs },

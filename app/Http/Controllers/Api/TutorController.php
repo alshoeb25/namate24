@@ -7,6 +7,7 @@ use App\Models\StudentRequirement;
 use App\Models\Tutor;
 use App\Services\TutorSearchService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class TutorController extends Controller
 {
@@ -123,6 +124,31 @@ class TutorController extends Controller
             ->orderBy('rating_count', 'desc')
             ->limit($perPage)
             ->get();
+
+        return response()->json([
+            'data' => $tutors,
+            'total' => $tutors->count(),
+        ]);
+    }
+
+    /**
+     * Get latest tutors
+     * GET /api/tutors/latest
+     */
+    public function latest(Request $request)
+    {
+        $perPage = (int)$request->query('per_page', 6);
+        $cacheKey = "home.latest_tutors.{$perPage}";
+
+        $tutors = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($perPage) {
+            return Tutor::with('user', 'subjects')
+                ->where('moderation_status', 'approved')
+                ->where('is_disabled', false)
+                ->whereHas('user', fn($q) => $q->where('is_disabled', false))
+                ->orderByDesc('created_at')
+                ->limit($perPage)
+                ->get();
+        });
 
         return response()->json([
             'data' => $tutors,

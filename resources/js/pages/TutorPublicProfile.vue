@@ -389,45 +389,19 @@
           </div>
 
           <div class="mb-6">
-            <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
-              <i class="fas fa-shield-alt text-blue-600 mr-2"></i>Safety Guidelines
-            </h3>
-            <ul class="space-y-2 text-sm text-gray-700">
-              <li class="flex items-start">
-                <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
-                <span>Always meet in public places for the first meeting</span>
-              </li>
-              <li class="flex items-start">
-                <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
-                <span>Verify the tutor's credentials and experience</span>
-              </li>
-              <li class="flex items-start">
-                <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
-                <span>Share your class schedule with family/friends</span>
-              </li>
-              <li class="flex items-start">
-                <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
-                <span>Report any suspicious behavior to our support team</span>
-              </li>
-            </ul>
-          </div>
-
-          <div class="mb-6">
-            <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
-              <i class="fas fa-file-contract text-purple-600 mr-2"></i>Terms & Conditions
-            </h3>
-            <div class="bg-gray-50 rounded-lg p-4 max-h-48 overflow-y-auto text-sm text-gray-700">
-              <ol class="space-y-2 list-decimal list-inside">
-                <li>Once you unlock contact details, {{ contactUnlockCoins }} coins will be deducted from your account.</li>
-                <li>Contact details are provided as-is and the platform is not responsible for the accuracy.</li>
-                <li>You agree to use contact information only for educational purposes.</li>
-                <li>Any misuse of contact information may result in account suspension.</li>
-                <li>Coins are non-refundable once contact details are unlocked.</li>
-                <li>The platform does not guarantee response from the tutor.</li>
-                <li>All transactions through the platform should be documented for your safety.</li>
-                <li>You agree to our privacy policy and data protection guidelines.</li>
-              </ol>
-            </div>
+            <label class="flex items-start gap-3 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                v-model="acceptedPolicies"
+                class="mt-1"
+              />
+              <span>
+                I have read and agree to the
+                <a href="/terms-and-conditions" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Terms and Conditions</a>
+                and the
+                <a href="/safety-documents" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Safety Documents</a>.
+              </span>
+            </label>
           </div>
 
           <div v-if="userCoins < contactUnlockCoins" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -449,8 +423,8 @@
             </button>
             <button 
               @click="acceptAndUnlock"
-              :disabled="userCoins < contactUnlockCoins || unlocking"
-              :class="userCoins < contactUnlockCoins || unlocking ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'"
+              :disabled="userCoins < contactUnlockCoins || unlocking || !acceptedPolicies"
+              :class="userCoins < contactUnlockCoins || unlocking || !acceptedPolicies ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'"
               class="flex-1 text-white py-3 rounded-lg font-medium transition">
               <span v-if="unlocking">
                 <i class="fas fa-spinner fa-spin mr-2"></i>Processing...
@@ -571,6 +545,7 @@ export default {
     const hasContactAccess = ref(false);
     const userCoins = ref(0);
     const contactUnlockCoins = ref(0);
+    const acceptedPolicies = ref(false);
     
     // Review modal
     const showReviewModal = ref(false);
@@ -699,14 +674,20 @@ export default {
       if (!contactUnlockCoins.value) {
         await loadContactUnlockCoins();
       }
+      acceptedPolicies.value = false;
       showContactModal.value = true;
     }
 
     function closeContactModal() {
       showContactModal.value = false;
+      acceptedPolicies.value = false;
     }
 
     async function acceptAndUnlock() {
+      if (!acceptedPolicies.value) {
+        alert('Please accept the Terms and Conditions and Safety Documents.');
+        return;
+      }
       if (userCoins.value < contactUnlockCoins.value) {
         alert('Insufficient coins. Please purchase more coins.');
         return;
@@ -962,6 +943,7 @@ export default {
       hasContactAccess,
       userCoins,
       contactUnlockCoins,
+      acceptedPolicies,
       showReviewModal,
       reviewRating,
       reviewComment,

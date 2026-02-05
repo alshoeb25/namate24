@@ -34,6 +34,7 @@ Route::post('auth/google/callback', [\App\Http\Controllers\Api\SocialAuthControl
 
 Route::get('tutors', [TutorController::class,'index']);
 Route::get('tutors/featured', [TutorController::class,'featured']);
+Route::get('tutors/latest', [TutorController::class,'latest']);
 Route::get('tutors/{id}', [TutorController::class,'show']);
 Route::get('public/tutors/{id}', [TutorController::class,'publicShow']);
 Route::get('settings/contact-unlock-coins', [\App\Http\Controllers\Api\PublicTutorProfileController::class, 'getContactUnlockCoins']);

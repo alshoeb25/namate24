@@ -122,7 +122,7 @@
     <div class="flex gap-3 pt-4 border-t border-gray-200">
       <button 
         v-if="!requirement.has_unlocked"
-        @click="unlock" 
+        @click="openUnlockModal" 
         :disabled="unlocking || requirement.lead_info?.is_full"
         :class="[
           'flex-1 py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2',
@@ -151,6 +151,59 @@
       </button>
     </div>
   </div>
+
+  <!-- Unlock Terms & Conditions Modal -->
+  <div v-if="showUnlockModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-2xl font-bold text-gray-800">Unlock Contact Details</h2>
+          <button @click="closeUnlockModal" class="text-gray-500 hover:text-gray-700">
+            <i class="fas fa-times text-xl"></i>
+          </button>
+        </div>
+
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+          <div class="flex items-center">
+            <i class="fas fa-coins text-yellow-600 text-2xl mr-3"></i>
+            <div>
+              <p class="font-semibold text-yellow-800">{{ requirement.unlock_price || 0 }} Coins Required</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <label class="flex items-start gap-3 text-sm text-gray-700">
+            <input type="checkbox" v-model="acceptedPolicies" class="mt-1" />
+            <span>
+              I have read and agree to the
+              <router-link to="/terms-and-conditions" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Terms and Conditions</router-link>
+              and the
+              <router-link to="/safety-documents" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Safety Documents</router-link>.
+            </span>
+          </label>
+        </div>
+
+        <div class="flex gap-3">
+          <button 
+            @click="closeUnlockModal" 
+            class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-3 rounded-lg font-medium transition">
+            Reject
+          </button>
+          <button 
+            @click="confirmUnlock"
+            :disabled="unlocking || !acceptedPolicies || requirement.lead_info?.is_full"
+            :class="unlocking || !acceptedPolicies || requirement.lead_info?.is_full ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'"
+            class="flex-1 text-white py-3 rounded-lg font-medium transition">
+            <span v-if="unlocking">
+              <i class="fas fa-spinner fa-spin mr-2"></i>Processing...
+            </span>
+            <span v-else>Accept & Unlock ({{ requirement.unlock_price || 0 }} coins)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -173,6 +226,8 @@ export default {
   },
   setup(props) {
     const unlocking = ref(false);
+    const showUnlockModal = ref(false);
+    const acceptedPolicies = ref(false);
     const router = useRouter();
     const route = useRoute();
     const userStore = useUserStore();
@@ -207,9 +262,35 @@ export default {
       }
     }
 
+    function openUnlockModal() {
+      acceptedPolicies.value = false;
+      showUnlockModal.value = true;
+    }
+
+    function closeUnlockModal() {
+      showUnlockModal.value = false;
+      acceptedPolicies.value = false;
+    }
+
+    async function confirmUnlock() {
+      if (!acceptedPolicies.value) {
+        alert('Please accept the Terms and Conditions and Safety Documents.');
+        return;
+      }
+      await unlock();
+      if (!unlocking.value) {
+        closeUnlockModal();
+      }
+    }
+
     return {
       unlocking,
+      showUnlockModal,
+      acceptedPolicies,
       unlock,
+      openUnlockModal,
+      closeUnlockModal,
+      confirmUnlock,
       router,
       route
     };

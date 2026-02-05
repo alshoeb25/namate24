@@ -6,6 +6,7 @@ use App\Models\Tutor;
 use App\Jobs\IndexTutorJob;
 use App\Jobs\RemoveTutorFromIndexJob;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class TutorObserver
 {
@@ -18,6 +19,7 @@ class TutorObserver
         // When a new tutor is created and already approved, index immediately
         if ($tutor->moderation_status === 'approved' && !$tutor->is_disabled) {
             dispatch(new IndexTutorJob($tutor->id));
+            $this->forgetLatestTutorsCache();
         }
     }
 
@@ -46,16 +48,29 @@ class TutorObserver
             // If approved, add/update in Elasticsearch
             if ($tutor->moderation_status === 'approved' && !$tutor->is_disabled) {
                 dispatch(new IndexTutorJob($tutor->id));
+                $this->forgetLatestTutorsCache();
             }
 
             // If rejected, remove from Elasticsearch
             if (in_array($tutor->moderation_status, ['rejected'])) {
                 dispatch(new RemoveTutorFromIndexJob($tutor->id));
+                $this->forgetLatestTutorsCache();
             }
         } elseif ($tutor->moderation_status === 'approved' && !$tutor->is_disabled) {
             // If status is still approved but other fields changed, re-index
             dispatch(new IndexTutorJob($tutor->id));
         }
+        
+        if ($tutor->isDirty('is_disabled')) {
+            $this->forgetLatestTutorsCache();
+        }
+    }
+
+    protected function forgetLatestTutorsCache(): void
+    {
+        Cache::forget('home.latest_tutors.6');
+        Cache::forget('home.latest_tutors.9');
+        Cache::forget('home.latest_tutors.12');
     }
 
     /**
