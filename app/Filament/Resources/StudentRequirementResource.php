@@ -230,8 +230,8 @@ class StudentRequirementResource extends Resource
                                 $record->loadMissing([
                                     'unlocks.tutor.user',
                                     'unlocks.tutor.subjects',
-                                    'approachedTutor.user',
-                                    'approachedTutor.subjects',
+                                    'approachedTutors.user',
+                                    'approachedTutors.subjects',
                                 ]);
 
                                 $history = [];
