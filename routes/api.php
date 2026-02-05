@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\TutorProfileController;
 use App\Http\Controllers\Api\Admin\SubjectModuleController;
 use App\Http\Controllers\Payment\RazorpayWebhookController;
 use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\HomeCacheController;
 
 use App\Http\Controllers\Api\EmailVerificationController;
 
@@ -388,6 +389,8 @@ Route::middleware('auth:api')->group(function() {
         Route::post('subjects', [SubjectController::class,'store']);
         Route::put('subjects/{subject}', [SubjectController::class,'update']);
         Route::delete('subjects/{subject}', [SubjectController::class,'destroy']);
+
+        Route::post('home/cache/clear', [HomeCacheController::class, 'clear']);
 
         Route::get('cms', [CmsPageController::class,'index']);
 
