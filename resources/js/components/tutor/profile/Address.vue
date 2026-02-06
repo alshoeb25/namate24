@@ -196,7 +196,7 @@ export default {
         this.loading = true;
         this.error = '';
         const response = await axios.post('/api/tutor/profile/address', this.form);
-        this.message = response.data.message;
+        this.message = response.data?.message || 'Data saved successfully.';
         setTimeout(() => this.message = '', 3000);
       } catch (err) {
         this.error = err.response?.data?.message || 'Failed to update address';

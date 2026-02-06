@@ -197,7 +197,7 @@ export default {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         
-        this.message = response.data.message;
+        this.message = response.data?.message || 'Data saved successfully.';
         this.currentVideoUrl = response.data.video_url;
         this.videoData.video_approval_status = response.data.video_approval_status;
         this.videoData.youtube_intro_url = response.data.youtube_intro_url;
@@ -231,7 +231,7 @@ export default {
         
         const response = await axios.delete('/api/tutor/profile/video');
         
-        this.message = response.data.message;
+        this.message = response.data?.message || 'Data saved successfully.';
         this.currentVideoUrl = '';
         this.videoData = {
           introductory_video: null,

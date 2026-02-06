@@ -315,7 +315,7 @@ export default {
         };
 
         const response = await axios.post('/api/tutor/profile/teaching-details', payload);
-        this.message = response.data.message;
+        this.message = response.data?.message || 'Data saved successfully.';
         setTimeout(() => (this.message = ''), 3000);
       } catch (err) {
         this.error = err.response?.data?.message || 'Failed to save';

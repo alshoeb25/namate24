@@ -363,7 +363,7 @@ export default {
             to_level_id: this.toLevelId,
           });
         }
-        this.message = response.data.message;
+        this.message = response.data?.message || 'Data saved successfully.';
         this.subjects = response.data.subjects;
         this.resetForm();
         setTimeout(() => this.message = '', 3000);
@@ -430,7 +430,7 @@ export default {
           name: this.newSubjectName,
         });
         
-        this.message = response.data.message;
+        this.message = response.data?.message || 'Data saved successfully.';
         const newSubject = response.data.subject;
         
         // Add to all subjects list

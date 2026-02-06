@@ -440,7 +440,7 @@ export default {
           response = await axios.post('/api/tutor/profile/education', this.form);
         }
         
-        this.message = response.data.message;
+        this.message = response.data?.message || 'Data saved successfully.';
         this.educations = response.data.educations;
         this.resetForm();
         setTimeout(() => this.message = '', 3000);
@@ -472,7 +472,7 @@ export default {
         this.loading = true;
         this.error = '';
         const response = await axios.delete(`/api/tutor/profile/education/${index}`);
-        this.message = response.data.message;
+        this.message = response.data?.message || 'Education deleted successfully.';
         this.educations = response.data.educations;
         setTimeout(() => this.message = '', 3000);
       } catch (err) {

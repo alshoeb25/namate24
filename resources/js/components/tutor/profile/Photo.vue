@@ -77,7 +77,7 @@ export default {
         const response = await axios.post('/api/tutor/profile/photo', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
-        this.message = response.data.message;
+        this.message = response.data?.message || 'Data saved successfully.';
         this.currentPhoto = response.data.photo_url;
         this.selectedFile = null;
         setTimeout(() => this.message = '', 3000);

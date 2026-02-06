@@ -258,7 +258,7 @@ export default {
           response = await axios.post('/api/tutor/profile/experience', this.form);
         }
 
-        this.message = response.data.message;
+        this.message = response.data?.message || 'Data saved successfully.';
         this.experiences = response.data.experiences;
         this.resetForm();
         setTimeout(() => (this.message = ''), 3000);
@@ -280,7 +280,7 @@ export default {
         this.loading = true;
         this.error = '';
         const response = await axios.delete(`/api/tutor/profile/experience/${index}`);
-        this.message = response.data.message;
+        this.message = response.data?.message || 'Experience deleted successfully.';
         this.experiences = response.data.experiences;
         setTimeout(() => (this.message = ''), 3000);
       } catch (err) {

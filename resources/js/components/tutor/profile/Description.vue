@@ -174,7 +174,7 @@ const updateDescription = async () => {
       '/api/tutor/profile/description',
       form.value
     )
-    message.value = data.message
+    message.value = data?.message || 'Data saved successfully.'
     setTimeout(() => (message.value = ''), 3000)
   } catch (err) {
     error.value = err.response?.data?.message || 'Failed to update description'

@@ -107,6 +107,7 @@
             type="submit" 
             class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
             :disabled="loading"
+            @click.prevent="updatePersonalDetails"
           >
             {{ loading ? 'Saving...' : 'Save Details' }}
           </button>
@@ -146,6 +147,9 @@ export default {
         strength: '',
         languages: [],
       },
+      loading: false,
+      message: '',
+      error: '',
       languageSearch: '',
       languageDropdown: false,
       allLanguages: [
@@ -213,7 +217,7 @@ export default {
         this.error = '';
         this.message = '';
         const response = await axios.post('/api/tutor/profile/personal-details', this.form);
-        this.message = response.data.message;
+        this.message = response.data?.message || 'Data saved successfully.';
         setTimeout(() => this.message = '', 3000);
       } catch (err) {
         this.error = err.response?.data?.message || 'Failed to update details';
