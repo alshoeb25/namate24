@@ -112,7 +112,7 @@
                 <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-5 flex flex-col h-full">
                     <!-- header: only heading + view all (unchanged) -->
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Latest Requirements</h3>
+                        <h3 class="text-lg font-semibold text-gray-900">Latest Student Requirements</h3>
                       <router-link to="/latest-posts" class="text-xs text-blue-600 font-medium hover:underline">View All</router-link>
                     </div>
 
@@ -196,7 +196,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                             </svg>
-                            {{ user?.tutor ? 'View Profile' : 'Become Tutors' }}
+                            {{ user?.tutor ? 'View Profile' : 'Become Tutor' }}
                         </button>
                         <p class="text-sm text-gray-500">Offer your teaching expertise</p>
                     </div>

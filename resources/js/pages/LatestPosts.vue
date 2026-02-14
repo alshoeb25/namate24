@@ -3,8 +3,8 @@
     <div class="bg-white border-b shadow-sm py-8">
       <div class="max-w-7xl mx-auto px-4 flex items-center justify-between gap-4">
         <div>
-          <h1 class="text-3xl font-bold text-gray-900">Latest Posts</h1>
-          <p class="text-gray-600 mt-1">Recent student requirements</p>
+          <h1 class="text-3xl font-bold text-gray-900">Latest Student Requirements</h1>
+            <p class="text-gray-600 mt-1">Explore the most recent posts from students seeking tutors.</p>
         </div>
         <button @click="handleBecomeTutor"
           class="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white text-sm font-medium px-5 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
