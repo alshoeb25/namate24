@@ -7,6 +7,7 @@ use App\Models\StudentRequirement;
 use App\Services\LabelService;
 use App\Services\RequirementSearchService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class RequirementController extends Controller
 {
@@ -135,6 +136,74 @@ class RequirementController extends Controller
             // Fallback to database query
             return $this->fallbackSearch($request);
         }
+    }
+
+    /**
+     * Public latest requirements for home page cards
+     * GET /api/requirements/latest?limit=3
+     */
+    public function latestPublic(Request $request)
+    {
+        $limit = (int) $request->query('limit', 3);
+        if ($limit < 1) {
+            $limit = 1;
+        }
+        if ($limit > 20) {
+            $limit = 20;
+        }
+
+        $requirements = StudentRequirement::query()
+            ->with([
+                'subjects:id,name',
+                'subject:id,name',
+                'student.user:id,name',
+            ])
+            ->whereHas('subjects')
+            ->where('visible', true)
+            ->orderByDesc('created_at')
+            ->limit($limit)
+            ->get();
+
+        $data = $requirements->map(function ($req) {
+            $location = $req->location;
+            if (!$location) {
+                $parts = array_filter([$req->area, $req->city]);
+                $location = $parts ? implode(', ', $parts) : null;
+            }
+
+            $subjects = $req->subjects ? $req->subjects->pluck('name')->filter()->values()->all() : [];
+            if (empty($subjects)) {
+                $subjects = DB::table('student_post_subjects')
+                    ->join('subjects', 'subjects.id', '=', 'student_post_subjects.subject_id')
+                    ->where('student_post_subjects.student_requirement_id', $req->id)
+                    ->orderBy('subjects.name')
+                    ->pluck('subjects.name')
+                    ->filter()
+                    ->values()
+                    ->all();
+            }
+            if (empty($subjects) && $req->subject?->name) {
+                $subjects = [$req->subject->name];
+            }
+
+            return [
+                'id' => $req->id,
+                'student_name' => $req->student?->user?->name
+                    ?? $req->student?->name
+                    ?? $req->student_name
+                    ?? 'Student',
+                'subjects' => $subjects,
+                'details' => $req->details,
+                'location' => $location,
+                'posted_at' => $req->posted_at?->toIso8601String() ?? $req->created_at?->toIso8601String(),
+                'created_at' => $req->created_at?->toIso8601String(),
+            ];
+        });
+
+        return response()->json([
+            'data' => $data,
+            'count' => $data->count(),
+        ]);
     }
 
     /**

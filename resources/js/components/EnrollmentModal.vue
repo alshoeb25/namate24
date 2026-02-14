@@ -115,6 +115,10 @@ export default {
       type: String,
       required: true,
       validator: (value) => ['teacher', 'student'].includes(value)
+    },
+    redirectTo: {
+      type: String,
+      default: ''
     }
   },
   emits: ['close'],
@@ -147,7 +151,8 @@ export default {
         
         // Redirect after 2 seconds
         setTimeout(() => {
-          const destination = props.type === 'teacher' ? '/tutor/profile' : '/student/dashboard';
+          const fallback = props.type === 'teacher' ? '/tutor/profile/personal-details' : '/student/dashboard';
+          const destination = props.redirectTo || fallback;
           router.push(destination);
           emit('close');
         }, 2000);

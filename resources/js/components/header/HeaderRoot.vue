@@ -51,6 +51,7 @@ export default {
         currentPath === '/search' || 
         currentPath === '/tutors' ||
         currentPath === '/tutor-jobs' ||
+        currentPath === '/latest-posts' ||
         currentPath === '/profile';
       
       // If user has both roles
@@ -84,6 +85,7 @@ export default {
         currentPath === '/search' || 
         currentPath === '/tutors' ||
         currentPath === '/tutor-jobs' ||
+        currentPath === '/latest-posts' ||
         currentPath === '/profile';
       
       // If user has both roles

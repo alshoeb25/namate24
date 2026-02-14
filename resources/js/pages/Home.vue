@@ -102,6 +102,111 @@
           </div>
         </div>
       </section>
+      <!-- ========== MODIFIED: STANDALONE CARDS REMOVED, POST BUTTONS MOVED INSIDE BOTTOM OF CURRENT POST SECTIONS ========== -->
+        <!-- two-column layout – Current Student Posts / Current Teacher Posts with button at bottom -->
+        <section class="max-w-7xl mx-auto px-4 mt-10 mb-6">
+            <!-- grid container: two equal columns, left and right -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <!-- LEFT COLUMN – STUDENT POSTS + BUTTON AT BOTTOM -->
+                <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-5 flex flex-col h-full">
+                    <!-- header: only heading + view all (unchanged) -->
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Latest Requirements</h3>
+                      <router-link to="/latest-posts" class="text-xs text-blue-600 font-medium hover:underline">View All</router-link>
+                    </div>
+
+                    <!-- feed area – student posts (API) -->
+                    <div class="flex-1">
+                      <div v-for="(post, idx) in leftPosts" :key="post.id"
+                        class="flex items-start gap-3 py-2"
+                        :class="{ 'border-b border-gray-100': idx < leftPosts.length - 1 }">
+                        <img :src="post.photo" class="w-8 h-8 rounded-full object-cover">
+                        <div class="flex-1">
+                          <div class="flex items-center justify-between">
+                            <p class="text-sm font-medium text-gray-900">{{ post.name }}</p>
+                            <span class="text-xs text-gray-500">{{ formatTimeAgo(post.createdAt) }}</span>
+                          </div>
+                          <p class="text-xs text-gray-600 mt-0.5">{{ post.details }}</p>
+                          <div class="flex items-center gap-2 mt-1">
+                            <span class="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">{{ post.subject }}</span>
+                            <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{{ post.location }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- MOVED BUTTON: student "Post Requirement" with tagline – now at bottom of left column (w-64, centered) -->
+                    <div class="mt-6 flex flex-col items-center gap-2 pt-2 border-t border-gray-100">
+                        <button @click="handlePostRequirement"
+                            class="w-64 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white text-sm font-medium px-6 py-3.5 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            Post Requirement
+                        </button>
+                        <p class="text-sm text-gray-500">Get help from expert teachers</p>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN – LATEST TUTORS + BUTTON AT BOTTOM -->
+                <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-5 flex flex-col h-full">
+                    <!-- header: only heading + view all (unchanged) -->
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Latest Tutors</h3>
+                        <router-link to="/tutors" class="text-xs text-purple-600 font-medium hover:underline">View All</router-link>
+                    </div>
+
+                    <!-- feed area – latest tutors (API, limit 3) -->
+                    <div class="flex-1">
+                      <div v-for="(teacher, idx) in latestTeachers.slice(0, 3)" :key="teacher.id"
+                        class="flex items-start gap-3 py-2"
+                        :class="{ 'border-b border-gray-100': idx < Math.min(latestTeachers.length, 3) - 1 }">
+                        <img :src="teacher.photo" class="w-8 h-8 rounded-full object-cover">
+                        <div class="flex-1">
+                          <div class="flex items-center justify-between">
+                            <p class="text-sm font-medium text-gray-900">{{ teacher.name }}</p>
+                            <span class="text-xs text-gray-500">{{ teacher.mode }}</span>
+                          </div>
+                          <div class="flex items-center gap-1 mt-1 text-xs text-yellow-600 font-medium">
+                            <span>⭐</span>
+                            <span>{{ teacher.rating }}</span>
+                          </div>
+                          <div class="flex items-center gap-2 mt-1">
+                            <span v-for="subject in teacher.subjects" :key="subject"
+                              class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                              {{ subject }}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- MOVED BUTTON: teacher "Post Requirement" with tagline – now at bottom of right column (w-64, centered) -->
+                    <div class="mt-6 flex flex-col items-center gap-2 pt-2 border-t border-gray-100">
+                        <button @click="handleBecomeTutor"
+                            class="w-64 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white text-sm font-medium px-6 py-3.5 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            {{ user?.tutor ? 'View Profile' : 'Become Tutors' }}
+                        </button>
+                        <p class="text-sm text-gray-500">Offer your teaching expertise</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+                  <EnrollmentModal
+                  :show="showEnrollModal"
+                  :type="enrollType"
+                  :redirect-to="enrollRedirect"
+                  @close="closeEnrollModal"
+                  />
 
       <!-- Franchise CTA -->
       <section class="max-w-6xl mx-auto px-4 mt-10 mb-10">
@@ -132,7 +237,7 @@
           <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
           <div class="absolute inset-0 flex flex-col justify-end p-4 sm:p-5 text-white">
             <h2 class="text-lg sm:text-xl font-semibold mb-3 leading-tight">
-              Here are the latest admission updates
+              Here are the latest education updates
             </h2>
             <div class="flex items-center justify-between flex-wrap gap-3">
               <router-link to="/contact-us"
@@ -148,19 +253,22 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '../store';
 import HeroSearch from '../components/HeroSearch.vue';
+import EnrollmentModal from '../components/EnrollmentModal.vue';
 import axios from 'axios';
 
 export default {
   name: 'Home',
   components: {
     HeroSearch,
+    EnrollmentModal,
   },
   setup() {
     const router = useRouter();
+    const route = useRoute();
     const userStore = useUserStore();
 
     const profileMenuOpen = ref(false);
@@ -170,6 +278,9 @@ export default {
 
     const categories = ref([]);
     const showFeaturedSection = ref(false);
+    const showEnrollModal = ref(false);
+    const enrollType = ref('');
+    const enrollRedirect = ref('');
 
     // Icon mapping for subjects with colors
     const subjectIconMap = {
@@ -198,9 +309,11 @@ export default {
 
     const featuredTeachers = ref([]);
     const latestTeachers = ref([]);
+    const latestPosts = ref([]);
 
     const isAuthenticated = computed(() => userStore.token !== null);
     const user = computed(() => userStore.user);
+    const leftPosts = computed(() => latestPosts.value.slice(0, 3));
 
     // Fetch subjects from database
     const fetchSubjects = async () => {
@@ -267,6 +380,63 @@ export default {
       }
     };
 
+    const getSubjectLabel = (req) => {
+      if (req.subjects && req.subjects.length > 0) {
+        return req.subjects[0].name || req.subjects[0];
+      }
+      if (req.subject && req.subject.name) {
+        return req.subject.name;
+      }
+      if (req.subject_name) {
+        return req.subject_name;
+      }
+      return 'Subject';
+    };
+
+    const formatTimeAgo = (dateValue) => {
+      if (!dateValue) return 'Just now';
+      const time = new Date(dateValue).getTime();
+      if (Number.isNaN(time)) return 'Just now';
+
+      const seconds = Math.floor((Date.now() - time) / 1000);
+      if (seconds < 60) return 'Just now';
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return `${minutes} min ago`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+      const days = Math.floor(hours / 24);
+      if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
+      const weeks = Math.floor(days / 7);
+      if (weeks < 5) return `${weeks} week${weeks > 1 ? 's' : ''} ago`;
+      const months = Math.floor(days / 30);
+      if (months < 12) return `${months} month${months > 1 ? 's' : ''} ago`;
+      const years = Math.floor(days / 365);
+      return `${years} year${years > 1 ? 's' : ''} ago`;
+    };
+
+    const fetchLatestPosts = async () => {
+      try {
+        const response = await axios.get('/api/requirements/latest', {
+          params: { limit: 3 }
+        });
+        const items = response.data.data || [];
+        latestPosts.value = items.map(req => {
+          return {
+            id: req.id,
+            name: req.student_name || 'Student',
+            photo: 'https://via.placeholder.com/40',
+            subject: Array.isArray(req.subjects) && req.subjects.length > 0 ? req.subjects[0] : 'Subject',
+            location: req.location || 'Location not specified',
+            details: req.details || 'New requirement posted',
+            createdAt: req.posted_at || req.created_at
+          };
+        });
+      } catch (error) {
+        console.error('Failed to fetch latest posts:', error);
+        latestPosts.value = [];
+      }
+    };
+
     const performSearch = () => {
       router.push({
         name: 'search',
@@ -298,12 +468,75 @@ export default {
       profileMenuOpen.value = false;
     };
 
+    const openEnrollModal = (type, redirectTo = '') => {
+      enrollType.value = type;
+      enrollRedirect.value = redirectTo;
+      showEnrollModal.value = true;
+    };
+
+    const closeEnrollModal = () => {
+      showEnrollModal.value = false;
+      enrollType.value = '';
+      enrollRedirect.value = '';
+    };
+
+    const handleBecomeTutor = async () => {
+      if (!isAuthenticated.value) {
+        router.push({ path: '/login', query: { redirect: '/?enroll=teacher' } });
+        return;
+      }
+
+      if (user.value?.tutor) {
+        router.push('/tutor/profile/view');
+        return;
+      }
+
+      openEnrollModal('teacher');
+    };
+
+    const handlePostRequirement = async () => {
+      if (!isAuthenticated.value) {
+        router.push({ path: '/login', query: { redirect: '/?enroll=student&next=/student/request-tutor' } });
+        return;
+      }
+
+      if (user.value?.student) {
+        router.push('/student/request-tutor');
+        return;
+      }
+
+      openEnrollModal('student', '/student/request-tutor');
+    };
+
+    const tryOpenEnrollFromQuery = async () => {
+      if (!isAuthenticated.value) return;
+
+      if (route.query.enroll === 'teacher' && !user.value?.tutor) {
+        openEnrollModal('teacher');
+        return;
+      }
+
+      if (route.query.enroll === 'student' && !user.value?.student) {
+        const nextPath = typeof route.query.next === 'string' ? route.query.next : '';
+        openEnrollModal('student', nextPath);
+      }
+    };
+
     onMounted(async () => {
       await userStore.fetchUser();
       await fetchSubjects();
       await fetchFeaturedTeachers();
       await fetchLatestTeachers();
+      await fetchLatestPosts();
+      await tryOpenEnrollFromQuery();
     });
+
+    watch(
+      () => [route.query.enroll, isAuthenticated.value, user.value?.tutor],
+      () => {
+        tryOpenEnrollFromQuery();
+      }
+    );
 
     return {
       profileMenuOpen,
@@ -316,9 +549,17 @@ export default {
       latestTeachers,
       isAuthenticated,
       user,
+      leftPosts,
+      showEnrollModal,
+      enrollType,
+      enrollRedirect,
       performSearch,
       searchBySubject,
       viewMoreTeachers,
+      handlePostRequirement,
+      formatTimeAgo,
+      handleBecomeTutor,
+      closeEnrollModal,
       logout,
     };
   }

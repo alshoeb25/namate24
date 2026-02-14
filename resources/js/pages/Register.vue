@@ -35,7 +35,7 @@
           <h2 class="text-2xl font-bold text-gray-900">Sign Up</h2>
           <p class="text-gray-600 mt-1 text-sm">
               Already have an account?
-              <router-link to="/login" class="text-pink-600 font-semibold">login</router-link>
+              <router-link :to="loginLink" class="text-pink-600 font-semibold">login</router-link>
           </p>
 
           <form @submit.prevent="submit">
@@ -182,7 +182,7 @@
 </template>
 
 <script>
-import { reactive, ref, onMounted, watch } from 'vue';
+import { reactive, ref, onMounted, watch, computed } from 'vue';
 import { useUserStore } from '../store';
 import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
@@ -204,6 +204,10 @@ export default {
     const userStore = useUserStore();
     const router = useRouter();
     const route = useRoute();
+    const loginLink = computed(() => {
+      const redirectTo = route.query.redirect;
+      return redirectTo ? { path: '/login', query: { redirect: redirectTo } } : { path: '/login' };
+    });
 
     const loading = ref(false);
     const verificationSent = ref(false);
@@ -337,7 +341,8 @@ export default {
             [data.email ? 'email' : 'phone']: id, 
             password: payload.password 
           });
-          router.push('/');
+          const redirectTo = route.query.redirect;
+          router.push(redirectTo || '/');
         }
       } catch (e) {
         errorMessage.value = e.response?.data?.message || 'Registration failed';
@@ -347,6 +352,11 @@ export default {
     }
 
     function goToLogin() {
+      const redirectTo = route.query.redirect;
+      if (redirectTo) {
+        router.push({ path: '/login', query: { redirect: redirectTo } });
+        return;
+      }
       router.push('/login');
     }
 
@@ -371,7 +381,8 @@ export default {
       loading, 
       verificationSent, 
       registeredEmail, 
-      goToLogin, 
+      goToLogin,
+      loginLink,
       resendEmail, 
       errorMessage,
       successMessage,

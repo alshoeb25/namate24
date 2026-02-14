@@ -15,7 +15,7 @@
         <h2 class="text-2xl font-bold text-gray-900">Login</h2>
         <p class="text-gray-600 mt-1 text-sm">
             Don't have an account?
-            <router-link to="/register" class="text-pink-600 font-semibold">sign up</router-link>
+            <router-link :to="registerLink" class="text-pink-600 font-semibold">sign up</router-link>
         </p>
 
         <form @submit.prevent="submit">
@@ -110,7 +110,7 @@
 </template>
 
 <script>
-import { reactive, ref } from 'vue';
+import { reactive, ref, computed } from 'vue';
 import { useUserStore } from '../store';
 import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
@@ -129,6 +129,10 @@ export default {
     const userStore = useUserStore();
     const router = useRouter();
     const route = useRoute();
+    const registerLink = computed(() => {
+      const redirectTo = route.query.redirect;
+      return redirectTo ? { path: '/register', query: { redirect: redirectTo } } : { path: '/register' };
+    });
 
     async function submit() {
       errorMessage.value = '';
@@ -201,7 +205,7 @@ export default {
       }
     }
 
-    return { payload, submit, loading, emailVerificationPending, errorMessage, resendVerificationEmail, showPassword };
+    return { payload, submit, loading, emailVerificationPending, errorMessage, resendVerificationEmail, showPassword, registerLink };
   }
 };
 </script>

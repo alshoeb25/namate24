@@ -72,6 +72,11 @@ class EnquiryService
             // Reload requirement with subjects for notification
             $enquiry = $enquiry->fresh(['subjects']);
 
+            Log::info('New enquiry posted, dispatching tutor notifications', [
+                'requirement_id' => $enquiry->id,
+                'subject_ids' => $subjectIds,
+            ]);
+
             // Dispatch job to send notifications to matching tutors
             NotifyTutorsOfNewRequirement::dispatch($enquiry, $subjectIds);
 

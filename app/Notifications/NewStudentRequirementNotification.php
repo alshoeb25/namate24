@@ -8,6 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\DB;
 
 class NewStudentRequirementNotification extends Notification implements ShouldQueue
 {
@@ -51,7 +52,18 @@ class NewStudentRequirementNotification extends Notification implements ShouldQu
         $labelService = app(\App\Services\LabelService::class);
         $labelService->addLabels($requirement);
 
-        $subjects = collect($requirement->subjects ?? [])->pluck('name')->implode(', ');
+        $subjectsList = collect($requirement->subjects ?? [])->pluck('name')->filter()->values()->all();
+        if (empty($subjectsList)) {
+            $subjectsList = DB::table('student_post_subjects')
+                ->join('subjects', 'subjects.id', '=', 'student_post_subjects.subject_id')
+                ->where('student_post_subjects.student_requirement_id', $requirement->id)
+                ->orderBy('subjects.name')
+                ->pluck('subjects.name')
+                ->filter()
+                ->values()
+                ->all();
+        }
+        $subjects = implode(', ', $subjectsList);
         $subjectLabel = $subjects !== ''
             ? $subjects
             : ($requirement->subject_name
@@ -96,22 +108,36 @@ class NewStudentRequirementNotification extends Notification implements ShouldQu
      */
     public function toArray(object $notifiable): array
     {
-        $subjects = collect($this->requirement->subjects ?? [])->pluck('name')->implode(', ');
+        $requirement = $this->requirement;
+        $requirement->loadMissing('subjects', 'subject');
+
+        $subjectsList = collect($requirement->subjects ?? [])->pluck('name')->filter()->values()->all();
+        if (empty($subjectsList)) {
+            $subjectsList = DB::table('student_post_subjects')
+                ->join('subjects', 'subjects.id', '=', 'student_post_subjects.subject_id')
+                ->where('student_post_subjects.student_requirement_id', $requirement->id)
+                ->orderBy('subjects.name')
+                ->pluck('subjects.name')
+                ->filter()
+                ->values()
+                ->all();
+        }
+        $subjects = implode(', ', $subjectsList);
         $subjectsLabel = $subjects !== '' ? $subjects : 'subjects';
         
         return [
             'type' => 'new_student_requirement',
             'title' => 'New Student Requirement',
-            'message' => "New {$subjectsLabel} requirement posted in {$this->requirement->area}, {$this->requirement->city}",
-            'requirement_id' => $this->requirement->id,
-            'student_name' => $this->requirement->student_name,
+            'message' => "New {$subjectsLabel} requirement posted in {$requirement->area}, {$requirement->city}",
+            'requirement_id' => $requirement->id,
+            'student_name' => $requirement->student_name,
             'subjects' => $subjects,
-            'city' => $this->requirement->city,
-            'area' => $this->requirement->area,
-            'meeting_options' => $this->requirement->meeting_options,
-            'budget_amount' => $this->requirement->budget_amount,
-            'budget_type' => $this->requirement->budget_type,
-            'gender_preference' => $this->requirement->gender_preference,
+            'city' => $requirement->city,
+            'area' => $requirement->area,
+            'meeting_options' => $requirement->meeting_options,
+            'budget_amount' => $requirement->budget_amount,
+            'budget_type' => $requirement->budget_type,
+            'gender_preference' => $requirement->gender_preference,
         ];
     }
 

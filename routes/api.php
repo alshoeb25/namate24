@@ -46,6 +46,7 @@ Route::get('tutors/by-location', [TutorController::class,'byLocation']);
 Route::get('cms/{slug}', [CmsPageController::class,'show']);
 Route::get('credit-packages', [CreditPackageController::class,'index']);
 Route::get('subjects', [SubjectController::class,'index']);
+Route::get('requirements/latest', [RequirementController::class,'latestPublic']);
 
 Route::get('/search-subjects', [SubjectController::class, 'search']);
 
