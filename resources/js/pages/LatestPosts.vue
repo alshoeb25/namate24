@@ -33,7 +33,10 @@
 
         <div v-for="post in posts" :key="post.id" class="bg-white rounded-xl shadow-md p-4">
           <div class="flex items-start gap-3">
-            <img :src="post.photo" class="w-10 h-10 rounded-full object-cover">
+            <img v-if="post.photo" :src="post.photo" class="w-10 h-10 rounded-full object-cover">
+            <div v-else class="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-semibold">
+              {{ getInitials(post.name) }}
+            </div>
             <div class="flex-1">
               <div class="flex items-center justify-between">
                 <p class="text-sm font-medium text-gray-900">{{ post.name }}</p>
@@ -107,6 +110,15 @@ export default {
       return `${years} year${years > 1 ? 's' : ''} ago`;
     };
 
+    const getInitials = (name) => {
+      const value = (name || '').trim();
+      if (!value) return 'S';
+      const parts = value.split(/\s+/).filter(Boolean);
+      const first = parts[0]?.[0] || '';
+      const last = parts.length > 1 ? parts[parts.length - 1]?.[0] : '';
+      return `${first}${last}`.toUpperCase();
+    };
+
     const fetchLatestPosts = async () => {
       loading.value = true;
       try {
@@ -118,7 +130,7 @@ export default {
           return {
             id: req.id,
             name: req.student_name || 'Student',
-            photo: 'https://via.placeholder.com/40',
+            photo: req.photo_url || req.avatar_url || '',
             subjects: Array.isArray(req.subjects) && req.subjects.length > 0 ? req.subjects : ['Subject'],
             location: req.location || 'Location not specified',
             details: req.details || 'New requirement posted',
@@ -179,6 +191,7 @@ export default {
       posts,
       loading,
       formatTimeAgo,
+      getInitials,
       showEnrollModal,
       enrollType,
       user,

@@ -70,7 +70,7 @@
       </section>
 
       <!-- Latest Tutors -->
-      <section class="max-w-7xl mx-auto px-4 mt-10">
+      <section v-if="showFeaturedSection" class="max-w-7xl mx-auto px-4 mt-10">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-semibold text-gray-900">Latest Tutors</h2>
           <router-link to="/tutors" class="text-blue-600 text-sm font-medium hover:underline">See All</router-link>
@@ -121,7 +121,10 @@
                       <div v-for="(post, idx) in leftPosts" :key="post.id"
                         class="flex items-start gap-3 py-2"
                         :class="{ 'border-b border-gray-100': idx < leftPosts.length - 1 }">
-                        <img :src="post.photo" class="w-8 h-8 rounded-full object-cover">
+                        <img v-if="post.photo" :src="post.photo" class="w-8 h-8 rounded-full object-cover">
+                        <div v-else class="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-semibold">
+                          {{ getInitials(post.name) }}
+                        </div>
                         <div class="flex-1">
                           <div class="flex items-center justify-between">
                             <p class="text-sm font-medium text-gray-900">{{ post.name }}</p>
@@ -414,6 +417,15 @@ export default {
       return `${years} year${years > 1 ? 's' : ''} ago`;
     };
 
+    const getInitials = (name) => {
+      const value = (name || '').trim();
+      if (!value) return 'S';
+      const parts = value.split(/\s+/).filter(Boolean);
+      const first = parts[0]?.[0] || '';
+      const last = parts.length > 1 ? parts[parts.length - 1]?.[0] : '';
+      return `${first}${last}`.toUpperCase();
+    };
+
     const fetchLatestPosts = async () => {
       try {
         const response = await axios.get('/api/requirements/latest', {
@@ -424,7 +436,7 @@ export default {
           return {
             id: req.id,
             name: req.student_name || 'Student',
-            photo: 'https://via.placeholder.com/40',
+            photo: req.photo_url || req.avatar_url || '',
             subject: Array.isArray(req.subjects) && req.subjects.length > 0 ? req.subjects[0] : 'Subject',
             location: req.location || 'Location not specified',
             details: req.details || 'New requirement posted',
@@ -558,6 +570,7 @@ export default {
       viewMoreTeachers,
       handlePostRequirement,
       formatTimeAgo,
+      getInitials,
       handleBecomeTutor,
       closeEnrollModal,
       logout,
