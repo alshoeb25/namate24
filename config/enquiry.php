@@ -24,6 +24,20 @@ return [
     // Maximum number of tutors that can unlock and see a single enquiry
     'max_leads' => env('ENQUIRY_MAX_LEADS', 5),
 
+    // Nationality-based pricing
+    'pricing_by_nationality' => [
+        // Post requirement / Unlock tutors
+        'post' => [
+            'indian' => env('ENQUIRY_POST_FEE_INDIAN', 49),
+            'non_indian' => env('ENQUIRY_POST_FEE_NON_INDIAN', 99),
+        ],
+        // Tutor unlock profile / Contact unlock
+        'unlock' => [
+            'indian' => env('ENQUIRY_UNLOCK_FEE_INDIAN', 199),
+            'non_indian' => env('ENQUIRY_UNLOCK_FEE_NON_INDIAN', 399),
+        ],
+    ],
+
     // Enquiry/Requirement lifecycle statuses
     'statuses' => [
         'active'      => 'Active - Open for tutor applications',
@@ -90,4 +104,14 @@ return [
 
     // Enable audit trail logging (tracks fee changes, status changes)
     'audit_enabled' => env('ENQUIRY_AUDIT_LOG', true),
+
+    // Terms & Conditions enforcement for enquiry operations with nationality-based pricing
+    'terms_and_conditions' => [
+        'enforce_acceptance' => env('ENQUIRY_ENFORCE_TC_ACCEPTANCE', false), // Set to true to require T&C acceptance in API
+        'require_for_operations' => [
+            'post' => env('ENQUIRY_REQUIRE_TC_POST', false), // Require T&C for posting with nationality-based fees
+            'unlock' => env('ENQUIRY_REQUIRE_TC_UNLOCK', false), // Require T&C for unlocking with nationality-based fees
+        ],
+        'notify_about_pricing' => env('ENQUIRY_NOTIFY_PRICING_CHANGE', true), // Notify users about nationality-based pricing
+    ],
 ];

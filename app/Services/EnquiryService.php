@@ -20,8 +20,12 @@ class EnquiryService
 
     public function createForStudent(array $data, User $student, array $subjectIds = []): StudentRequirement
     {
-        $postFee = (int)($data['post_fee'] ?? config('enquiry.post_fee', 0));
-        $unlockPrice = (int)($data['unlock_price'] ?? config('enquiry.unlock_fee', 0));
+        // Use nationality-based pricing for post fee
+        $postFee = (int)($data['post_fee'] ?? \App\Services\CoinPricingService::getCoinCost($student, 'post_requirement'));
+        
+        // Use nationality-based pricing for unlock price (tutor will pay when unlocking)
+        // This is set now but tutors may have different pricing
+        $unlockPrice = (int)($data['unlock_price'] ?? config('enquiry.unlock_fee', 199));
         $maxLeads = (int)($data['max_leads'] ?? config('enquiry.max_leads', 5));
 
         $studentId = $data['student_id'] ?? $student->student->id;
@@ -110,7 +114,12 @@ class EnquiryService
                 return [$lockedEnquiry->fresh(), $existing, false];
             }
 
-            $unlockPrice = (int)($lockedEnquiry->unlock_price ?? config('enquiry.unlock_fee', 0));
+            // Use nationality-based pricing for requirement unlock (49/99 based on tutor's nationality)
+            // Note: Requirements unlock pricing matches post pricing tier, not tutor profile pricing
+            $isIndia = $lockedTutor->country_iso === 'IN';
+            $unlockPrice = (int)($isIndia 
+                ? config('enquiry.pricing_by_nationality.post.indian', 49)
+                : config('enquiry.pricing_by_nationality.post.non_indian', 99));
 
 
             if ($unlockPrice > 0) {

@@ -255,7 +255,7 @@
               :class="hasContactAccess ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-600'"
               class="text-white py-2.5 px-4 rounded text-sm font-medium flex items-center justify-center transition">
               <i class="fas fa-phone mr-2"></i>
-              {{ hasContactAccess ? 'Contact Unlocked' : 'Contact' }}
+              {{ hasContactAccess ? 'Contact Unlocked' : 'Contact (' + contactUnlockCoins + ' coins)' }}
             </button>
             <button 
               @click="openReviewModal"
@@ -385,6 +385,27 @@
                 <p class="font-semibold text-yellow-800">{{ contactUnlockCoins }} Coins Required</p>
                 <p class="text-sm text-yellow-700">Your current balance: {{ userCoins }} coins</p>
               </div>
+            </div>
+          </div>
+
+          <!-- Terms & Conditions -->
+          <div class="mb-6">
+            <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
+              <i class="fas fa-file-contract text-purple-600 mr-2"></i>Terms & Conditions
+            </h3>
+            <div class="bg-gray-50 rounded-lg p-4 max-h-48 overflow-y-auto text-sm text-gray-700">
+              <ol class="space-y-2 list-decimal list-inside">
+                <li><strong>Nationality-Based Pricing:</strong> The cost of {{ contactUnlockCoins }} coins is based on your registered country. Indian users pay 199 coins, non-Indian users pay 399 coins.</li>
+                <li>Once you unlock contact details, {{ contactUnlockCoins }} coins will be deducted from your account.</li>
+                <li>Contact details are provided as-is and the platform is not responsible for the accuracy.</li>
+                <li>You agree to use contact information only for educational purposes.</li>
+                <li>Any misuse of contact information may result in account suspension.</li>
+                <li>Coins are non-refundable once contact details are unlocked.</li>
+                <li>The platform does not guarantee response from the tutor.</li>
+                <li>All transactions through the platform should be documented for your safety.</li>
+                <li>You agree to our privacy policy and data protection guidelines.</li>
+                <li>By clicking "Accept & Unlock", you confirm that you have read, understood, and agree to all terms and conditions including the nationality-based pricing structure.</li>
+              </ol>
             </div>
           </div>
 
@@ -650,7 +671,9 @@ export default {
 
     async function loadContactUnlockCoins() {
       try {
-        const response = await axios.get('/api/settings/contact-unlock-coins');
+        const tutorId = profile.value?.id;
+        console.log('Loading contact unlock coins for tutor ID:', tutorId);
+        const response = await axios.get(`/api/settings/contact-unlock-coins/${tutorId}`);
         if (response.data?.contact_unlock_coins !== undefined) {
           contactUnlockCoins.value = Number(response.data.contact_unlock_coins);
         }
@@ -923,8 +946,8 @@ export default {
       if (!userStore.user && userStore.token) {
         await userStore.fetchUser();
       }
-      await loadContactUnlockCoins();
       await loadProfile();
+      await loadContactUnlockCoins();
     });
 
     return {

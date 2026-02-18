@@ -28,4 +28,26 @@ return [
 
     // Cost to unlock tutor contact details
     'contact_unlock' => env('CONTACT_UNLOCK_COINS', 50),
+
+    // Nationality-based pricing for tutor contact unlock / profile unlock
+    'pricing_by_nationality' => [
+        'contact_unlock' => [
+            'indian' => env('CONTACT_UNLOCK_COINS_INDIAN', 199),
+            'non_indian' => env('CONTACT_UNLOCK_COINS_NON_INDIAN', 399),
+        ],
+        'approach_tutor' => [
+            'indian' => env('APPROACH_TUTOR_COINS_INDIAN', 49),
+            'non_indian' => env('APPROACH_TUTOR_COINS_NON_INDIAN', 99),
+        ],
+    ],
+
+    // Terms & Conditions enforcement for coin operations
+    'terms_and_conditions' => [
+        'enforce_acceptance' => env('COINS_ENFORCE_TC_ACCEPTANCE', false), // Set to true to require T&C acceptance in API
+        'require_for_operations' => [
+            'post_requirement' => env('COINS_REQUIRE_TC_POST', false),
+            'unlock_tutor' => env('COINS_REQUIRE_TC_UNLOCK', false),
+            'contact_unlock' => env('COINS_REQUIRE_TC_CONTACT', false),
+        ],
+    ],
 ];

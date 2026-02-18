@@ -76,11 +76,19 @@
         </div>
           <div class="mb-6 bg-blue-50 border border-blue-100 text-blue-800 px-4 py-3 rounded-lg text-sm flex items-start gap-2">
             <i class="fas fa-info-circle mt-0.5"></i>
-            <div>
+            <div class="w-full">
               <div class="font-semibold">Posting Info</div>
               <div v-if="!isEditMode">
                 <span v-if="postingIsFree" class="text-green-700 font-medium">✓ FREE post ({{ requirementsPosted }}/3 used)</span>
                 <span v-else class="text-orange-700 font-medium">💰 {{ postingCost }} coins required ({{ requirementsPosted }}/3 free posts used)</span>
+              </div>
+              <div v-if="!postingIsFree && !isEditMode" class="mt-2 text-xs text-gray-700 bg-white bg-opacity-50 px-2 py-1 rounded">
+                <div class="font-medium mb-1">Pricing by nationality:</div>
+                <div class="flex gap-4">
+                  <span>🇮🇳 Indian: {{ pricingDetails.indian }} coins</span>
+                  <span>🌍 Non-Indian: {{ pricingDetails.non_indian }} coins</span>
+                </div>
+                <div class="mt-1 font-medium">Your cost: <span class="text-blue-700">{{ postingCost }} coins</span> ({{ userNationality }})</div>
               </div>
               <div class="mt-1 text-xs text-gray-600">First 3 posts free • {{ enquiryConfig.unlock_fee }} coins to unlock • Max {{ enquiryConfig.max_leads }} tutors</div>
             </div>
@@ -123,11 +131,15 @@
         <!-- Coin Info for Mobile -->
         <div class="mt-4 bg-blue-50 border border-blue-100 text-blue-800 px-3 py-2 rounded-lg text-xs flex items-start gap-2">
           <i class="fas fa-info-circle mt-0.5 text-sm"></i>
-          <div>
+          <div class="w-full">
             <div class="font-semibold">Posting Info</div>
             <div v-if="!isEditMode">
               <span v-if="postingIsFree" class="text-green-700 font-medium">✓ FREE ({{ requirementsPosted }}/3)</span>
               <span v-else class="text-orange-700 font-medium">💰 {{ postingCost }} coins</span>
+            </div>
+            <div v-if="!postingIsFree && !isEditMode" class="mt-1 text-[10px] text-gray-700 bg-white bg-opacity-50 px-1 py-0.5 rounded">
+              <div class="font-medium">🇮🇳 Indian: {{ pricingDetails.indian }} • 🌍 Non-Indian: {{ pricingDetails.non_indian }}</div>
+              <div class="font-medium">Your cost: {{ postingCost }} ({{ userNationality }})</div>
             </div>
             <div class="mt-1 text-[10px] text-gray-600">First 3 free • {{ enquiryConfig.unlock_fee }} coins unlock • Max {{ enquiryConfig.max_leads }} tutors</div>
           </div>
@@ -765,7 +777,7 @@
               ✓ Free post ({{ requirementsPosted }}/3)
             </span>
             <span v-else class="text-blue-600 font-medium">
-              💰 Paid post - {{ postingCost }} coins
+              💰 Paid post - {{ postingCost }} coins ({{ userNationality }})
             </span>
           </div>
 
@@ -870,6 +882,8 @@ export default {
     const postingCost = ref(0);
     const requirementsPosted = ref(0);
     const postingEligibilityMsg = ref('');
+    const userNationality = ref('');
+    const pricingDetails = ref({ indian: 49, non_indian: 99 });
 
     // Phone handling
     const phoneNumber = ref('');
@@ -1168,13 +1182,15 @@ export default {
         postingCost.value = Number(data.post_fee) || 0;
         requirementsPosted.value = Number(data.requirements_posted) || 0;
         postingEligibilityMsg.value = data.message || '';
-        
+        userNationality.value = data.nationality || 'Unknown';
+        pricingDetails.value = data.pricing_details || { indian: 49, non_indian: 99 };
         
       } catch (error) {
         console.error('Failed to check posting eligibility:', error);
         // Default to paid if API fails
         postingIsFree.value = false;
-        postingCost.value = 10;
+        postingCost.value = 49; // Default to Indian pricing if API fails
+        userNationality.value = 'Unknown';
       }
     };
 
@@ -1531,6 +1547,8 @@ export default {
       postingCost,
       requirementsPosted,
       postingEligibilityMsg,
+      userNationality,
+      pricingDetails,
       checkPostingEligibility,
       isFieldFilled,
       getFieldClass,

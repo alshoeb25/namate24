@@ -109,8 +109,8 @@ class PublicTutorProfileController extends Controller
         // Get tutor's user for name
         $tutorUser = DB::table('users')->where('id', $tutor->user_id)->first();
 
-        // Check coin balance
-        $requiredCoins = \App\Helpers\CommonHelper::getContactUnlockCoins();
+        // Check coin balance - Use nationality-based pricing (student's nationality)
+        $requiredCoins = \App\Services\CoinPricingService::getCoinCost($user, 'contact_unlock');
         if ($user->coins < $requiredCoins) {
             return response()->json([
                 'success' => false,
@@ -312,12 +312,66 @@ class PublicTutorProfileController extends Controller
     }
 
     /**
-     * Get contact unlock coins (public)
+     * Get contact unlock coins based on tutor's country (public)
      */
-    public function getContactUnlockCoins()
+    public function getContactUnlockCoins(Request $request, $tutorId = null)
     {
+        // If tutorId is provided, return the pricing for the tutor's nationality
+        if ($tutorId) {
+            $tutor = \App\Models\Tutor::find($tutorId);
+            
+            if (!$tutor || !$tutor->user_id) {
+                return response()->json(['error' => 'Tutor not found'], 404);
+            }
+            
+            // Get tutor's user based on user_id
+            $tutorUser = User::find($tutor->user_id);
+            
+            if (!$tutorUser) {
+                return response()->json(['error' => 'Tutor user not found'], 404);
+            }
+            
+            // Get the coin cost based on the tutor's user country
+            $tutorCountry = $tutorUser->country ?? null;
+            $requiredCoins = \App\Services\CoinPricingService::getCoinCost($tutorUser, 'contact_unlock');
+            $nationalityInfo = \App\Services\CoinPricingService::getNationalityInfo($tutorUser);
+            
+            return response()->json([
+                'contact_unlock_coins' => $requiredCoins,
+                'tutor_country' => $tutorCountry,
+                'tutor_is_indian' => $nationalityInfo['is_indian'],
+                'pricing' => [
+                    'indian' => config('coins.pricing_by_nationality.contact_unlock.indian', 199),
+                    'non_indian' => config('coins.pricing_by_nationality.contact_unlock.non_indian', 399),
+                ]
+            ]);
+        }
+        
+        $user = $request->user();
+        
+        // If authenticated but no tutorId, return the pricing for the user's nationality
+        if ($user) {
+            $requiredCoins = \App\Services\CoinPricingService::getCoinCost($user, 'contact_unlock');
+            $nationalityInfo = \App\Services\CoinPricingService::getNationalityInfo($user);
+            
+            return response()->json([
+                'contact_unlock_coins' => $requiredCoins,
+                'nationality' => $nationalityInfo['nationality'],
+                'is_indian' => $nationalityInfo['is_indian'],
+                'pricing' => [
+                    'indian' => config('coins.pricing_by_nationality.contact_unlock.indian', 199),
+                    'non_indian' => config('coins.pricing_by_nationality.contact_unlock.non_indian', 399),
+                ]
+            ]);
+        }
+        
+        // If not authenticated and no tutorId, return default pricing
         return response()->json([
-            'contact_unlock_coins' => \App\Helpers\CommonHelper::getContactUnlockCoins()
+            'contact_unlock_coins' => \App\Helpers\CommonHelper::getContactUnlockCoins(),
+            'pricing' => [
+                'indian' => config('coins.pricing_by_nationality.contact_unlock.indian', 199),
+                'non_indian' => config('coins.pricing_by_nationality.contact_unlock.non_indian', 399),
+            ]
         ]);
     }
 

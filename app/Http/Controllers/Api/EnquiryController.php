@@ -97,7 +97,7 @@ class EnquiryController extends Controller
             ->orderByDesc('created_at')
             ->paginate($request->integer('per_page', 20));
 
-        $enquiries->getCollection()->transform(function (StudentRequirement $enquiry) {
+        $enquiries->getCollection()->transform(function (StudentRequirement $enquiry) use ($user) {
             // Add labels for display and Elasticsearch
             $enquiry = $this->addLabelsToEnquiry($enquiry);
             
@@ -126,6 +126,18 @@ class EnquiryController extends Controller
                 'max_leads' => $enquiry->max_leads,
                 'spots_available' => $enquiry->max_leads - $enquiry->current_leads,
                 'is_full' => $enquiry->current_leads >= $enquiry->max_leads,
+            ]);
+            
+            // Add dynamic unlock pricing based on tutor's (user's) nationality
+            // Requirements/jobs unlock uses post pricing (49/99), not tutor profile pricing (199/399)
+            $isIndia = $user && $user->country_iso === 'IN';
+            $unlockPrice = $isIndia 
+                ? config('enquiry.pricing_by_nationality.post.indian', 49)
+                : config('enquiry.pricing_by_nationality.post.non_indian', 99);
+            $enquiry->setAttribute('unlock_price', $unlockPrice);
+            $enquiry->setAttribute('pricing_details', [
+                'indian' => config('enquiry.pricing_by_nationality.post.indian', 49),
+                'non_indian' => config('enquiry.pricing_by_nationality.post.non_indian', 99),
             ]);
             
             return $enquiry;
@@ -172,6 +184,25 @@ class EnquiryController extends Controller
             unset($payload['phone'], $payload['alternate_phone']);
         }
 
+        // Add dynamic unlock pricing based on tutor's (user's) nationality
+        // Requirements/jobs unlock uses post pricing (49/99), not tutor profile pricing (199/399)
+        // Always recalculate for consistency with what will be charged at unlock
+        if ($user->hasRole('tutor')) {
+            $isIndia = $user->country_iso === 'IN';
+            $unlockPrice = $isIndia
+                ? config('enquiry.pricing_by_nationality.post.indian', 49)
+                : config('enquiry.pricing_by_nationality.post.non_indian', 99);
+            $payload['unlock_price'] = $unlockPrice;
+            $payload['pricing_details'] = [
+                'indian' => config('enquiry.pricing_by_nationality.post.indian', 49),
+                'non_indian' => config('enquiry.pricing_by_nationality.post.non_indian', 99),
+                'tutor_country' => $user->country_iso,
+            ];
+        } else {
+            // For non-tutors, show default pricing but don't charge it
+            $payload['unlock_price'] = config('enquiry.unlock_fee', 10);
+        }
+
         return response()->json(['enquiry' => $payload]);
     }
 
@@ -213,15 +244,23 @@ class EnquiryController extends Controller
             'is_full' => $freshEnquiry->current_leads >= $freshEnquiry->max_leads,
         ];
 
+        // Calculate the actual unlock price that was charged (or would have been)
+        $isIndia = $user->country_iso === 'IN';
+        $unlockPrice = $isIndia
+            ? config('enquiry.pricing_by_nationality.post.indian', 49)
+            : config('enquiry.pricing_by_nationality.post.non_indian', 99);
+
         return response()->json([
             'message' => $charged ? 'Contact unlocked successfully.' : 'Already unlocked.',
             'enquiry' => array_merge($freshEnquiry->toArray(), [
                 'has_unlocked' => true,
                 'lead_info' => $leadInfo,
                 'student_email' => $freshEnquiry->student?->user?->email,
+                'unlock_price' => $unlockPrice, // Always show the current pricing
             ]),
             'unlock' => $unlock,
             'charged' => $charged,
+            'coins_charged' => $charged ? $unlockPrice : 0,
         ]);
     }
 

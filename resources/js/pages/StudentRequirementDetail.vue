@@ -47,7 +47,7 @@
           <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
             <p class="text-sm text-yellow-800">
               <i class="fas fa-info-circle mr-2"></i>
-              <strong>Note:</strong> Approaching a tutor will cost <strong>10 coins</strong>. You'll be able to see their contact details after approaching.
+              <strong>Note:</strong> Approaching a tutor will cost <strong>{{ approachCoinCost }} coins</strong> (based on your nationality). You'll be able to see their contact details after approaching.
             </p>
           </div>
 
@@ -102,7 +102,7 @@
                   @click="selectTeacher(teacher.id)"
                   :disabled="approachLoading"
                   class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition disabled:bg-gray-400">
-                  <i class="fas fa-check-circle mr-1"></i>{{ approachLoading ? 'Processing...' : 'Approach (10 coins)' }}
+                  <i class="fas fa-check-circle mr-1"></i>{{ approachLoading ? 'Processing...' : 'Approach (' + approachCoinCost + ' coins)' }}
                 </button>
                 <div v-else class="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium">
                   <i class="fas fa-check-circle mr-1"></i>Approached
@@ -300,6 +300,7 @@ export default {
     const showInterestedModal = ref(false);
     const interestedTeachers = ref([]);
     const approachLoading = ref(false);
+    const approachCoinCost = ref(0);
 
     const fetchRequirement = async () => {
       loading.value = true;
@@ -343,7 +344,7 @@ export default {
         refundRequirementId.value = null;
         
         // Show success message with refund details
-        alert(`✅ Refund Successful!\n\n${refundedCoins} coins have been refunded to your wallet.\n\nYour requirement has been closed and removed from the list.\n\nCurrent balance: ${response.data.current_balance || 'Updated'} coins`);
+        alert(`Refund successful! ${refundedCoins} coins refunded.`);
         
         // Navigate back to requirements list
         router.push('/student/requirements');
@@ -352,9 +353,9 @@ export default {
         showRefundModal.value = false;
         
         if (err.response?.data?.message) {
-          alert(`❌ Refund Failed\n\n${err.response.data.message}`);
+          alert(err.response.data.message);
         } else {
-          alert('❌ Failed to process refund. Please try again.');
+          alert('Failed to process refund. Please try again.');
         }
       }
     };
@@ -363,6 +364,7 @@ export default {
       try {
         const response = await axios.get(`/api/student/requirements/${id}/interested-teachers`);
         interestedTeachers.value = response.data.teachers || [];
+        approachCoinCost.value = response.data.approach_coin_cost || 49;
         showInterestedModal.value = true;
       } catch (err) {
         console.error('Error loading interested teachers:', err);
@@ -377,7 +379,8 @@ export default {
 
     const selectTeacher = async (teacherId) => {
       // Confirm before approaching
-      if (!confirm('Are you sure you want to approach this tutor?\n\nThis will cost 10 coins and you will receive their contact details.')) {
+      const cost = approachCoinCost.value || 49;
+      if (!confirm(`Are you sure you want to approach this tutor?\n\nThis will cost ${cost} coins and you will receive their contact details.`)) {
         return;
       }
       
@@ -390,7 +393,7 @@ export default {
         console.log('Approach response:', response.data);
         
         // Show success message with coin deduction info
-        alert(`✅ Success!\n\n${response.data.coins_deducted} coins deducted\n${response.data.message}\n\nCurrent balance: ${response.data.current_balance} coins`);
+        alert(`Successfully approached! ${response.data.coins_deducted} coins deducted.`);
         
         // Reload interested teachers from database to show updated contact details
         const teachersResponse = await axios.get(`/api/student/requirements/${requirement.value.id}/interested-teachers`);
@@ -404,11 +407,11 @@ export default {
       } catch (err) {
         console.error('Error approaching teacher:', err);
         if (err.response?.status === 402) {
-          alert(`❌ Insufficient Coins\n\n${err.response.data.message}\n\nPlease purchase more coins to continue.`);
+          alert(err.response.data.message);
         } else if (err.response?.status === 422) {
-          alert(`❌ Error\n\n${err.response?.data?.message || 'You have already approached this tutor.'}`);
+          alert(err.response?.data?.message || 'You have already approached this tutor.');
         } else {
-          alert(`❌ Error\n\n${err.response?.data?.message || 'Failed to approach teacher'}`);
+          alert(err.response?.data?.message || 'Failed to approach teacher');
         }
       } finally {
         approachLoading.value = false;
@@ -424,9 +427,9 @@ export default {
         
         // Show success message
         if (response.data.refund_amount && response.data.refund_amount > 0) {
-          alert(`✅ Requirement Closed!\n\n${response.data.refund_amount} coins have been refunded to your wallet.\n\nYour requirement has been removed from the list.\n\nCurrent balance: ${response.data.current_balance || 'Updated'} coins`);
+          alert(`Requirement closed! ${response.data.refund_amount} coins refunded.`);
         } else {
-          alert('✅ Requirement closed successfully!\n\nYour requirement has been removed from the list.');
+          alert('Requirement closed successfully!');
         }
         
         // Navigate back to requirements list
@@ -434,9 +437,9 @@ export default {
       } catch (err) {
         console.error('Error closing requirement:', err);
         if (err.response?.data?.message) {
-          alert(`❌ Failed to Close\n\n${err.response.data.message}`);
+          alert(err.response.data.message);
         } else {
-          alert('❌ Failed to close requirement. Please try again.');
+          alert('Failed to close requirement. Please try again.');
         }
       }
     };
@@ -500,6 +503,7 @@ export default {
       showInterestedModal,
       interestedTeachers,
       approachLoading,
+      approachCoinCost,
       subjectsDisplay,
       meetingOptionsDisplay,
       statusBadgeClass,

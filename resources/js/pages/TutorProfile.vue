@@ -460,6 +460,7 @@
             </h3>
             <div class="bg-gray-50 rounded-lg p-4 max-h-48 overflow-y-auto text-sm text-gray-700">
               <ol class="space-y-2 list-decimal list-inside">
+                <li><strong>Nationality-Based Pricing:</strong> The cost of {{ contactUnlockCoins }} coins is based on your registered country. Indian users pay 199 coins, non-Indian users pay 399 coins.</li>
                 <li>Once you unlock contact details, {{ contactUnlockCoins }} coins will be deducted from your account.</li>
                 <li>Contact details are provided as-is and the platform is not responsible for the accuracy.</li>
                 <li>You agree to use contact information only for educational purposes.</li>
@@ -468,6 +469,7 @@
                 <li>The platform does not guarantee response from the tutor.</li>
                 <li>All transactions through the platform should be documented for your safety.</li>
                 <li>You agree to our privacy policy and data protection guidelines.</li>
+                <li>By clicking "Accept & Unlock", you confirm that you have read, understood, and agree to all terms and conditions including the nationality-based pricing structure.</li>
               </ol>
             </div>
           </div>

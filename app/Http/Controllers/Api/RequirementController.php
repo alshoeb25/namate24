@@ -125,8 +125,14 @@ class RequirementController extends Controller
             // Use Elasticsearch via RequirementSearchService
             $results = $this->searchService->search($filters, $perPage, $page);
 
+            // Transform results to include dynamic unlock pricing based on authenticated user's nationality
+            $transformedItems = $this->transformRequirementsWithDynamicPricing(
+                $results->items(),
+                $request->user()
+            );
+
             return response()->json([
-                'data' => $results->items(),
+                'data' => $transformedItems,
                 'total' => $results->total(),
                 'per_page' => $results->perPage(),
                 'current_page' => $results->currentPage(),
@@ -381,7 +387,8 @@ class RequirementController extends Controller
         
         $requirementCount = StudentRequirement::where('student_id', $studentId)->count();
         $freeCount = config('coins.free_requirements_count', 3);
-        $postFee = config('coins.requirement_post_fee', 10);
+        // Use nationality-based pricing via CoinPricingService
+        $postFee = \App\Services\CoinPricingService::getCoinCost($user, 'post_requirement');
         
         $isFree = $requirementCount < $freeCount;
         $remainingFree = max(0, $freeCount - $requirementCount);
@@ -394,6 +401,11 @@ class RequirementController extends Controller
             'free_requirements_remaining' => $remainingFree,
             'post_fee' => $isFree ? 0 : $postFee,
             'current_coins' => $user->coins,
+            'nationality' => \App\Services\CoinPricingService::getNationalityInfo($user)['nationality'],
+            'pricing_details' => [
+                'indian' => config('coins.pricing_by_nationality.post_requirement.indian', 49),
+                'non_indian' => config('coins.pricing_by_nationality.post_requirement.non_indian', 99),
+            ],
             'message' => $isFree 
                 ? "You have {$remainingFree} free requirement(s) remaining." 
                 : ($canPost 
@@ -450,4 +462,36 @@ class RequirementController extends Controller
 
         return response()->json($results);
     }
+
+    /**
+     * Transform requirement/job listings with dynamic unlock pricing
+     * based on authenticated user's nationality
+     */
+    private function transformRequirementsWithDynamicPricing($items, $user)
+    {
+        if (!is_array($items)) {
+            $items = $items->toArray() ?? [];
+        }
+
+        return array_map(function($item) use ($user) {
+            $item = (array)$item;
+            
+            // Calculate dynamic unlock price based on tutor's (user's) nationality
+            // Requirements/jobs unlock uses post pricing (49/99), not tutor profile pricing (199/399)
+            if ($user) {
+                $isIndia = $user->country_iso === 'IN';
+                $unlockPrice = $isIndia
+                    ? config('enquiry.pricing_by_nationality.post.indian', 49)
+                    : config('enquiry.pricing_by_nationality.post.non_indian', 99);
+                $item['unlock_price'] = $unlockPrice;
+                $item['pricing_details'] = [
+                    'indian' => config('enquiry.pricing_by_nationality.post.indian', 49),
+                    'non_indian' => config('enquiry.pricing_by_nationality.post.non_indian', 99),
+                ];
+            }
+            
+            return $item;
+        }, $items);
+    }
 }
+

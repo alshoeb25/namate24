@@ -242,12 +242,15 @@ export default {
         // Update requirement with unlocked data
         Object.assign(props.requirement, res.data.enquiry);
         
+        // Use coins_charged from response for accuracy, fallback to unlock_price
+        const coinAmount = res.data.coins_charged || res.data.unlock_price || props.requirement.unlock_price || 0;
+        
         // Update wallet balance in user store if coins were charged
         if (res.data.charged && userStore.user) {
-          userStore.user.coins -= (props.requirement.unlock_price || 0);
+          userStore.user.coins -= coinAmount;
         }
         
-        alert(`Unlocked successfully! ${res.data.charged ? `${props.requirement.unlock_price || 0} coins deducted.` : 'Already unlocked.'}`);
+        alert(`Unlocked successfully! ${coinAmount} coins deducted.`);
       } catch (error) {
         console.error('Error unlocking requirement:', error);
         if (error.response?.status === 401 || error.response?.status === 403) {

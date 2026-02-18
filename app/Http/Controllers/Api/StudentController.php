@@ -121,7 +121,7 @@ class StudentController extends Controller
             'languages' => $data['languages'],
             'tutor_location_preference' => $data['tutor_location'],
             'status' => 'active',
-            'post_fee' => config('enquiry.post_fee'),
+            // post_fee will be calculated by EnquiryService using CoinPricingService for nationality-based pricing
             'unlock_price' => config('enquiry.unlock_fee'),
             'max_leads' => config('enquiry.max_leads'),
             'lead_status' => 'open',
@@ -544,7 +544,12 @@ class StudentController extends Controller
             'enquiry_id' => $requirement->id,
             'total_interested' => count($teachers),
             'teachers' => $teachers,
-            'approach_coin_cost' => config('coins.approach_teacher_cost', 10),
+            'approach_coin_cost' => \App\Services\CoinPricingService::getCoinCost($user, 'approach_tutor'),
+            'nationality' => \App\Services\CoinPricingService::getNationalityInfo($user)['nationality'],
+            'pricing_details' => [
+                'indian' => config('coins.pricing_by_nationality.approach_tutor.indian', 49),
+                'non_indian' => config('coins.pricing_by_nationality.approach_tutor.non_indian', 99),
+            ]
         ]);
     }
 
@@ -605,8 +610,8 @@ class StudentController extends Controller
             ], 422);
         }
 
-        // Get approach cost from config
-        $approachCost = config('coins.approach_teacher_cost', 10);
+        // Get approach cost using nationality-based pricing
+        $approachCost = \App\Services\CoinPricingService::getCoinCost($user, 'approach_tutor');
         
         // Check if user has enough coins
         if ($user->coins < $approachCost) {
@@ -942,12 +947,12 @@ class StudentController extends Controller
             ], 404);
         }
 
-        // Check coin balance
-        $requiredCoins = 50;
+        // Check coin balance - Use nationality-based pricing (student's nationality)
+        $requiredCoins = \App\Services\CoinPricingService::getCoinCost($user, 'contact_unlock');
         if ($user->coins < $requiredCoins) {
             return response()->json([
                 'success' => false,
-                'message' => 'Insufficient coins. You need 50 coins to unlock contact details.',
+                'message' => 'Insufficient coins. You need ' . $requiredCoins . ' coins to unlock contact details.',
                 'required' => $requiredCoins,
                 'current_balance' => $user->coins
             ], 402);

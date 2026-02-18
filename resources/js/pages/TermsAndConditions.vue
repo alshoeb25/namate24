@@ -101,10 +101,46 @@
         <article class="bg-white rounded-xl sm:rounded-2xl shadow-lg border-t-4 border-rose-500 p-4 sm:p-6 md:p-8">
           <div class="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
             <span class="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-rose-50 text-rose-500 text-sm sm:text-base">
-              <i class="fas fa-undo-alt"></i>
+              <i class="fas fa-coins"></i>
             </span>
-            <h2 class="text-lg sm:text-xl font-semibold text-rose-600">Refund Policy</h2>
+            <h2 class="text-lg sm:text-xl font-semibold text-rose-600">Nationality-Based Coin Pricing</h2>
           </div>
+          <div class="space-y-4">
+            <p class="text-sm sm:text-base text-gray-700 leading-relaxed">Namate24 uses nationality-based pricing to ensure fair access for tutors and students worldwide. By accepting these terms, you agree to the following coin pricing structure:</p>
+            
+            <div class="space-y-3">
+              <div class="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
+                <h3 class="font-semibold text-blue-700 mb-2">📝 Post Requirement & Unlock Tutors</h3>
+                <ul class="space-y-1 text-sm text-gray-700">
+                  <li><span class="font-semibold text-green-600">Indian Users:</span> 49 coins</li>
+                  <li><span class="font-semibold text-purple-600">Non-Indian Users:</span> 99 coins</li>
+                </ul>
+              </div>
+
+              <div class="bg-amber-50 rounded-lg p-4 border-l-4 border-amber-500">
+                <h3 class="font-semibold text-amber-700 mb-2">🔓 Tutor Profile Unlock (Contact Details)</h3>
+                <ul class="space-y-1 text-sm text-gray-700">
+                  <li><span class="font-semibold text-green-600">Indian Users:</span> 199 coins</li>
+                  <li><span class="font-semibold text-purple-600">Non-Indian Users:</span> 399 coins</li>
+                </ul>
+              </div>
+
+              <div class="bg-rose-50 rounded-lg p-3 sm:p-4 border-l-4 border-rose-500">
+                <h3 class="font-semibold text-rose-600 mb-2">Important Notice</h3>
+                <ul class="space-y-2 text-sm text-gray-700 list-disc list-inside">
+                  <li>Your nationality is determined by your registered country code.</li>
+                  <li>Pricing is automatically calculated at the time of each transaction based on your account details.</li>
+                  <li>Coin costs cannot be refunded once the transaction is completed and the service is delivered.</li>
+                  <li>By using our platform, you accept and agree to these pricing structures.</li>
+                  <li>Disputes regarding nationality classification will be resolved based on the registered country in your account.</li>
+                  <li>Prices may be updated by Namate24 at any time. Changes will apply to future transactions only.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="bg-white rounded-xl sm:rounded-2xl shadow-lg border-t-4 border-rose-500 p-4 sm:p-6 md:p-8">
           <div class="space-y-4">
             <p class="text-sm sm:text-base text-gray-700 leading-relaxed">
               For detailed refund terms, please visit our <router-link to="/refund-policy" class="text-rose-600 font-semibold hover:underline">Refund Policy</router-link> page. Key highlights include:

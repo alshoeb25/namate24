@@ -276,12 +276,15 @@ export default {
         // Update requirement with unlocked data
         requirement.value = res.data.enquiry;
         
+        // Use coins_charged from response for accuracy, fallback to unlock_price
+        const coinAmount = res.data.coins_charged || res.data.unlock || res.data.enquiry.unlock_price || 0;
+        
         // Update wallet balance in user store if coins were charged
         if (res.data.charged && userStore.user) {
-          userStore.user.coins -= (requirement.value.unlock_price || 0);
+          userStore.user.coins -= coinAmount;
         }
         
-        alert(`Contact unlocked successfully! ${res.data.charged ? `${requirement.value.unlock_price || 0} coins deducted from your balance.` : 'Already unlocked.'}`);
+        alert(`Unlocked successfully! ${coinAmount} coins deducted.`);
       } catch (error) {
         console.error('Error unlocking requirement:', error);
         if (isProfileNotApproved(error)) {

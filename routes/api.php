@@ -38,7 +38,7 @@ Route::get('tutors/featured', [TutorController::class,'featured']);
 Route::get('tutors/latest', [TutorController::class,'latest']);
 Route::get('tutors/{id}', [TutorController::class,'show']);
 Route::get('public/tutors/{id}', [TutorController::class,'publicShow']);
-Route::get('settings/contact-unlock-coins', [\App\Http\Controllers\Api\PublicTutorProfileController::class, 'getContactUnlockCoins']);
+Route::get('settings/contact-unlock-coins/{tutorId?}', [\App\Http\Controllers\Api\PublicTutorProfileController::class, 'getContactUnlockCoins']);
 
 // Advanced search endpoints for tutors
 Route::get('tutors/nearby', [TutorController::class,'nearby']);
