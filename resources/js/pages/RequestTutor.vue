@@ -79,10 +79,11 @@
             <div class="w-full">
               <div class="font-semibold">Posting Info</div>
               <div v-if="!isEditMode">
-                <span v-if="postingIsFree" class="text-green-700 font-medium">✓ FREE post ({{ requirementsPosted }}/3 used)</span>
+                <span v-if="postingCost === 0" class="text-green-700 font-medium">✓ ALL POSTS ARE FREE!</span>
+                <span v-else-if="postingIsFree" class="text-green-700 font-medium">✓ FREE post ({{ requirementsPosted }}/3 used)</span>
                 <span v-else class="text-orange-700 font-medium">💰 {{ postingCost }} coins required ({{ requirementsPosted }}/3 free posts used)</span>
               </div>
-              <div v-if="!postingIsFree && !isEditMode" class="mt-2 text-xs text-gray-700 bg-white bg-opacity-50 px-2 py-1 rounded">
+              <div v-if="postingCost > 0 && !isEditMode" class="mt-2 text-xs text-gray-700 bg-white bg-opacity-50 px-2 py-1 rounded">
                 <div class="font-medium mb-1">Pricing by nationality:</div>
                 <div class="flex gap-4">
                   <span>🇮🇳 Indian: {{ pricingDetails.indian }} coins</span>
@@ -90,7 +91,6 @@
                 </div>
                 <div class="mt-1 font-medium">Your cost: <span class="text-blue-700">{{ postingCost }} coins</span> ({{ userNationality }})</div>
               </div>
-              <div class="mt-1 text-xs text-gray-600">First 3 posts free • {{ enquiryConfig.unlock_fee }} coins to unlock • Max {{ enquiryConfig.max_leads }} tutors</div>
             </div>
           </div>
       </div>
@@ -134,14 +134,13 @@
           <div class="w-full">
             <div class="font-semibold">Posting Info</div>
             <div v-if="!isEditMode">
-              <span v-if="postingIsFree" class="text-green-700 font-medium">✓ FREE ({{ requirementsPosted }}/3)</span>
+              <span v-if="postingCost === 0" class="text-green-700 font-medium">✓ ALL FREE!</span>
+              <span v-else-if="postingIsFree" class="text-green-700 font-medium">✓ FREE ({{ requirementsPosted }}/3)</span>
               <span v-else class="text-orange-700 font-medium">💰 {{ postingCost }} coins</span>
             </div>
-            <div v-if="!postingIsFree && !isEditMode" class="mt-1 text-[10px] text-gray-700 bg-white bg-opacity-50 px-1 py-0.5 rounded">
-              <div class="font-medium">🇮🇳 Indian: {{ pricingDetails.indian }} • 🌍 Non-Indian: {{ pricingDetails.non_indian }}</div>
+            <div v-if="postingCost > 0 && !isEditMode" class="mt-1 text-[10px] text-gray-700 bg-white bg-opacity-50 px-1 py-0.5 rounded">
               <div class="font-medium">Your cost: {{ postingCost }} ({{ userNationality }})</div>
             </div>
-            <div class="mt-1 text-[10px] text-gray-600">First 3 free • {{ enquiryConfig.unlock_fee }} coins unlock • Max {{ enquiryConfig.max_leads }} tutors</div>
           </div>
         </div>
       </div>
@@ -771,8 +770,8 @@
 
         <!-- Navigation Buttons -->
         <div class="flex items-center justify-between pt-6 border-t mt-8">
-          <!-- Posting Status Info -->
-          <div v-if="!isEditMode" class="text-sm text-gray-600">
+          <!-- Posting Status Info (only show when posting costs coins) -->
+          <div v-if="!isEditMode && postingCost > 0" class="text-sm text-gray-600">
             <span v-if="postingIsFree" class="text-green-600 font-medium">
               ✓ Free post ({{ requirementsPosted }}/3)
             </span>
@@ -807,7 +806,7 @@
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   ]">
             <i class="fas fa-check mr-2"></i>
-            {{ submitting ? 'Submitting...' : (isEditMode ? 'Update Request' : `Submit Request${postingIsFree ? ' (FREE)' : ` (-${postingCost} coins)`}`) }}
+            {{ submitting ? 'Submitting...' : (isEditMode ? 'Update Request' : `Submit Request${postingCost === 0 ? ' (FREE)' : ` (-${postingCost} coins)`}`) }}
           </button>
         </div>
 
@@ -1429,8 +1428,8 @@ export default {
     const submitRequest = async () => {
       if (!validateStep()) return;
 
-      // Check coin balance before submission (only if posting is NOT free)
-      if (!isEditMode.value && !postingIsFree.value && userBalance.value < postingCost.value) {
+      // Check coin balance before submission (only if coins are required)
+      if (!isEditMode.value && postingCost.value > 0 && userBalance.value < postingCost.value) {
         showInsufficientCoinsModal.value = true;
         return;
       }
@@ -1450,7 +1449,7 @@ export default {
           response = await axios.post('/api/student/request-tutor', form);
           
           // Optimistically update balance (subtract coins immediately for better UX)
-          if (!postingIsFree.value) {
+          if (postingCost.value > 0) {
             userBalance.value = oldBalance - postingCost.value;
             if (userStore.user) {
               userStore.user.coins = userBalance.value;

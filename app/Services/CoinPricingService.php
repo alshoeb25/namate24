@@ -169,16 +169,16 @@ class CoinPricingService
         
         return match($operation) {
             'post_requirement' => $isIndia 
-                ? config('enquiry.pricing_by_nationality.post.indian', 49)
-                : config('enquiry.pricing_by_nationality.post.non_indian', 99),
+                ? config('enquiry.pricing_by_nationality.post.indian', 0)
+                : config('enquiry.pricing_by_nationality.post.non_indian', 0),
             
             'unlock_tutor' => $isIndia
-                ? config('enquiry.pricing_by_nationality.unlock.indian', 199)
-                : config('enquiry.pricing_by_nationality.unlock.non_indian', 399),
+                ? config('enquiry.pricing_by_nationality.unlock.indian', 49)
+                : config('enquiry.pricing_by_nationality.unlock.non_indian', 99),
             
             'contact_unlock' => $isIndia
-                ? config('coins.pricing_by_nationality.contact_unlock.indian', 199)
-                : config('coins.pricing_by_nationality.contact_unlock.non_indian', 399),
+                ? config('coins.pricing_by_nationality.contact_unlock.indian', 49)
+                : config('coins.pricing_by_nationality.contact_unlock.non_indian', 99),
             
             'approach_tutor' => $isIndia
                 ? config('coins.pricing_by_nationality.approach_tutor.indian', 49)

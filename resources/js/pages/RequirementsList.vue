@@ -181,11 +181,6 @@
                         class="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition whitespace-nowrap w-full sm:w-auto">
                   <i class="fas fa-eye mr-1"></i>View Tutors
                 </button>
-                <button v-if="canModifyRequirement(req)" 
-                        @click="openRefundModal(req.id)" 
-                        class="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition whitespace-nowrap w-full sm:w-auto">
-                  <i class="fas fa-coins mr-1"></i>Cancel & Refund
-                </button>
                 <button v-if="canModifyRequirement(req)" @click="closeRequirement(req.id)" 
                         class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition w-full sm:w-auto">
                   <i class="fas fa-times-circle mr-1"></i>Close
@@ -481,13 +476,7 @@ export default {
         const response = await axios.post(`/api/student/requirements/${id}/close`);
         
         // Show success message
-        if (response.data.free_post_restored) {
-          alert('Requirement closed! Your free post has been restored.');
-        } else if (response.data.refund_amount && response.data.refund_amount > 0) {
-          alert(`Requirement closed! ${response.data.refund_amount} coins refunded.`);
-        } else {
-          alert('Requirement closed successfully!');
-        }
+        alert('Requirement closed successfully!');
         
         // Refresh requirements list
         await fetchRequirements(pagination.value?.current_page || 1);

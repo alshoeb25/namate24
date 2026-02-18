@@ -208,9 +208,9 @@ class CoinTransactionResource extends Resource
                             ->numeric()
                             ->required()
                             ->minValue(1)
-                            ->maxValue(100)
+                            ->maxValue(500)
                             ->suffix('coins')
-                            ->helperText('Maximum 100 coins per transaction')
+                            ->helperText('Maximum 500 coins per transaction')
                             ->live(),
                         Textarea::make('description')
                             ->label('Reason/Description')

@@ -102,8 +102,8 @@ class TermsAndConditionsHelper
      */
     private static function getContactUnlockTerms(?string $nationality = null): array
     {
-        $indianCost = config('coins.pricing_by_nationality.contact_unlock.indian', 199);
-        $nonIndianCost = config('coins.pricing_by_nationality.contact_unlock.non_indian', 399);
+        $indianCost = config('coins.pricing_by_nationality.contact_unlock.indian', 49);
+        $nonIndianCost = config('coins.pricing_by_nationality.contact_unlock.non_indian', 99);
         
         return [
             'operation' => 'contact_unlock',

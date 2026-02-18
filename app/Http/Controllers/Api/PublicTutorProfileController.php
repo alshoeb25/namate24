@@ -341,8 +341,8 @@ class PublicTutorProfileController extends Controller
                 'tutor_country' => $tutorCountry,
                 'tutor_is_indian' => $nationalityInfo['is_indian'],
                 'pricing' => [
-                    'indian' => config('coins.pricing_by_nationality.contact_unlock.indian', 199),
-                    'non_indian' => config('coins.pricing_by_nationality.contact_unlock.non_indian', 399),
+                    'indian' => config('coins.pricing_by_nationality.contact_unlock.indian', 49),
+                    'non_indian' => config('coins.pricing_by_nationality.contact_unlock.non_indian', 99),
                 ]
             ]);
         }
@@ -359,8 +359,8 @@ class PublicTutorProfileController extends Controller
                 'nationality' => $nationalityInfo['nationality'],
                 'is_indian' => $nationalityInfo['is_indian'],
                 'pricing' => [
-                    'indian' => config('coins.pricing_by_nationality.contact_unlock.indian', 199),
-                    'non_indian' => config('coins.pricing_by_nationality.contact_unlock.non_indian', 399),
+                    'indian' => config('coins.pricing_by_nationality.contact_unlock.indian', 49),
+                    'non_indian' => config('coins.pricing_by_nationality.contact_unlock.non_indian', 99),
                 ]
             ]);
         }
@@ -369,8 +369,8 @@ class PublicTutorProfileController extends Controller
         return response()->json([
             'contact_unlock_coins' => \App\Helpers\CommonHelper::getContactUnlockCoins(),
             'pricing' => [
-                'indian' => config('coins.pricing_by_nationality.contact_unlock.indian', 199),
-                'non_indian' => config('coins.pricing_by_nationality.contact_unlock.non_indian', 399),
+                'indian' => config('coins.pricing_by_nationality.contact_unlock.indian', 49),
+                'non_indian' => config('coins.pricing_by_nationality.contact_unlock.non_indian', 99),
             ]
         ]);
     }

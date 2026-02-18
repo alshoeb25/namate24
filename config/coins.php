@@ -32,8 +32,8 @@ return [
     // Nationality-based pricing for tutor contact unlock / profile unlock
     'pricing_by_nationality' => [
         'contact_unlock' => [
-            'indian' => env('CONTACT_UNLOCK_COINS_INDIAN', 199),
-            'non_indian' => env('CONTACT_UNLOCK_COINS_NON_INDIAN', 399),
+            'indian' => env('CONTACT_UNLOCK_COINS_INDIAN', 49),
+            'non_indian' => env('CONTACT_UNLOCK_COINS_NON_INDIAN', 99),
         ],
         'approach_tutor' => [
             'indian' => env('APPROACH_TUTOR_COINS_INDIAN', 49),

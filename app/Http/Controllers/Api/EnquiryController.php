@@ -129,15 +129,15 @@ class EnquiryController extends Controller
             ]);
             
             // Add dynamic unlock pricing based on tutor's (user's) nationality
-            // Requirements/jobs unlock uses post pricing (49/99), not tutor profile pricing (199/399)
+            // Tutor unlocking requirements uses unlock pricing (49/99)
             $isIndia = $user && $user->country_iso === 'IN';
             $unlockPrice = $isIndia 
-                ? config('enquiry.pricing_by_nationality.post.indian', 49)
-                : config('enquiry.pricing_by_nationality.post.non_indian', 99);
+                ? config('enquiry.pricing_by_nationality.unlock.indian', 49)
+                : config('enquiry.pricing_by_nationality.unlock.non_indian', 99);
             $enquiry->setAttribute('unlock_price', $unlockPrice);
             $enquiry->setAttribute('pricing_details', [
-                'indian' => config('enquiry.pricing_by_nationality.post.indian', 49),
-                'non_indian' => config('enquiry.pricing_by_nationality.post.non_indian', 99),
+                'indian' => config('enquiry.pricing_by_nationality.unlock.indian', 49),
+                'non_indian' => config('enquiry.pricing_by_nationality.unlock.non_indian', 99),
             ]);
             
             return $enquiry;
@@ -247,8 +247,8 @@ class EnquiryController extends Controller
         // Calculate the actual unlock price that was charged (or would have been)
         $isIndia = $user->country_iso === 'IN';
         $unlockPrice = $isIndia
-            ? config('enquiry.pricing_by_nationality.post.indian', 49)
-            : config('enquiry.pricing_by_nationality.post.non_indian', 99);
+            ? config('enquiry.pricing_by_nationality.unlock.indian', 49)
+            : config('enquiry.pricing_by_nationality.unlock.non_indian', 99);
 
         return response()->json([
             'message' => $charged ? 'Contact unlocked successfully.' : 'Already unlocked.',

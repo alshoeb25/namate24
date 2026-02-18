@@ -28,13 +28,13 @@ return [
     'pricing_by_nationality' => [
         // Post requirement / Unlock tutors
         'post' => [
-            'indian' => env('ENQUIRY_POST_FEE_INDIAN', 49),
-            'non_indian' => env('ENQUIRY_POST_FEE_NON_INDIAN', 99),
+            'indian' => env('ENQUIRY_POST_FEE_INDIAN', 0),
+            'non_indian' => env('ENQUIRY_POST_FEE_NON_INDIAN', 0),
         ],
         // Tutor unlock profile / Contact unlock
         'unlock' => [
-            'indian' => env('ENQUIRY_UNLOCK_FEE_INDIAN', 199),
-            'non_indian' => env('ENQUIRY_UNLOCK_FEE_NON_INDIAN', 399),
+            'indian' => env('ENQUIRY_UNLOCK_FEE_INDIAN', 49),
+            'non_indian' => env('ENQUIRY_UNLOCK_FEE_NON_INDIAN', 99),
         ],
     ],
 

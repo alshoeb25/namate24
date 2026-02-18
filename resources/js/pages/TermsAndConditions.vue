@@ -109,8 +109,31 @@
             <p class="text-sm sm:text-base text-gray-700 leading-relaxed">Namate24 uses nationality-based pricing to ensure fair access for tutors and students worldwide. By accepting these terms, you agree to the following coin pricing structure:</p>
             
             <div class="space-y-3">
+              <div class="bg-green-50 rounded-lg p-4 border-l-4 border-green-500">
+                <h3 class="font-semibold text-green-700 mb-2">✓ Post Requirements</h3>
+                <ul class="space-y-1 text-sm text-gray-700">
+                  <li><span class="font-semibold text-green-600">All Users:</span> FREE (0 coins)</li>
+                </ul>
+              </div>
+
+              <div class="bg-purple-50 rounded-lg p-4 border-l-4 border-purple-500">
+                <h3 class="font-semibold text-purple-700 mb-2">🔍 Unlock Requirement (Tutor View)</h3>
+                <ul class="space-y-1 text-sm text-gray-700">
+                  <li><span class="font-semibold text-green-600">Indian Users:</span> 49 coins</li>
+                  <li><span class="font-semibold text-purple-600">Non-Indian Users:</span> 99 coins</li>
+                </ul>
+              </div>
+
+              <div class="bg-green-50 rounded-lg p-4 border-l-4 border-green-500">
+                <h3 class="font-semibold text-green-700 mb-2">👥 Approach/Unlock Tutors</h3>
+                <ul class="space-y-1 text-sm text-gray-700">
+                  <li><span class="font-semibold text-green-600">Indian Users:</span> 49 coins</li>
+                  <li><span class="font-semibold text-purple-600">Non-Indian Users:</span> 99 coins</li>
+                </ul>
+              </div>
+
               <div class="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
-                <h3 class="font-semibold text-blue-700 mb-2">📝 Post Requirement & Unlock Tutors</h3>
+                <h3 class="font-semibold text-blue-700 mb-2">📞 Contact Tutor (Unlock Contact Details)</h3>
                 <ul class="space-y-1 text-sm text-gray-700">
                   <li><span class="font-semibold text-green-600">Indian Users:</span> 49 coins</li>
                   <li><span class="font-semibold text-purple-600">Non-Indian Users:</span> 99 coins</li>
@@ -120,8 +143,8 @@
               <div class="bg-amber-50 rounded-lg p-4 border-l-4 border-amber-500">
                 <h3 class="font-semibold text-amber-700 mb-2">🔓 Tutor Profile Unlock (Contact Details)</h3>
                 <ul class="space-y-1 text-sm text-gray-700">
-                  <li><span class="font-semibold text-green-600">Indian Users:</span> 199 coins</li>
-                  <li><span class="font-semibold text-purple-600">Non-Indian Users:</span> 399 coins</li>
+                  <li><span class="font-semibold text-green-600">Indian Users:</span> 49 coins</li>
+                  <li><span class="font-semibold text-purple-600">Non-Indian Users:</span> 99 coins</li>
                 </ul>
               </div>
 

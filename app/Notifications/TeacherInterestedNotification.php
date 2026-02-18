@@ -45,16 +45,22 @@ class TeacherInterestedNotification extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $enquiry = StudentRequirement::with('subjects', 'subject')->find($this->enquiry->id) ?? $this->enquiry;
-        $enquiry->loadMissing('subjects', 'subject');
+        $enquiry = StudentRequirement::with('subject')->find($this->enquiry->id) ?? $this->enquiry;
+        $enquiry->loadMissing('subject');
 
         $labelService = app(\App\Services\LabelService::class);
         $labelService->addLabels($enquiry);
 
-        $subjects = collect($enquiry->subjects ?? [])->pluck('name')->implode(', ');
-        $subjectLabel = $subjects !== ''
-            ? $subjects
-            : ($enquiry->subject_name ?? $enquiry->other_subject ?? 'subjects');
+        // Get subjects directly from pivot table since relationship property access has issues
+        $subjectsData = \DB::table('student_post_subjects')
+            ->where('student_requirement_id', $enquiry->id)
+            ->join('subjects', 'student_post_subjects.subject_id', '=', 'subjects.id')
+            ->pluck('subjects.name')
+            ->implode(', ');
+        
+        $subjectLabel = !empty($subjectsData)
+            ? $subjectsData
+            : ($enquiry->subject_name ?? $enquiry->other_subject ?? 'Not specified');
 
         $meetingOptionsRaw = $enquiry->meeting_options;
         $meetingOptions = is_array($meetingOptionsRaw)
@@ -98,10 +104,18 @@ class TeacherInterestedNotification extends Notification implements ShouldQueue
      */
     public function toArray(object $notifiable): array
     {
-        $subjects = collect($this->enquiry->subjects ?? [])->pluck('name')->implode(', ');
-        $subjectLabel = $subjects !== ''
-            ? $subjects
-            : ($this->enquiry->subject_name ?? $this->enquiry->other_subject ?? 'subjects');
+        $enquiry = $this->enquiry;
+        
+        // Get subjects directly from pivot table since relationship property access has issues
+        $subjectsData = \DB::table('student_post_subjects')
+            ->where('student_requirement_id', $enquiry->id)
+            ->join('subjects', 'student_post_subjects.subject_id', '=', 'subjects.id')
+            ->pluck('subjects.name')
+            ->implode(', ');
+        
+        $subjectLabel = !empty($subjectsData)
+            ? $subjectsData
+            : ($enquiry->subject_name ?? $enquiry->other_subject ?? 'Not specified');
 
         return [
             'type' => 'teacher_interested',
