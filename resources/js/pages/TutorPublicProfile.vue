@@ -673,7 +673,7 @@ export default {
       try {
         const tutorId = profile.value?.id;
         console.log('Loading contact unlock coins for tutor ID:', tutorId);
-        const response = await axios.get(`/api/settings/contact-unlock-coins/${tutorId}`);
+        const response = await axios.get(`/api/student/contact-unlock-coins/${tutorId}`);
         if (response.data?.contact_unlock_coins !== undefined) {
           contactUnlockCoins.value = Number(response.data.contact_unlock_coins);
         }

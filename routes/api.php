@@ -38,7 +38,6 @@ Route::get('tutors/featured', [TutorController::class,'featured']);
 Route::get('tutors/latest', [TutorController::class,'latest']);
 Route::get('tutors/{id}', [TutorController::class,'show']);
 Route::get('public/tutors/{id}', [TutorController::class,'publicShow']);
-Route::get('settings/contact-unlock-coins/{tutorId?}', [\App\Http\Controllers\Api\PublicTutorProfileController::class, 'getContactUnlockCoins']);
 
 // Advanced search endpoints for tutors
 Route::get('tutors/nearby', [TutorController::class,'nearby']);
@@ -185,6 +184,7 @@ Route::middleware('auth:api')->group(function() {
         Route::get('review/{tutorId}', [\App\Http\Controllers\Api\PublicTutorProfileController::class, 'getReview']);
         Route::put('review/{reviewId}', [\App\Http\Controllers\Api\PublicTutorProfileController::class, 'updateReview']);
         Route::get('coins/balance', [\App\Http\Controllers\Api\PublicTutorProfileController::class, 'getCoinBalance']);
+        Route::get('contact-unlock-coins/{tutorId?}', [\App\Http\Controllers\Api\PublicTutorProfileController::class, 'getContactUnlockCoins']);
     });
 
     // Student Routes - Protected by student profile check

@@ -674,7 +674,7 @@ export default {
 
     async function loadContactUnlockCoins() {
       try {
-        const response = await axios.get('/api/settings/contact-unlock-coins');
+        const response = await axios.get('/api/student/contact-unlock-coins');
         if (response.data?.contact_unlock_coins !== undefined) {
           contactUnlockCoins.value = Number(response.data.contact_unlock_coins);
         }

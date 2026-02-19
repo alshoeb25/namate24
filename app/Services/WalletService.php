@@ -33,7 +33,7 @@ class WalletService
                 'amount' => -$amount,
                 'balance_after' => $lockedUser->coins,
                 'description' => $description,
-                'meta' => $meta,
+                'meta' => !empty($meta) ? json_encode($meta) : null,
             ]);
         });
     }
@@ -57,7 +57,7 @@ class WalletService
                 'amount' => $amount,
                 'balance_after' => $lockedUser->coins,
                 'description' => $description,
-                'meta' => $meta,
+                'meta' => !empty($meta) ? json_encode($meta) : null,
             ]);
         });
     }

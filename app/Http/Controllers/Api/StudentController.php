@@ -628,10 +628,14 @@ class StudentController extends Controller
         // Record transaction
         \App\Models\CoinTransaction::create([
             'user_id' => $user->id,
-            'type' => 'debit',
-            'amount' => $approachCost,
+            'type' => 'tutor_approach',
+            'amount' => -$approachCost,
             'description' => 'Approached teacher ' . ($tutor->user->name ?? 'Tutor') . ' for requirement #' . $requirement->id,
             'balance_after' => $user->fresh()->coins,
+            'meta' => json_encode([
+                'tutor_id' => $tutorId,
+                'requirement_id' => $requirement->id,
+            ]),
         ]);
 
         // Save approached tutor record
@@ -969,12 +973,13 @@ class StudentController extends Controller
             \DB::table('coin_transactions')->insert([
                 'user_id' => $user->id,
                 'amount' => -$requiredCoins,
-                'type' => 'debit',
-                'reason' => 'unlock_tutor_contact',
+                'type' => 'tutor_unlock_contact',
                 'description' => "Unlocked contact details for tutor: {$tutor->name}",
                 'balance_after' => $user->coins,
-                'reference_type' => 'tutor_contact',
-                'reference_id' => $tutorId,
+                'meta' => json_encode([
+                    'tutor_id' => $tutorId,
+                    'student_id' => $user->student->id,
+                ]),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

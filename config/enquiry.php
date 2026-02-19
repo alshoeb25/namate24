@@ -16,10 +16,10 @@ return [
      */
 
     // Global default: Coins charged when a student posts an enquiry
-    'post_fee' => env('ENQUIRY_POST_FEE', 10),
+    'post_fee' => env('ENQUIRY_POST_FEE', 0),
 
     // Global default: Coins charged when a tutor unlocks/views enquiry contact
-    'unlock_fee' => env('ENQUIRY_UNLOCK_FEE', 10),
+    'unlock_fee' => env('ENQUIRY_UNLOCK_FEE', 49),
 
     // Maximum number of tutors that can unlock and see a single enquiry
     'max_leads' => env('ENQUIRY_MAX_LEADS', 5),

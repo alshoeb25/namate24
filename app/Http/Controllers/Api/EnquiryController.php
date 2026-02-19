@@ -187,21 +187,18 @@ class EnquiryController extends Controller
         // Add dynamic unlock pricing based on tutor's (user's) nationality
         // Requirements/jobs unlock uses post pricing (49/99), not tutor profile pricing (199/399)
         // Always recalculate for consistency with what will be charged at unlock
-        if ($user->hasRole('tutor')) {
-            $isIndia = $user->country_iso === 'IN';
-            $unlockPrice = $isIndia
-                ? config('enquiry.pricing_by_nationality.post.indian', 49)
-                : config('enquiry.pricing_by_nationality.post.non_indian', 99);
-            $payload['unlock_price'] = $unlockPrice;
-            $payload['pricing_details'] = [
-                'indian' => config('enquiry.pricing_by_nationality.post.indian', 49),
-                'non_indian' => config('enquiry.pricing_by_nationality.post.non_indian', 99),
-                'tutor_country' => $user->country_iso,
-            ];
-        } else {
-            // For non-tutors, show default pricing but don't charge it
-            $payload['unlock_price'] = config('enquiry.unlock_fee', 10);
-        }
+        
+        $isIndia = $user->country_iso === 'IN';
+        $unlockPrice = $isIndia
+            ? config('enquiry.pricing_by_nationality.unlock.indian', 49)
+            : config('enquiry.pricing_by_nationality.unlock.non_indian', 99);
+        $payload['unlock_price'] = $unlockPrice;
+        $payload['pricing_details'] = [
+            'indian' => config('enquiry.pricing_by_nationality.unlock.indian', 49),
+            'non_indian' => config('enquiry.pricing_by_nationality.unlock.non_indian', 99),
+            'tutor_country' => $user->country_iso,
+        ];
+       
 
         return response()->json(['enquiry' => $payload]);
     }

@@ -90,7 +90,8 @@ class EnquiryService
 
     public function unlockForTutor(StudentRequirement $enquiry, User $tutor): array
     {
-        return DB::transaction(function () use ($enquiry, $tutor) {
+        $transaction = null;
+        $result = DB::transaction(function () use ($enquiry, $tutor, &$transaction) {
             $lockedEnquiry = StudentRequirement::whereKey($enquiry->id)->lockForUpdate()->firstOrFail();
             $lockedTutor = User::whereKey($tutor->id)->lockForUpdate()->firstOrFail();
 
@@ -116,10 +117,11 @@ class EnquiryService
 
             // Use nationality-based pricing for requirement unlock (49/99 based on tutor's nationality)
             // Note: Requirements unlock pricing matches post pricing tier, not tutor profile pricing
-            $isIndia = $lockedTutor->country_iso === 'IN';
+            $tutorCountryCode = strtoupper((string) ($lockedTutor->country_iso ?? ''));
+            $isIndia = in_array($tutorCountryCode, ['IN', 'IND', '91']);
             $unlockPrice = (int)($isIndia 
-                ? config('enquiry.pricing_by_nationality.post.indian', 49)
-                : config('enquiry.pricing_by_nationality.post.non_indian', 99));
+                ? config('enquiry.pricing_by_nationality.unlock.indian', 49)
+                : config('enquiry.pricing_by_nationality.unlock.non_indian', 99));
 
 
             if ($unlockPrice > 0) {
@@ -134,9 +136,14 @@ class EnquiryService
                             'student_id' => $lockedEnquiry->student_id,
                         ]
                     );
-
-                    $lockedTutor->notify(new CoinSpentNotification($transaction));
+                } catch (InsufficientBalanceException $e) {
+                    throw $e;
                 } catch (\Exception $e) {
+                    \Log::error('Failed to create coin transaction for enquiry unlock', [
+                        'enquiry_id' => $lockedEnquiry->id,
+                        'tutor_id' => $tutorId,
+                        'error' => $e->getMessage(),
+                    ]);
                     throw $e;
                 }
             }
@@ -160,6 +167,20 @@ class EnquiryService
 
             return [$lockedEnquiry->fresh(), $unlock, true];
         });
+
+        // Send coin spent notification outside transaction
+        if ($transaction) {
+            try {
+                $tutor->notify(new CoinSpentNotification($transaction));
+            } catch (\Exception $e) {
+                \Log::error('Failed to send coin spent notification', [
+                    'transaction_id' => $transaction->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $result;
     }
 
     /**

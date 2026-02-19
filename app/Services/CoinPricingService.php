@@ -28,7 +28,8 @@ class CoinPricingService
             return false;
         }
         
-        return strtoupper($user->country_iso) === 'IN';
+        $countryCode = strtoupper($user->country_iso);
+        return in_array($countryCode, ['IN', 'IND', '91']);
     }
 
     /**
