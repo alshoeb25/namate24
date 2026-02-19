@@ -243,10 +243,10 @@
               Here are the latest education updates
             </h2>
             <div class="flex items-center justify-between flex-wrap gap-3">
-              <router-link to="/contact-us"
+              <a href="https://namate24eduinfo.blogspot.com" target="_blank" rel="noopener noreferrer"
                            class="bg-white text-black text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-200 transition w-full sm:w-auto text-center inline-flex items-center justify-center">
                 Click to know more
-              </router-link>
+              </a>
             </div>
           </div>
         </div>
