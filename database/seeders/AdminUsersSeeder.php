@@ -55,6 +55,12 @@ class AdminUsersSeeder extends Seeder
                 'password' => 'service@123456',
                 'role' => 'service_admin',
             ],
+            [
+                'name' => 'Subscription Manager',
+                'email' => 'subscription@namate24.com',
+                'password' => 'subscription@123456',
+                'role' => 'subscription_admin',
+            ],
         ];
 
         foreach ($adminUsers as $adminData) {

@@ -106,6 +106,12 @@
             </div>
           </div>
 
+          <router-link to="/tutor/subscriptions" 
+                       class="text-gray-700 hover:text-pink-600 font-medium transition"
+                       active-class="text-pink-600 font-semibold">
+            <i class="fas fa-list mr-2"></i>Subscriptions
+          </router-link>
+
           <router-link to="/tutor/profile/view" 
                        class="text-gray-700 hover:text-pink-600 font-medium transition"
                        active-class="text-pink-600 font-semibold">
@@ -166,6 +172,13 @@
                 <li><router-link to="/tutor/wallet/referrals" @click="closeMobileMenu" class="block py-1 text-sm text-gray-600 hover:text-pink-600"><i class="fas fa-user-friends text-xs w-5 mr-2"></i>Refer Friends</router-link></li>
               </ul>
             </details>
+          </li>
+
+          <li>
+            <router-link to="/tutor/subscriptions" @click="closeMobileMenu" 
+                         class="block px-4 py-2 text-gray-700 font-medium hover:bg-gray-50 rounded-md">
+              <i class="fas fa-list mr-2"></i>Subscriptions
+            </router-link>
           </li>
 
           <li>

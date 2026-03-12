@@ -82,7 +82,7 @@ class WalletController extends Controller
 
         if ($typeFilter !== 'all') {
             if ($typeFilter === 'purchase') {
-                $pQuery->where('type', 'coin_purchase');
+                $pQuery->whereIn('type', ['coin_purchase', 'subscription_purchase']);
             } else {
                 // Non-purchase types not tracked as payments
                 $pQuery->whereRaw('1=0');
@@ -168,7 +168,8 @@ class WalletController extends Controller
             $items->push([
                 'id' => $p->id,
                 'source' => 'payment',
-                'type' => 'purchase',
+                'type' => $p->type === 'subscription_purchase' ? 'subscription' : 'purchase',
+                'transaction_type' => $p->type,
                 'status' => $p->status,
                 'description' => $p->description,
                 'order_id' => $p->order_id,

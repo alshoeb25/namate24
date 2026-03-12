@@ -63,6 +63,11 @@ class User extends Authenticatable implements JWTSubject, FilamentUser
         return $this->hasMany(CoinTransaction::class);
     }
 
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(UserSubscription::class);
+    }
+
     public function referrals(): HasMany
     {
         return $this->hasMany(Referral::class, 'referrer_id');
@@ -71,6 +76,21 @@ class User extends Authenticatable implements JWTSubject, FilamentUser
     public function activities(): HasMany
     {
         return $this->hasMany(UserActivity::class);
+    }
+
+    public function subscriptionOrders(): HasMany
+    {
+        return $this->hasMany(SubscriptionOrder::class);
+    }
+
+    public function subscriptionTransactions(): HasMany
+    {
+        return $this->hasMany(SubscriptionTransaction::class);
+    }
+
+    public function paymentTransactions(): HasMany
+    {
+        return $this->hasMany(PaymentTransaction::class);
     }
 
     public function referredBy()
@@ -129,6 +149,25 @@ class User extends Authenticatable implements JWTSubject, FilamentUser
             'service_admin',
             'admin', // Keep backward compatibility
         ]);
+    }
+
+    /**
+     * Get user's current active subscription
+     */
+    public function activeSubscription()
+    {
+        return $this->subscriptions()
+            ->where('status', 'active')
+            ->where('expires_at', '>', now())
+            ->first();
+    }
+
+    /**
+     * Check if user has active subscription
+     */
+    public function hasActiveSubscription(): bool
+    {
+        return $this->activeSubscription() !== null;
     }
 
 }

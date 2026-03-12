@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Enums\PaymentStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PaymentTransaction extends Model
 {
@@ -31,13 +33,55 @@ class PaymentTransaction extends Model
         'bonus_coins' => 'integer',
     ];
 
-    public function user()
+    /**
+     * Get the user
+     */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function order()
+    /**
+     * Get the order
+     */
+    public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
+    }
+
+    /**
+     * Check if transaction is successful
+     */
+    public function isSuccess(): bool
+    {
+        try {
+            return PaymentStatus::from($this->status)->isSuccess();
+        } catch (\ValueError) {
+            return $this->status === 'SUCCESS' || $this->status === 'completed';
+        }
+    }
+
+    /**
+     * Check if transaction is pending
+     */
+    public function isPending(): bool
+    {
+        try {
+            return PaymentStatus::from($this->status)->isPending();
+        } catch (\ValueError) {
+            return in_array($this->status, ['INITIATED', 'PENDING', 'PROCESSING']);
+        }
+    }
+
+    /**
+     * Check if transaction failed
+     */
+    public function isFailed(): bool
+    {
+        try {
+            return PaymentStatus::from($this->status)->isFailure();
+        } catch (\ValueError) {
+            return in_array($this->status, ['FAILED', 'CANCELLED']);
+        }
     }
 }

@@ -173,6 +173,16 @@
                 <p class="text-sm text-gray-500 text-center mt-1">Write about your teaching philosophy</p>
             </router-link>
 
+            <!-- Subscriptions -->
+            <router-link to="/tutor/subscriptions"
+                class="dashboard-card flex flex-col items-center justify-center gap-4 bg-white rounded-2xl p-6 shadow-md hover:shadow-xl">
+                <div class="icon-container bg-gradient-to-br from-green-500 to-emerald-600">
+                    <i class="fas fa-list text-white text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-800 text-center">Subscriptions</h3>
+                <p class="text-sm text-gray-500 text-center mt-1">View subscription plans</p>
+            </router-link>
+
         </div>
 
         <!-- MOBILE VIEW -->
@@ -337,6 +347,19 @@
                 <div>
                     <p class="text-lg font-semibold text-gray-800">Profile Description</p>
                     <p class="text-sm text-gray-500">Write about your teaching philosophy</p>
+                </div>
+                <i class="fas fa-chevron-right text-gray-400 ml-auto"></i>
+            </router-link>
+
+            <!-- Subscriptions -->
+            <router-link to="/tutor/subscriptions"
+                class="dashboard-card flex items-center gap-4 bg-white rounded-2xl p-4 shadow-md">
+                <div class="icon-container bg-gradient-to-br from-green-500 to-emerald-600">
+                    <i class="fas fa-list text-white"></i>
+                </div>
+                <div>
+                    <p class="text-lg font-semibold text-gray-800">Subscriptions</p>
+                    <p class="text-sm text-gray-500">View subscription plans</p>
                 </div>
                 <i class="fas fa-chevron-right text-gray-400 ml-auto"></i>
             </router-link>

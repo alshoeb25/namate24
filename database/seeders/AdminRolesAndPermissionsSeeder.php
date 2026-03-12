@@ -73,6 +73,16 @@ class AdminRolesAndPermissionsSeeder extends Seeder
             'view-orders',
             'manage-orders',
 
+            // Subscription Plans Management
+            'view-subscription-plans',
+            'create-subscription-plans',
+            'edit-subscription-plans',
+            'delete-subscription-plans',
+
+            // Subscribed Users Management
+            'view-subscribed-users',
+            'manage-subscribed-users',
+
             // General Admin
             'view-dashboard',
             'access-settings',
@@ -204,6 +214,21 @@ class AdminRolesAndPermissionsSeeder extends Seeder
             'delete-services',
             'view-orders',
             'manage-orders',
+            'view-dashboard',
+        ]);
+
+        // Subscription Manager
+        $subscriptionManager = Role::firstOrCreate(
+            ['name' => 'subscription_admin'],
+            ['guard_name' => 'web']
+        );
+        $subscriptionManager->syncPermissions([
+            'view-subscription-plans',
+            'create-subscription-plans',
+            'edit-subscription-plans',
+            'delete-subscription-plans',
+            'view-subscribed-users',
+            'manage-subscribed-users',
             'view-dashboard',
         ]);
     }

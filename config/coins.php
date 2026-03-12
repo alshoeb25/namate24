@@ -50,4 +50,34 @@ return [
             'contact_unlock' => env('COINS_REQUIRE_TC_CONTACT', false),
         ],
     ],
+
+    // Subscription Plans Configuration
+    'subscription_plans' => [
+        [
+            'name' => 'Premium Plan',
+            'price' => 399.00,
+            'currency' => 'INR',
+            'validity_days' => 30,
+            'views_allowed' => null, // Unlimited views
+            'description' => 'User can view unlimited profiles/requirements within 30 days from activation.',
+            'is_active' => true,
+            'display_order' => 1,
+        ],
+        [
+            'name' => 'Basic Plan',
+            'price' => 100.00,
+            'currency' => 'INR',
+            'validity_days' => 30,
+            'views_allowed' => 5, // Limited to 5 views
+            'description' => 'User can view up to 5 profiles/requirements within 30 days from activation.',
+            'is_active' => true,
+            'display_order' => 2,
+        ],
+    ],
+
+    // Subscription rules
+    'subscription' => [
+        'auto_expire_on_validity_end' => true, // Automatically mark as expired
+        'reset_views_on_renewal' => true, // Reset view count on renewal
+    ],
 ];

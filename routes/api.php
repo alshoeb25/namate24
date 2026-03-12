@@ -20,6 +20,9 @@ use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\HomeCacheController;
 
 use App\Http\Controllers\Api\EmailVerificationController;
+use App\Http\Controllers\Api\SubscriptionController;
+use App\Http\Controllers\Api\SubscriptionOrderController;
+use App\Http\Controllers\Api\Admin\SubscriptionPlanController as AdminSubscriptionPlanController;
 
 Route::post('register', [AuthController::class,'register'])->middleware('throttle:10,1');
 Route::post('login', [AuthController::class,'login'])->middleware('throttle:10,1');
@@ -283,6 +286,32 @@ Route::middleware('auth:api')->group(function() {
             Route::get('invoice/{invoiceId}/download', [WalletController::class, 'downloadInvoice'])->name('invoice.download'); // Download invoice PDF
     });
 
+    // Subscription Plans Routes
+    Route::prefix('subscriptions')->name('api.subscriptions.')->group(function () {
+        Route::get('plans', [SubscriptionController::class, 'getPlans'])->name('plans');
+        Route::get('status', [SubscriptionController::class, 'getStatus'])->name('status');
+        Route::post('purchase', [SubscriptionController::class, 'purchaseSubscription'])->name('purchase');
+        Route::post('verify-payment', [SubscriptionController::class, 'verifyPayment'])->name('verify-payment');
+        Route::post('payment-failed', [SubscriptionController::class, 'markPaymentFailed'])->name('payment-failed');
+        Route::get('order/{orderId}/check-pending', [SubscriptionController::class, 'checkPendingPayment'])->name('order.check-pending');
+        Route::post('check-view', [SubscriptionController::class, 'checkView'])->name('check-view');
+        Route::get('history', [SubscriptionController::class, 'getHistory'])->name('history');
+        Route::post('cancel', [SubscriptionController::class, 'cancelSubscription'])->name('cancel');
+    });
+
+    // Subscription Orders & Transactions Routes
+    Route::prefix('subscription-orders')->name('api.subscription-orders.')->group(function () {
+        Route::get('', [SubscriptionOrderController::class, 'index'])->name('index');
+        Route::get('{orderId}', [SubscriptionOrderController::class, 'show'])->name('show');
+        Route::post('{orderId}/retry', [SubscriptionOrderController::class, 'retryOrder'])->name('retry');
+        Route::get('recent/dashboard', [SubscriptionOrderController::class, 'recentOrders'])->name('recent');
+    });
+
+    Route::prefix('subscription-transactions')->name('api.subscription-transactions.')->group(function () {
+        Route::get('', [SubscriptionOrderController::class, 'transactions'])->name('index');
+        Route::get('analytics', [SubscriptionOrderController::class, 'analytics'])->name('analytics');
+    });
+
     // Notifications API
     Route::middleware('auth:api')->group(function () {
         Route::get('notifications', [\App\Http\Controllers\Api\NotificationController::class, 'index']);
@@ -379,6 +408,16 @@ Route::middleware('auth:api')->group(function() {
         Route::delete('coin-packages/{coinPackage}', [AdminCoinPackageController::class, 'destroy']);
         Route::post('coin-packages/{coinPackage}/toggle-popular', [AdminCoinPackageController::class, 'togglePopular']);
         Route::post('coin-packages/{coinPackage}/toggle-active', [AdminCoinPackageController::class, 'toggleActive']);
+
+        // Subscription Plans (Admin CRUD)
+        Route::get('subscription-plans', [AdminSubscriptionPlanController::class, 'index']);
+        Route::post('subscription-plans', [AdminSubscriptionPlanController::class, 'store']);
+        Route::get('subscription-plans/{subscriptionPlan}', [AdminSubscriptionPlanController::class, 'show']);
+        Route::put('subscription-plans/{subscriptionPlan}', [AdminSubscriptionPlanController::class, 'update']);
+        Route::delete('subscription-plans/{subscriptionPlan}', [AdminSubscriptionPlanController::class, 'destroy']);
+        Route::post('subscription-plans/{subscriptionPlan}/toggle-active', [AdminSubscriptionPlanController::class, 'toggleActive']);
+        Route::get('subscription-plans/stats', [AdminSubscriptionPlanController::class, 'stats']);
+
         Route::post('credit-packages', [CreditPackageController::class,'store']);
         Route::put('credit-packages/{creditPackage}', [CreditPackageController::class,'update']);
         Route::delete('credit-packages/{creditPackage}', [CreditPackageController::class,'destroy']);

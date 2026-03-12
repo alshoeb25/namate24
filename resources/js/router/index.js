@@ -54,6 +54,7 @@ import RequirementDetail from '../pages/RequirementDetail.vue';
 import StudentRequirementDetail from '../pages/StudentRequirementDetail.vue';
 import StudentReviews from '../pages/StudentReviews.vue';
 import StudentWallet from '../pages/StudentWallet.vue';
+import StudentSubscriptions from '../pages/StudentSubscriptions.vue';
 import StudentSettings from '../pages/StudentSettings.vue';
 import ContactedTutors from '../pages/ContactedTutors.vue';
 
@@ -123,6 +124,7 @@ const routes = [
   { path: '/tutor/wallet/payment-history', name: 'tutor.payment-history', component: () => import('../pages/PaymentHistory.vue') },
   { path: '/tutor/wallet/coin-transactions', name: 'tutor.coin-transactions', component: () => import('../pages/CoinTransactions.vue') },
   { path: '/tutor/wallet/referrals', name: 'tutor.referrals', component: () => import('../pages/ReferralPage.vue') },
+  { path: '/tutor/subscriptions', name: 'tutor.subscriptions', component: () => import('../pages/TutorSubscriptions.vue') },
 
   // Profile Management
   { path: '/profile', name: 'profile', component: ProfileManagement },
@@ -143,6 +145,7 @@ const routes = [
       { path: 'wallet/payment-history', name: 'student.payment-history', component: () => import('../pages/PaymentHistory.vue') },
       { path: 'wallet/coin-transactions', name: 'student.coin-transactions', component: () => import('../pages/CoinTransactions.vue') },
       { path: 'wallet/referrals', name: 'student.referrals', component: () => import('../pages/ReferralPage.vue') },
+      { path: 'subscriptions', name: 'student.subscriptions', component: StudentSubscriptions },
       { path: 'reviews', name: 'student.reviews', component: StudentReviews },
       { path: 'settings', name: 'student.settings', component: () => import('../pages/StudentSettings.vue') },
     ]
