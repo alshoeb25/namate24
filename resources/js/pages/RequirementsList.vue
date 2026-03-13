@@ -63,7 +63,12 @@
           <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
             <p class="text-sm text-yellow-800">
               <i class="fas fa-info-circle mr-2"></i>
-              <strong>Note:</strong> Approaching a tutor will cost <strong>{{ approachCoinCost }} coins</strong> (based on your nationality). You'll be able to see their contact details after approaching.
+              <strong>Note:</strong> Approaching a tutor will cost <strong>{{ approachCostDisplay }}</strong>
+              <span v-if="userHasSubscription" class="ml-2 inline-flex items-center">
+                <i class="fas fa-check-circle text-green-600 mr-1"></i>
+                <span class="text-green-700 font-semibold">(Free with your subscription)</span>
+              </span>
+              (based on your nationality). You'll be able to see their contact details after approaching.
             </p>
           </div>
 
@@ -118,7 +123,7 @@
                     @click="selectTeacher(teacher.id)"
                     :disabled="approachLoading"
                     class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition disabled:bg-gray-400">
-                    <i class="fas fa-check-circle mr-1"></i>{{ approachLoading ? 'Processing...' : `Approach (${approachCoinCost} coins)` }}
+                    <i class="fas fa-check-circle mr-1"></i>{{ approachLoading ? 'Processing...' : 'Approach (' + approachCostDisplay + ')' }}
                   </button>
                   <div v-else class="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium">
                     <i class="fas fa-check-circle mr-1"></i>Approached
@@ -290,12 +295,14 @@
 <script>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useUserStore } from '../store';
 import axios from '../bootstrap';
 
 export default {
   name: 'RequirementsList',
   setup() {
     const router = useRouter();
+    const userStore = useUserStore();
     const requirements = ref([]);
     const loading = ref(true);
     const error = ref('');
@@ -313,6 +320,17 @@ export default {
     const selectedRequirement = ref(null);
     const approachLoading = ref(false);
     const approachCoinCost = ref(0);
+
+    const userHasSubscription = computed(() => {
+      return userStore.user?.has_active_subscription || userStore.user?.subscription_active || false;
+    });
+
+    const approachCostDisplay = computed(() => {
+      if (userHasSubscription.value) {
+        return 'Free';
+      }
+      return `${approachCoinCost.value} coins`;
+    });
 
     const fetchRequirements = async (page = 1) => {
       loading.value = true;
@@ -426,9 +444,12 @@ export default {
     const selectTeacher = async (teacherId) => {
       if (!selectedRequirement.value) return;
       
-      // Confirm before approaching
-      const cost = approachCoinCost.value || 10;
-      if (!confirm(`Are you sure you want to approach this tutor?\n\nThis will cost ${cost} coins and you will receive their contact details.`)) {
+      // Prepare confirmation message based on subscription status
+      const confirmMessage = userHasSubscription.value 
+        ? 'Are you sure you want to approach this tutor?\n\nThis will be FREE with your active subscription and you will receive their contact details.'
+        : `Are you sure you want to approach this tutor?\n\nThis will cost ${approachCoinCost.value} coins and you will receive their contact details.`;
+      
+      if (!confirm(confirmMessage)) {
         return;
       }
       
@@ -438,8 +459,11 @@ export default {
           teacher_id: teacherId
         });
         
-        // Show success message with coin deduction info
-        alert(`Successfully approached! ${response.data.coins_deducted} coins deducted.`);
+        // Show success message based on subscription status
+        const successMessage = userHasSubscription.value 
+          ? 'Contact details sent for free with your subscription!'
+          : `Successfully approached! ${response.data.coins_deducted} coins deducted.`;
+        alert(successMessage);
         
         // Reload interested teachers from database to show updated contact details
         const teachersResponse = await axios.get(`/api/student/requirements/${selectedRequirement.value.id}/interested-teachers`);
@@ -579,7 +603,9 @@ export default {
       confirmRefund,
       openInterestedModal,
       closeInterestedModal,
-      selectTeacher
+      selectTeacher,
+      userHasSubscription,
+      approachCostDisplay
     };
   }
 };

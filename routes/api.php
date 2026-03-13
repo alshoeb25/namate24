@@ -126,6 +126,9 @@ Route::middleware('auth:api')->group(function() {
             $wallet = $user->wallet->only(['id', 'user_id', 'balance']);
         }
         
+        // Check for active subscription
+        $hasActiveSubscription = $user->activeSubscription() !== null;
+        
         // Get roles
         $userRoles = $user->roles->pluck('name')->toArray();
         
@@ -153,6 +156,8 @@ Route::middleware('auth:api')->group(function() {
             'student' => $student,
             'wallet' => $wallet,
             'roles' => $userRoles,
+            'has_active_subscription' => $hasActiveSubscription,
+            'subscription_active' => $hasActiveSubscription,
         ]);
     });
 
@@ -244,6 +249,7 @@ Route::middleware('auth:api')->group(function() {
     Route::get('enquiries/config', [EnquiryController::class, 'config']);
     Route::middleware(['role:tutor', 'check.tutor.profile'])->group(function () {
         Route::get('tutor-jobs', [EnquiryController::class, 'index']);
+        Route::get('enquiries/{enquiry}/unlock-info', [EnquiryController::class, 'unlockInfo']);
         Route::post('enquiries/{enquiry}/unlock', [EnquiryController::class, 'unlock']);
     });
     Route::get('enquiries/{enquiry}', [EnquiryController::class, 'show']);

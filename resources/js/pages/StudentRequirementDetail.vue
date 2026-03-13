@@ -47,7 +47,13 @@
           <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
             <p class="text-sm text-yellow-800">
               <i class="fas fa-info-circle mr-2"></i>
-              <strong>Note:</strong> Approaching a tutor will cost <strong>{{ approachCoinCost }} coins</strong> (based on your nationality). You'll be able to see their contact details after approaching.
+              <strong>Note:</strong> 
+              <span v-if="viewsExhausted">
+                Your free views have been exhausted. Approaching a tutor will cost <strong>{{ approachCostDisplay }}</strong>. You'll be able to see their contact details after paying.
+              </span>
+              <span v-else>
+                Approaching a tutor will cost <strong>{{ approachCostDisplay }}</strong> <span v-if="!userHasSubscription">(based on your nationality)</span><span v-else><i class="fas fa-star ml-1 text-yellow-600"></i> Included with your subscription</span>. You'll be able to see their contact details after approaching.
+              </span>
             </p>
           </div>
 
@@ -102,7 +108,7 @@
                   @click="selectTeacher(teacher.id)"
                   :disabled="approachLoading"
                   class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition disabled:bg-gray-400">
-                  <i class="fas fa-check-circle mr-1"></i>{{ approachLoading ? 'Processing...' : 'Approach (' + approachCoinCost + ' coins)' }}
+                  <i class="fas fa-check-circle mr-1"></i>{{ approachLoading ? 'Processing...' : ('Approach (' + approachCostDisplay + ')') }}
                 </button>
                 <div v-else class="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium">
                   <i class="fas fa-check-circle mr-1"></i>Approached
@@ -280,6 +286,7 @@
 <script>
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useUserStore } from '../store';
 import axios from '../bootstrap';
 
 export default {
@@ -287,6 +294,7 @@ export default {
   setup() {
     const route = useRoute();
     const router = useRouter();
+    const userStore = useUserStore();
     const requirement = ref({});
     const loading = ref(true);
     const history = ref([]);
@@ -301,6 +309,25 @@ export default {
     const interestedTeachers = ref([]);
     const approachLoading = ref(false);
     const approachCoinCost = ref(0);
+    const approachCostType = ref('coins'); // 'coins' or 'subscription'
+    const approachCostLabel = ref(''); // Display label from API
+    const viewsExhausted = ref(false); // Whether free views are exhausted
+
+    const userHasSubscription = computed(() => {
+      return userStore.user?.has_active_subscription || userStore.user?.subscription_active || false;
+    });
+
+    const approachCostDisplay = computed(() => {
+      // Use the label from API if available
+      if (approachCostLabel.value) {
+        return approachCostLabel.value;
+      }
+      // Fallback to old logic
+      if (userHasSubscription.value) {
+        return 'Free';
+      }
+      return `${approachCoinCost.value} coins`;
+    });
 
     const fetchRequirement = async () => {
       loading.value = true;
@@ -365,6 +392,12 @@ export default {
         const response = await axios.get(`/api/student/requirements/${id}/interested-teachers`);
         interestedTeachers.value = response.data.teachers || [];
         approachCoinCost.value = response.data.approach_coin_cost || 49;
+        
+        // Store the new fields from API
+        approachCostType.value = response.data.approach_cost_type || 'coins';
+        approachCostLabel.value = response.data.approach_cost_label || '';
+        viewsExhausted.value = response.data.views_exhausted || false;
+        
         showInterestedModal.value = true;
       } catch (err) {
         console.error('Error loading interested teachers:', err);
@@ -379,8 +412,18 @@ export default {
 
     const selectTeacher = async (teacherId) => {
       // Confirm before approaching
-      const cost = approachCoinCost.value || 49;
-      if (!confirm(`Are you sure you want to approach this tutor?\n\nThis will cost ${cost} coins and you will receive their contact details.`)) {
+      let confirmMessage = 'Are you sure you want to approach this tutor?\n\n';
+      
+      if (approachCostLabel.value) {
+        // Use the label from API
+        confirmMessage += `This will cost ${approachCostLabel.value} and you will receive their contact details.`;
+      } else if (userHasSubscription.value) {
+        confirmMessage += 'This will be FREE with your active subscription, and you will receive their contact details.';
+      } else {
+        confirmMessage += `This will cost ${approachCoinCost.value} coins and you will receive their contact details.`;
+      }
+      
+      if (!confirm(confirmMessage)) {
         return;
       }
       
@@ -392,8 +435,18 @@ export default {
         
         console.log('Approach response:', response.data);
         
-        // Show success message with coin deduction info
-        alert(`Successfully approached! ${response.data.coins_deducted} coins deducted.`);
+        // Show success message based on cost type
+        let successMessage = 'Successfully approached! ';
+        
+        if (approachCostType.value === 'subscription' && userHasSubscription.value) {
+          successMessage += 'Contact details sent for free with your subscription.';
+        } else if (approachCostType.value === 'coins' || viewsExhausted.value) {
+          successMessage += `${response.data.coins_deducted} coins deducted.`;
+        } else {
+          successMessage += 'Contact details sent.';
+        }
+        
+        alert(successMessage);
         
         // Reload interested teachers from database to show updated contact details
         const teachersResponse = await axios.get(`/api/student/requirements/${requirement.value.id}/interested-teachers`);
@@ -408,6 +461,9 @@ export default {
         console.error('Error approaching teacher:', err);
         if (err.response?.status === 402) {
           alert(err.response.data.message);
+        } else if (err.response?.status === 403) {
+          // Views exhausted - coins were spent, no error message needed
+          console.log('Views exhausted, coins deducted:', err.response.data);
         } else if (err.response?.status === 422) {
           alert(err.response?.data?.message || 'You have already approached this tutor.');
         } else {
@@ -504,6 +560,11 @@ export default {
       interestedTeachers,
       approachLoading,
       approachCoinCost,
+      approachCostDisplay,
+      approachCostType,
+      approachCostLabel,
+      viewsExhausted,
+      userHasSubscription,
       subjectsDisplay,
       meetingOptionsDisplay,
       statusBadgeClass,

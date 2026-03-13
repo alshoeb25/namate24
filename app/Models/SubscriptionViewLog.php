@@ -14,8 +14,10 @@ class SubscriptionViewLog extends Model
         'user_subscription_id',
         'viewable_id',
         'viewable_type',
+        'action_type',
         'ip_address',
         'user_agent',
+        'viewed_at',
     ];
 
     protected $casts = [

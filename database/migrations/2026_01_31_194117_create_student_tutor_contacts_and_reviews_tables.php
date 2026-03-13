@@ -27,7 +27,7 @@ return new class extends Migration
             
             $table->foreign('tutor_id', 'stc_tutor_fk')
                   ->references('id')
-                  ->on('users')
+                  ->on('tutors')
                   ->onDelete('cascade');
 
             // Unique constraint to prevent duplicate unlocks
@@ -50,7 +50,7 @@ return new class extends Migration
             // Foreign keys
             $table->foreign('tutor_id', 'tr_tutor_fk')
                   ->references('id')
-                  ->on('users')
+                  ->on('tutors')
                   ->onDelete('cascade');
             
             $table->foreign('student_id', 'tr_student_fk')

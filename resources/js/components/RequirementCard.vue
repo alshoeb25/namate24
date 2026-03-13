@@ -132,7 +132,7 @@
         ]"
       >
         <i :class="unlocking ? 'fas fa-spinner fa-spin' : 'fas fa-unlock'"></i>
-        {{ unlocking ? 'Unlocking...' : requirement.lead_info?.is_full ? 'Full' : `Unlock (${requirement.unlock_price || 0} coins)` }}
+        {{ unlocking ? 'Unlocking...' : requirement.lead_info?.is_full ? 'Full' : (userHasSubscription ? 'Unlock (Free)' : `Unlock (${requirement.unlock_price || 0} coins)`) }}
       </button>
       <button 
         @click="viewDetails" 
@@ -167,7 +167,8 @@
           <div class="flex items-center">
             <i class="fas fa-coins text-yellow-600 text-2xl mr-3"></i>
             <div>
-              <p class="font-semibold text-yellow-800">{{ requirement.unlock_price || 0 }} Coins Required</p>
+              <p v-if="userHasSubscription" class="font-semibold text-yellow-800">Free with Subscription</p>
+              <p v-else class="font-semibold text-yellow-800">{{ requirement.unlock_price || 0 }} Coins Required</p>
             </div>
           </div>
         </div>
@@ -198,6 +199,7 @@
             <span v-if="unlocking">
               <i class="fas fa-spinner fa-spin mr-2"></i>Processing...
             </span>
+            <span v-else-if="userHasSubscription">Accept & Unlock (Free)</span>
             <span v-else>Accept & Unlock ({{ requirement.unlock_price || 0 }} coins)</span>
           </button>
         </div>
@@ -207,7 +209,7 @@
 </template>
 
 <script>
-import { ref } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '../store';
 import axios from 'axios';
@@ -228,9 +230,20 @@ export default {
     const unlocking = ref(false);
     const showUnlockModal = ref(false);
     const acceptedPolicies = ref(false);
+    const hasSubscription = ref(false);
     const router = useRouter();
     const route = useRoute();
     const userStore = useUserStore();
+
+    // Initialize hasSubscription from user store
+    if (userStore.user?.has_active_subscription || userStore.user?.subscription_active) {
+      hasSubscription.value = true;
+    }
+
+    const userHasSubscription = computed(() => {
+      if (hasSubscription.value) return true;
+      return userStore.user?.has_active_subscription || userStore.user?.subscription_active || false;
+    });
 
     async function unlock() {
       if (unlocking.value) return;
@@ -242,6 +255,11 @@ export default {
         // Update requirement with unlocked data
         Object.assign(props.requirement, res.data.enquiry);
         
+        // Update subscription status from response if available
+        if (res.data.has_subscription !== undefined) {
+          hasSubscription.value = res.data.has_subscription;
+        }
+        
         // Use coins_charged from response for accuracy, fallback to unlock_price
         const coinAmount = res.data.coins_charged || res.data.unlock_price || props.requirement.unlock_price || 0;
         
@@ -250,7 +268,12 @@ export default {
           userStore.user.coins -= coinAmount;
         }
         
-        alert(`Unlocked successfully! ${coinAmount} coins deducted.`);
+        // Show appropriate success message
+        if (userHasSubscription.value) {
+          alert('Unlocked successfully! (Free with subscription)');
+        } else {
+          alert(`Unlocked successfully! ${coinAmount} coins deducted.`);
+        }
       } catch (error) {
         console.error('Error unlocking requirement:', error);
         if (error.response?.status === 401 || error.response?.status === 403) {
@@ -286,10 +309,27 @@ export default {
       }
     }
 
+    async function loadUnlockInfo() {
+      try {
+        const res = await axios.get(`/api/enquiries/${props.requirement.id}/unlock-info`);
+        if (res.data.has_subscription !== undefined) {
+          hasSubscription.value = res.data.has_subscription;
+        }
+      } catch (error) {
+        console.error('Error loading unlock info:', error);
+      }
+    }
+
+    onMounted(() => {
+      loadUnlockInfo();
+    });
+
     return {
       unlocking,
       showUnlockModal,
       acceptedPolicies,
+      hasSubscription,
+      userHasSubscription,
       unlock,
       openUnlockModal,
       closeUnlockModal,

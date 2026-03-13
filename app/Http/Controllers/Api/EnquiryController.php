@@ -203,6 +203,33 @@ class EnquiryController extends Controller
         return response()->json(['enquiry' => $payload]);
     }
 
+    public function unlockInfo(Request $request, StudentRequirement $enquiry)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json(['has_subscription' => false]);
+        }
+
+        if (!$user->hasRole('tutor')) {
+            return response()->json(['has_subscription' => false]);
+        }
+
+        // Check if user has active subscription
+        $activeSubscription = $user->activeSubscription();
+        $hasSubscription = $activeSubscription !== null;
+
+        return response()->json([
+            'has_subscription' => $hasSubscription,
+            'subscription_plan' => $hasSubscription ? [
+                'name' => $activeSubscription->plan->name,
+                'views_allowed' => $activeSubscription->plan->views_allowed,
+                'views_used' => $activeSubscription->views_used,
+                'expires_at' => $activeSubscription->expires_at,
+            ] : null,
+        ]);
+    }
+
     public function unlock(Request $request, StudentRequirement $enquiry)
     {
         $user = $request->user();
@@ -225,6 +252,20 @@ class EnquiryController extends Controller
                 'balance' => $user->coins,
             ], 422);
         } catch (RuntimeException $e) {
+            // Check if this is a view exhaustion error
+            if (strpos($e->getMessage(), 'Views exhausted') === 0) {
+                // Extract coin cost from error message
+                preg_match('/pay (\d+) coins/', $e->getMessage(), $matches);
+                $coinCost = $matches[1] ?? 99;
+                
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'views_exhausted' => true,
+                    'coin_cost_alternative' => (int)$coinCost,
+                    'coins_available' => $user->coins,
+                    'can_pay_with_coins' => $user->coins >= $coinCost,
+                ], 403);
+            }
             return response()->json(['message' => $e->getMessage()], 422);
         }
 
@@ -247,6 +288,10 @@ class EnquiryController extends Controller
             ? config('enquiry.pricing_by_nationality.unlock.indian', 49)
             : config('enquiry.pricing_by_nationality.unlock.non_indian', 99);
 
+        // Get subscription info
+        $activeSubscription = $user->activeSubscription();
+        $hasSubscription = $activeSubscription !== null;
+
         return response()->json([
             'message' => $charged ? 'Contact unlocked successfully.' : 'Already unlocked.',
             'enquiry' => array_merge($freshEnquiry->toArray(), [
@@ -257,7 +302,14 @@ class EnquiryController extends Controller
             ]),
             'unlock' => $unlock,
             'charged' => $charged,
-            'coins_charged' => $charged ? $unlockPrice : 0,
+            'coins_charged' => $charged && !$hasSubscription ? $unlockPrice : 0,
+            'used_subscription' => $charged && $hasSubscription,
+            'subscription_info' => $hasSubscription ? [
+                'views_used' => $activeSubscription->views_used,
+                'views_allowed' => $activeSubscription->plan->views_allowed,
+                'remaining_views' => $activeSubscription->getRemainingViews(),
+                'unlimited_views' => $activeSubscription->plan->views_allowed === null,
+            ] : null,
         ]);
     }
 

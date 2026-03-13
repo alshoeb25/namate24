@@ -36,7 +36,7 @@
               <i class="fas fa-unlock"></i> Unlocked
             </div>
             <div v-else-if="requirement.unlock_price" class="px-4 py-2 bg-yellow-100 text-yellow-600 rounded-full text-sm font-medium">
-              <i class="fas fa-lock"></i> {{ requirement.unlock_price }} coins to unlock
+              <i class="fas fa-lock"></i> {{ userHasSubscription() ? 'Free' : (requirement.unlock_price + ' coins') }} to unlock
             </div>
             <div v-if="requirement.lead_info" class="text-sm text-gray-600">
               {{ requirement.lead_info.spots_available }}/{{ requirement.lead_info.max_leads }} spots available
@@ -149,7 +149,7 @@
           ]"
         >
           <i :class="unlocking ? 'fas fa-spinner fa-spin' : 'fas fa-unlock'"></i>
-          {{ unlocking ? 'Unlocking...' : requirement.lead_info?.is_full ? 'No Spots Available' : `Unlock Contact (${requirement.unlock_price || 0} coins)` }}
+          {{ unlocking ? 'Unlocking...' : requirement.lead_info?.is_full ? 'No Spots Available' : (userHasSubscription() ? 'Unlock Contact (Free)' : `Unlock Contact (${requirement.unlock_price || 0} coins)`) }}
         </button>
         <button 
           v-if="requirement.has_unlocked"
@@ -184,7 +184,8 @@
           <div class="flex items-center">
             <i class="fas fa-coins text-yellow-600 text-2xl mr-3"></i>
             <div>
-              <p class="font-semibold text-yellow-800">{{ requirement.unlock_price || 0 }} Coins Required</p>
+              <p v-if="userHasSubscription()" class="font-semibold text-yellow-800">Free with Subscription</p>
+              <p v-else class="font-semibold text-yellow-800">{{ requirement.unlock_price || 0 }} Coins Required</p>
             </div>
           </div>
         </div>
@@ -215,6 +216,7 @@
             <span v-if="unlocking">
               <i class="fas fa-spinner fa-spin mr-2"></i>Processing...
             </span>
+            <span v-else-if="userHasSubscription()">Accept & Unlock (Free)</span>
             <span v-else>Accept & Unlock ({{ requirement.unlock_price || 0 }} coins)</span>
           </button>
         </div>
@@ -240,6 +242,17 @@ export default {
     const unlocking = ref(false);
     const showUnlockModal = ref(false);
     const acceptedPolicies = ref(false);
+    const hasSubscription = ref(false);
+
+    // Initialize hasSubscription from user store
+    if (userStore.user?.has_active_subscription || userStore.user?.subscription_active) {
+      hasSubscription.value = true;
+    }
+
+    const userHasSubscription = () => {
+      if (hasSubscription.value) return true;
+      return userStore.user?.has_active_subscription || userStore.user?.subscription_active || false;
+    };
 
     function isProfileNotApproved(error) {
       const status = error?.response?.status;
@@ -252,6 +265,7 @@ export default {
       try {
         const res = await axios.get(`/api/enquiries/${route.params.id}`);
         requirement.value = res.data.enquiry || res.data;
+        await loadUnlockInfo();
       } catch (error) {
         console.error('Error loading requirement:', error);
         if (isProfileNotApproved(error)) {
@@ -266,6 +280,18 @@ export default {
       }
     }
 
+    async function loadUnlockInfo() {
+      try {
+        const res = await axios.get(`/api/enquiries/${route.params.id}/unlock-info`);
+        if (res.data.has_subscription !== undefined) {
+          hasSubscription.value = res.data.has_subscription;
+          console.log('Subscription status loaded:', hasSubscription.value);
+        }
+      } catch (error) {
+        console.error('Error loading unlock info:', error);
+      }
+    }
+
     async function unlock() {
       if (unlocking.value) return;
       
@@ -276,6 +302,11 @@ export default {
         // Update requirement with unlocked data
         requirement.value = res.data.enquiry;
         
+        // Update subscription status from response if available
+        if (res.data.has_subscription !== undefined) {
+          hasSubscription.value = res.data.has_subscription;
+        }
+        
         // Use coins_charged from response for accuracy, fallback to unlock_price
         const coinAmount = res.data.coins_charged || res.data.unlock || res.data.enquiry.unlock_price || 0;
         
@@ -284,7 +315,12 @@ export default {
           userStore.user.coins -= coinAmount;
         }
         
-        alert(`Unlocked successfully! ${coinAmount} coins deducted.`);
+        // Show appropriate success message
+        if (userHasSubscription()) {
+          alert('Unlocked successfully! (Free with subscription)');
+        } else {
+          alert(`Unlocked successfully! ${coinAmount} coins deducted.`);
+        }
       } catch (error) {
         console.error('Error unlocking requirement:', error);
         if (isProfileNotApproved(error)) {
@@ -387,6 +423,8 @@ export default {
       unlocking,
       showUnlockModal,
       acceptedPolicies,
+      hasSubscription,
+      userHasSubscription,
       formatDate,
       getBudgetDisplay,
       getModeText,

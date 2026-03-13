@@ -2,16 +2,16 @@
   <div class="w-full bg-gray-50 border-b">
     <div class="max-w-7xl mx-auto">
       <!-- Desktop Menu -->
-      <div class="hidden md:flex items-center justify-between px-4 py-3">
+      <div class="hidden md:flex items-center px-4 py-3 gap-6">
         <!-- Logo -->
-        <router-link to="/" class="flex items-center gap-1">
+        <router-link to="/" class="flex items-center gap-1 flex-shrink-0">
           <img :src="'/storage/logo.png'" 
             alt="Namate 24 Logo" 
             class="h-10 sm:h-11 md:h-12 lg:h-14 w-auto object-contain">
         </router-link>
 
         <!-- Menu Items -->
-        <nav class="flex items-center lg:gap-6">
+        <nav class="flex items-center gap-6 flex-wrap">
           <router-link to="/tutor/profile/" 
                        class="text-gray-700 hover:text-pink-600 font-medium transition"
                        active-class="text-pink-600 font-semibold">
@@ -21,7 +21,7 @@
           <div class="relative group">
             <button class="text-gray-700 hover:text-pink-600 font-medium transition flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-pink-50">
               <i class="fas fa-user-edit"></i>
-              Edit Profile
+              Profile
               <i class="fas fa-chevron-down text-xs"></i>
             </button>
             

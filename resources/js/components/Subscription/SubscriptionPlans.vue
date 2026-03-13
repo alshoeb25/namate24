@@ -139,7 +139,7 @@
     <div v-if="activeTab === 'browse' && !showPurchaseFlow" class="plans-section">
       <h2 class="plans-title">Choose Your Plan</h2>
       <p class="plans-description">
-        Select a subscription plan to unlock unlimited access to tutor profiles and requirements.
+        Select a subscription plan to unlock access to tutor profiles and requirements with the specified view limits.
       </p>
 
       <div class="plans-grid">
@@ -262,9 +262,20 @@
             <span>Views:</span>
             <strong>{{ selectedPlan.views_text }}</strong>
           </div>
+          <div v-if="isIndiaUser && selectedPlan.gst_amount > 0" class="summary-row">
+            <span>Base Price:</span>
+            <strong>₹{{ (selectedPlan.price - selectedPlan.gst_amount).toFixed(2) }}</strong>
+          </div>
+          <div v-if="isIndiaUser && selectedPlan.gst_amount > 0" class="summary-row">
+            <span>GST (18%):</span>
+            <strong>₹{{ (selectedPlan.gst_amount).toFixed(2) }}</strong>
+          </div>
           <div class="summary-row total">
             <span>Total Amount:</span>
-            <strong>₹{{ selectedPlan.price }}</strong>
+            <strong>
+              <span v-if="isIndiaUser">₹{{ selectedPlan.price.toFixed(2) }}</span>
+              <span v-else>${{ selectedPlan.price.toFixed(2) }}</span>
+            </strong>
           </div>
         </div>
 
@@ -316,13 +327,13 @@
         <tbody>
           <tr v-for="sub in history" :key="sub.id">
             <td>{{ sub.plan_name }}</td>
-            <td>₹{{ sub.price }}</td>
+            <td>
+              <span v-if="sub.is_india_user">₹{{ Number(sub.price).toFixed(2) }}</span>
+              <span v-else>${{ Number(sub.price).toFixed(2) }}</span>
+            </td>
             <td>{{ formatDate(sub.activated_at) }}</td>
             <td>{{ formatDate(sub.expires_at) }}</td>
-            <td>
-              <span v-if="sub.views_allowed === null">Unlimited</span>
-              <span v-else>{{ sub.views_used }}/{{ sub.views_allowed }}</span>
-            </td>
+            <td>{{ sub.views_text }}</td>
             <td>
               <span class="badge" :class="`status-${sub.status}`">
                 {{ sub.status }}

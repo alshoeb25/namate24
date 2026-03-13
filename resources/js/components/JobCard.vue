@@ -28,7 +28,8 @@
         <div class="mt-2 text-sm text-gray-500">{{ counterLabel }} tutors</div>
         <div class="mt-2 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-semibold">
           <i class="fas fa-coins"></i>
-          <span>{{ localEnquiry.unlock_price || 0 }} coins to unlock</span>
+          <span v-if="userHasSubscription">Free to unlock</span>
+          <span v-else>{{ localEnquiry.unlock_price || 0 }} coins to unlock</span>
         </div>
       </div>
     </div>
@@ -63,7 +64,7 @@
         <div class="text-sm font-semibold" :class="hasUnlocked ? 'text-green-700' : 'text-gray-800'">
           {{ hasUnlocked ? 'Contact unlocked' : 'Unlock to view contact' }}
         </div>
-        <div class="text-xs text-gray-500">{{ hasUnlocked ? 'No extra charge' : unlockLabel }}</div>
+        <div class="text-xs text-gray-500">{{ hasUnlocked ? 'No extra charge' : (userHasSubscription ? 'Free' : unlockLabel) }}</div>
       </div>
 
       <div v-if="hasUnlocked" class="mt-3 space-y-1 text-sm text-gray-800">
@@ -81,7 +82,7 @@
                 class="px-4 py-2 rounded-lg text-white font-semibold shadow-sm"
                 :class="(!canUnlock || unlocking) ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'">
           <span v-if="unlocking">Unlocking...</span>
-          <span v-else>{{ unlockLabel }}</span>
+          <span v-else>{{ userHasSubscription ? 'Unlock Free' : unlockLabel }}</span>
         </button>
         <p v-if="isFull" class="mt-2 text-xs text-red-600">Lead closed. Maximum tutors reached.</p>
       </div>
@@ -93,7 +94,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onMounted } from 'vue';
 import axios from '../bootstrap';
 import { useUserStore } from '../store';
 
@@ -109,6 +110,12 @@ const localEnquiry = ref({ ...props.enquiry });
 const unlocking = ref(false);
 const errorMsg = ref('');
 const successMsg = ref('');
+const hasSubscription = ref(false);
+
+// Initialize hasSubscription from user store
+if (userStore.user?.has_active_subscription || userStore.user?.subscription_active) {
+  hasSubscription.value = true;
+}
 
 watch(() => props.enquiry, (val) => {
   localEnquiry.value = { ...val };
@@ -121,6 +128,11 @@ const isFull = computed(() => {
 const hasUnlocked = computed(() => Boolean(localEnquiry.value.has_unlocked));
 const canUnlock = computed(() => !hasUnlocked.value && !isFull.value);
 
+const userHasSubscription = computed(() => {
+  if (hasSubscription.value) return true;
+  return userStore.user?.has_active_subscription || userStore.user?.subscription_active || false;
+});
+
 const counterLabel = computed(() => `${localEnquiry.value.current_leads || 0}/${localEnquiry.value.max_leads || 0}`);
 const progressWidth = computed(() => {
   const max = localEnquiry.value.max_leads || 1;
@@ -128,7 +140,7 @@ const progressWidth = computed(() => {
   return `${Math.min(100, (current / max) * 100)}%`;
 });
 
-const unlockLabel = computed(() => `Unlock Contact (${localEnquiry.value.unlock_price || 0} coins)`);
+const unlockLabel = computed(() => userHasSubscription.value ? 'Unlock Contact (Free)' : `Unlock Contact (${localEnquiry.value.unlock_price || 0} coins)`);
 
 const unlock = async () => {
   if (!userStore.token) {
@@ -142,11 +154,37 @@ const unlock = async () => {
   try {
     const response = await axios.post(`/api/enquiries/${localEnquiry.value.id}/unlock`);
     localEnquiry.value = response.data.enquiry;
-    successMsg.value = response.data.message;
+    
+    // Update subscription status from response if available
+    if (response.data.has_subscription !== undefined) {
+      hasSubscription.value = response.data.has_subscription;
+    }
+    
+    // Show appropriate success message
+    if (userHasSubscription.value) {
+      successMsg.value = response.data.message || 'Unlocked successfully! (Free with subscription)';
+    } else {
+      successMsg.value = response.data.message || 'Unlocked successfully!';
+    }
   } catch (err) {
     errorMsg.value = err.response?.data?.message || 'Unable to unlock this enquiry.';
   } finally {
     unlocking.value = false;
   }
 };
+
+const loadUnlockInfo = async () => {
+  try {
+    const response = await axios.get(`/api/enquiries/${localEnquiry.value.id}/unlock-info`);
+    if (response.data.has_subscription !== undefined) {
+      hasSubscription.value = response.data.has_subscription;
+    }
+  } catch (err) {
+    console.error('Error loading unlock info:', err);
+  }
+};
+
+onMounted(() => {
+  loadUnlockInfo();
+});
 </script>

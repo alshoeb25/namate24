@@ -42,8 +42,11 @@ class EnquiryService
             $freeCount = config('coins.free_requirements_count', 3);
             $isFreePost = $requirementCount < $freeCount;
             
-            // Only charge coins if NOT a free post
-            if (!$isFreePost && $postFee > 0) {
+            // Check if student has active subscription
+            $hasSubscription = $student->hasActiveSubscription();
+            
+            // Only charge coins if NOT a free post AND student does NOT have active subscription
+            if (!$isFreePost && $postFee > 0 && !$hasSubscription) {
                 try {
                     $transaction = $this->walletService->debit(
                         $student,
@@ -58,10 +61,13 @@ class EnquiryService
                     throw $e;
                 }
             }
+            
+            // Set post_fee to 0 if free post or has subscription
+            $actualPostFee = ($isFreePost || $hasSubscription) ? 0 : $postFee;
 
             $enquiry = StudentRequirement::create(array_merge($data, [
                 'student_id' => $studentId,
-                'post_fee' => $isFreePost ? 0 : $postFee,
+                'post_fee' => $actualPostFee,
                 'unlock_price' => $unlockPrice,
                 'max_leads' => $maxLeads,
                 'current_leads' => 0,
@@ -115,6 +121,10 @@ class EnquiryService
                 return [$lockedEnquiry->fresh(), $existing, false];
             }
 
+            // Check if tutor has active subscription
+            $activeSubscription = $lockedTutor->activeSubscription();
+            $hasSubscription = $activeSubscription !== null;
+            
             // Use nationality-based pricing for requirement unlock (49/99 based on tutor's nationality)
             // Note: Requirements unlock pricing matches post pricing tier, not tutor profile pricing
             $tutorCountryCode = strtoupper((string) ($lockedTutor->country_iso ?? ''));
@@ -122,9 +132,28 @@ class EnquiryService
             $unlockPrice = (int)($isIndia 
                 ? config('enquiry.pricing_by_nationality.unlock.indian', 49)
                 : config('enquiry.pricing_by_nationality.unlock.non_indian', 99));
+            
+            // Check subscription view limit before allowing action
+            if ($hasSubscription && !$activeSubscription->canView()) {
+                $remaining = $activeSubscription->getRemainingViews();
+                
+                // Check if tutor has coins to proceed as fallback
+                if ($lockedTutor->coins < $unlockPrice) {
+                    throw new RuntimeException(
+                        "You've used all ({$activeSubscription->views_used}/{$activeSubscription->plan->views_allowed}) views. "
+                        . "Pay {$unlockPrice} coins or upgrade your subscription."
+                    );
+                }
+                // If they have coins, we'll deduct them below as fallback
+            }
 
-
-            if ($unlockPrice > 0) {
+            // Debit coins logic:
+            // Case 1: NO subscription - deduct coins if sufficient
+            // Case 2: HAS subscription + views available - log view, NO coins
+            // Case 3: HAS subscription + views exhausted - deduct coins as fallback
+            
+            if ($unlockPrice > 0 && !$hasSubscription) {
+                // Case 1: NO subscription - must have coins
                 try {
                     $transaction = $this->walletService->debit(
                         $lockedTutor,
@@ -146,6 +175,48 @@ class EnquiryService
                     ]);
                     throw $e;
                 }
+            } else if ($hasSubscription && $activeSubscription->canView()) {
+                // Case 2: HAS subscription with available views - log view, NO coins
+                $transaction = null;
+            } else if ($hasSubscription && !$activeSubscription->canView() && $unlockPrice > 0) {
+                // Case 3: HAS subscription but views EXHAUSTED - deduct coins as fallback
+                try {
+                    $transaction = $this->walletService->debit(
+                        $lockedTutor,
+                        $unlockPrice,
+                        'enquiry_unlock',
+                        'Unlocked enquiry #' . $lockedEnquiry->id . ' (subscription views exhausted)',
+                        [
+                            'enquiry_id' => $lockedEnquiry->id,
+                            'student_id' => $lockedEnquiry->student_id,
+                            'reason' => 'subscription_views_exhausted',
+                        ]
+                    );
+                } catch (InsufficientBalanceException $e) {
+                    throw $e;
+                } catch (\Exception $e) {
+                    \Log::error('Failed to create fallback coin transaction for enquiry unlock', [
+                        'enquiry_id' => $lockedEnquiry->id,
+                        'tutor_id' => $tutorId,
+                        'error' => $e->getMessage(),
+                    ]);
+                    throw $e;
+                }
+            }
+            
+            // Track subscription view if user has active subscription (all types, unlimited or limited)
+            if ($hasSubscription) {
+                \App\Models\SubscriptionViewLog::create([
+                    'user_id' => $lockedTutor->id,
+                    'user_subscription_id' => $activeSubscription->id,
+                    'viewable_id' => $lockedEnquiry->id,
+                    'viewable_type' => 'enquiry_unlock',
+                    'action_type' => 'tutor_enquiry_unlock',
+                    'viewed_at' => now(),
+                ]);
+                
+                // Update views_used count
+                $activeSubscription->incrementViewCount();
             }
 
             $unlock = EnquiryUnlock::create([
@@ -168,7 +239,7 @@ class EnquiryService
             return [$lockedEnquiry->fresh(), $unlock, true];
         });
 
-        // Send coin spent notification outside transaction
+        // Send coin spent notification outside transaction (only if coins were deducted)
         if ($transaction) {
             try {
                 $tutor->notify(new CoinSpentNotification($transaction));
@@ -178,6 +249,12 @@ class EnquiryService
                     'error' => $e->getMessage(),
                 ]);
             }
+        } else if ($result[2]) {
+            // Unlock was successful, but no coins deducted (subscription active)
+            \Log::info('Enquiry unlocked with active subscription - no coins deducted', [
+                'enquiry_id' => $result[0]->id,
+                'tutor_id' => $tutor->id,
+            ]);
         }
 
         return $result;

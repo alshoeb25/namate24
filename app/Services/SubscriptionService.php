@@ -328,8 +328,10 @@ class SubscriptionService
             'user_subscription_id' => $subscription->id,
             'viewable_id' => $viewable->id,
             'viewable_type' => get_class($viewable),
+            'action_type' => 'generic_view',
             'ip_address' => $ipAddress,
             'user_agent' => $userAgent,
+            'viewed_at' => now(),
         ]);
 
         // Increment view count
@@ -383,10 +385,13 @@ class SubscriptionService
             'views_allowed' => $subscription['views_allowed'],
             'views_used' => $subscription['views_used'],
             'remaining_views' => $subscription['remaining_views'],
+            'unlimited_views' => $subscription['views_allowed'] === null,
+            'views_text' => $this->getViewsText($subscription['views_allowed']),
             'remaining_days' => $subscription['remaining_days'],
             'expires_at' => $subscription['expires_at'],
             'activated_at' => $subscription['activated_at'],
-            'unlimited_views' => $subscription['views_allowed'] === null,
+            'validity_days' => $subscription['validity_days'],
+            'validity_text' => $this->getValidityText($subscription['validity_days']),
             'price' => $pricing['price'],
             'display_price' => $pricing['display_price'],
             'currency' => $pricing['currency'],
@@ -474,10 +479,15 @@ class SubscriptionService
                 'price' => $pricing['price'],
                 'display_price' => $pricing['display_price'],
                 'currency' => $pricing['currency'],
+                'is_india_user' => $isIndia,
                 'gst_amount' => $pricing['gst_amount'] ?? 0,
                 'gst_rate' => $pricing['gst'],
                 'views_allowed' => $plan->views_allowed,
                 'views_used' => $subscription->views_used,
+                'unlimited_views' => $plan->views_allowed === null,
+                'views_text' => $this->getViewsText($plan->views_allowed),
+                'validity_days' => $plan->validity_days,
+                'validity_text' => $this->getValidityText($plan->validity_days),
                 'activated_at' => $subscription->activated_at->format('Y-m-d H:i:s'),
                 'expires_at' => $subscription->expires_at->format('Y-m-d H:i:s'),
                 'status' => $subscription->status,
@@ -601,6 +611,8 @@ class SubscriptionService
             'views_allowed' => $subscription->plan->views_allowed,
             'views_used' => $subscription->views_used,
             'remaining_views' => $subscription->getRemainingViews(),
+            'unlimited_views' => $subscription->plan->views_allowed === null,
+            'views_text' => $this->getViewsText($subscription->plan->views_allowed),
             'activated_at' => $subscription->activated_at->format('Y-m-d H:i:s'),
             'expires_at' => $subscription->expires_at->format('Y-m-d H:i:s'),
             'remaining_days' => $subscription->getRemainingDays(),
@@ -611,6 +623,7 @@ class SubscriptionService
             'gst_amount' => $pricing['gst_amount'] ?? 0,
             'gst_rate' => $pricing['gst'],
             'validity_days' => $subscription->plan->validity_days,
+            'validity_text' => $this->getValidityText($subscription->plan->validity_days),
         ];
     }
 

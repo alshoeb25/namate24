@@ -255,7 +255,7 @@
               :class="hasContactAccess ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-600'"
               class="text-white py-2.5 px-4 rounded text-sm font-medium flex items-center justify-center transition">
               <i class="fas fa-phone mr-2"></i>
-              {{ hasContactAccess ? 'Contact Unlocked' : 'Contact (' + contactUnlockCoins + ' coins)' }}
+              {{ hasContactAccess ? 'Contact Unlocked' : (userHasSubscription ? 'Contact (Free)' : 'Contact (' + contactUnlockCoins + ' coins)') }}
             </button>
             <button 
               @click="openReviewModal"
@@ -382,8 +382,9 @@
             <div class="flex items-center">
               <i class="fas fa-coins text-yellow-600 text-2xl mr-3"></i>
               <div>
-                <p class="font-semibold text-yellow-800">{{ contactUnlockCoins }} Coins Required</p>
-                <p class="text-sm text-yellow-700">Your current balance: {{ userCoins }} coins</p>
+                <p v-if="userHasSubscription" class="font-semibold text-yellow-800">Free with Subscription</p>
+                <p v-else class="font-semibold text-yellow-800">{{ contactUnlockCoins }} Coins Required</p>
+                <p v-if="!userHasSubscription" class="text-sm text-yellow-700">Your current balance: {{ userCoins }} coins</p>
               </div>
             </div>
           </div>
@@ -425,7 +426,7 @@
             </label>
           </div>
 
-          <div v-if="userCoins < contactUnlockCoins" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div v-if="userCoins < contactUnlockCoins && !userHasSubscription" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
             <p class="text-red-800 font-medium">
               <i class="fas fa-exclamation-triangle mr-2"></i>
               Insufficient coins. Please purchase more coins to continue.
@@ -436,6 +437,13 @@
             </router-link>
           </div>
 
+          <div v-else-if="userHasSubscription" class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <p class="text-green-800 font-medium">
+              <i class="fas fa-check-circle mr-2"></i>
+              You have an active subscription! Contact unlock is FREE.
+            </p>
+          </div>
+
           <div class="flex gap-3">
             <button 
               @click="closeContactModal" 
@@ -444,12 +452,13 @@
             </button>
             <button 
               @click="acceptAndUnlock"
-              :disabled="userCoins < contactUnlockCoins || unlocking || !acceptedPolicies"
-              :class="userCoins < contactUnlockCoins || unlocking || !acceptedPolicies ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'"
+              :disabled="(!userHasSubscription && userCoins < contactUnlockCoins) || unlocking || !acceptedPolicies"
+              :class="(!userHasSubscription && userCoins < contactUnlockCoins) || unlocking || !acceptedPolicies ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'"
               class="flex-1 text-white py-3 rounded-lg font-medium transition">
               <span v-if="unlocking">
                 <i class="fas fa-spinner fa-spin mr-2"></i>Processing...
               </span>
+              <span v-else-if="userHasSubscription">Accept & Unlock (Free)</span>
               <span v-else>Accept & Unlock ({{ contactUnlockCoins }} coins)</span>
             </button>
           </div>
@@ -564,9 +573,15 @@ export default {
     const showContactModal = ref(false);
     const unlocking = ref(false);
     const hasContactAccess = ref(false);
+    const hasSubscription = ref(false);
     const userCoins = ref(0);
     const contactUnlockCoins = ref(0);
     const acceptedPolicies = ref(false);
+    
+    // Initialize hasSubscription from user store
+    if (user.value?.has_active_subscription || user.value?.subscription_active) {
+      hasSubscription.value = true;
+    }
     
     // Review modal
     const showReviewModal = ref(false);
@@ -585,6 +600,14 @@ export default {
       if (!user.value || !profile.value) return false;
       // Check if the logged-in user is viewing their own profile
       return user.value.id === profile.value.user_id;
+    });
+    
+    // Check subscription from both local state and user store
+    const userHasSubscription = computed(() => {
+      // First check the loaded state from API
+      if (hasSubscription.value) return true;
+      // Fallback: check user store
+      return user.value?.has_active_subscription || user.value?.subscription_active || false;
     });    
     const approvedReviews = computed(() => {
       if (!profile.value?.reviews) return [];
@@ -638,6 +661,7 @@ export default {
         if (isLoggedInStudent.value && profile.value?.user_id) {
           await checkContactAccess();
           await loadUserCoins();
+          await loadContactUnlockCoins();
         }
       } catch (error) {
         console.error('Error loading tutor profile:', error);
@@ -674,8 +698,15 @@ export default {
         const tutorId = profile.value?.id;
         console.log('Loading contact unlock coins for tutor ID:', tutorId);
         const response = await axios.get(`/api/student/contact-unlock-coins/${tutorId}`);
+        console.log('Contact unlock response:', response.data);
+        
         if (response.data?.contact_unlock_coins !== undefined) {
           contactUnlockCoins.value = Number(response.data.contact_unlock_coins);
+        }
+        // Check if user has active subscription
+        if (response.data?.has_subscription !== undefined) {
+          hasSubscription.value = response.data.has_subscription;
+          console.log('User has subscription:', hasSubscription.value);
         }
       } catch (error) {
         console.error('Error loading contact unlock coins:', error);
@@ -694,9 +725,8 @@ export default {
         return;
       }
       
-      if (!contactUnlockCoins.value) {
-        await loadContactUnlockCoins();
-      }
+      // Reload coins to get fresh subscription status
+      await loadContactUnlockCoins();
       acceptedPolicies.value = false;
       showContactModal.value = true;
     }
@@ -711,7 +741,9 @@ export default {
         alert('Please accept the Terms and Conditions and Safety Documents.');
         return;
       }
-      if (userCoins.value < contactUnlockCoins.value) {
+      
+      // Skip coin check if user has active subscription
+      if (!userHasSubscription.value && userCoins.value < contactUnlockCoins.value) {
         alert('Insufficient coins. Please purchase more coins.');
         return;
       }
@@ -966,6 +998,8 @@ export default {
       hasContactAccess,
       userCoins,
       contactUnlockCoins,
+      hasSubscription,
+      userHasSubscription,
       acceptedPolicies,
       showReviewModal,
       reviewRating,
