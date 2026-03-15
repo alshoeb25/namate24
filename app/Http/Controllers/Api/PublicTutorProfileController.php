@@ -124,21 +124,33 @@ class PublicTutorProfileController extends Controller
             // Has subscription with available views - no coins needed
             $requiredCoins = 0;
         } else if ($hasSubscription && !$activeSubscription->canView()) {
-            // Has subscription but views exhausted - charge coins as fallback, but allow user to proceed
+            // Has subscription but views exhausted - require explicit coin payment choice
             $requiredCoins = \App\Services\CoinPricingService::getCoinCost($user, 'contact_unlock');
-            
-            // Return 403 asking for payment, but allow user to proceed if they have coins
-            if ($user->coins < $requiredCoins) {
+            $canPayWithCoins = $user->coins >= $requiredCoins;
+
+            // Unless user explicitly chose to pay with coins, show the choice modal
+            if (!$request->boolean('use_coins')) {
                 return response()->json([
                     'success' => false,
-                    'message' => "You've used all ({$activeSubscription->views_used}/{$activeSubscription->plan->views_allowed}) views. Pay {$requiredCoins} coins to unlock contact or upgrade your subscription.",
+                    'message' => "Your subscription views are exhausted ({$activeSubscription->views_used}/{$activeSubscription->plan->views_allowed} used). Choose how to proceed.",
                     'views_exhausted' => true,
                     'views_used' => $activeSubscription->views_used,
                     'views_allowed' => $activeSubscription->plan->views_allowed,
+                    'coin_cost_alternative' => $requiredCoins,
+                    'current_coins' => $user->coins,
+                    'can_pay_with_coins' => $canPayWithCoins,
+                ], 403);
+            }
+
+            // User chose to pay with coins
+            if (!$canPayWithCoins) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Insufficient coins. You need {$requiredCoins} coins to proceed.",
                     'required_coins' => $requiredCoins,
                     'current_coins' => $user->coins,
                     'can_pay_with_coins' => false,
-                ], 403);
+                ], 402);
             }
         } else {
             // No subscription - calculate coin cost

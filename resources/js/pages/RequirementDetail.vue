@@ -169,6 +169,46 @@
     </div>
   </div>
 
+  <!-- Subscription Exhausted Modal -->
+  <div v-if="showExhaustedModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+      <div class="text-center mb-4">
+        <i class="fas fa-exclamation-triangle text-5xl text-orange-500 mb-3"></i>
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">Subscription Views Exhausted</h2>
+        <p class="text-gray-600 text-sm">
+          You've used all <strong>{{ exhaustedData.views_used }}/{{ exhaustedData.views_allowed }}</strong> views in your subscription plan.
+        </p>
+      </div>
+      <p class="text-gray-700 mb-5 text-center">Choose how you'd like to proceed:</p>
+      <div class="space-y-3">
+        <button
+          v-if="exhaustedData.can_pay_with_coins"
+          @click="proceedWithCoins"
+          :disabled="unlocking"
+          class="w-full px-4 py-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-medium transition flex items-center justify-center">
+          <i class="fas fa-coins mr-2"></i>
+          Pay with Coins ({{ exhaustedData.coin_cost_alternative }} coins)
+        </button>
+        <div v-else class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center text-sm text-gray-600">
+          <i class="fas fa-coins mr-1"></i>
+          Insufficient coins (need {{ exhaustedData.coin_cost_alternative }}, have {{ exhaustedData.coins_available }})
+          <router-link to="/tutor/wallet" class="block mt-1 text-blue-600 hover:underline font-medium">Buy More Coins</router-link>
+        </div>
+        <button
+          @click="goToSubscriptions"
+          class="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition flex items-center justify-center">
+          <i class="fas fa-star mr-2"></i>
+          Upgrade Subscription Plan
+        </button>
+        <button
+          @click="closeExhaustedModal"
+          class="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Unlock Terms & Conditions Modal -->
   <div v-if="showUnlockModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
     <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -243,6 +283,8 @@ export default {
     const showUnlockModal = ref(false);
     const acceptedPolicies = ref(false);
     const hasSubscription = ref(false);
+    const showExhaustedModal = ref(false);
+    const exhaustedData = ref({ views_used: 0, views_allowed: 0, coin_cost_alternative: 0, coins_available: 0, can_pay_with_coins: false });
 
     // Initialize hasSubscription from user store
     if (userStore.user?.has_active_subscription || userStore.user?.subscription_active) {
@@ -327,8 +369,50 @@ export default {
           router.push('/tutor/profile/not-approved');
           return;
         }
-        const message = error.response?.data?.message || 'Failed to unlock requirement';
-        alert(message);
+        const data = error.response?.data;
+        if (error.response?.status === 403 && data?.views_exhausted) {
+          closeUnlockModal();
+          exhaustedData.value = {
+            views_used: data.views_used,
+            views_allowed: data.views_allowed,
+            coin_cost_alternative: data.coin_cost_alternative,
+            coins_available: data.coins_available,
+            can_pay_with_coins: data.can_pay_with_coins,
+          };
+          showExhaustedModal.value = true;
+        } else {
+          alert(data?.message || 'Failed to unlock requirement');
+        }
+      } finally {
+        unlocking.value = false;
+      }
+    }
+
+    function closeExhaustedModal() {
+      showExhaustedModal.value = false;
+    }
+
+    function goToSubscriptions() {
+      router.push('/tutor/subscriptions');
+    }
+
+    async function proceedWithCoins() {
+      showExhaustedModal.value = false;
+      unlocking.value = true;
+      try {
+        const res = await axios.post(`/api/enquiries/${route.params.id}/unlock`, { use_coins: true });
+        requirement.value = res.data.enquiry;
+        if (res.data.has_subscription !== undefined) {
+          hasSubscription.value = res.data.has_subscription;
+        }
+        const coinAmount = res.data.coins_charged || 0;
+        if (res.data.charged && userStore.user) {
+          userStore.user.coins -= coinAmount;
+        }
+        alert(`Unlocked successfully! ${coinAmount} coins deducted.`);
+      } catch (error) {
+        console.error('Error proceeding with coins:', error);
+        alert(error.response?.data?.message || 'Failed to unlock requirement');
       } finally {
         unlocking.value = false;
       }
@@ -434,7 +518,12 @@ export default {
       closeUnlockModal,
       confirmUnlock,
       contact,
-      share
+      share,
+      showExhaustedModal,
+      exhaustedData,
+      closeExhaustedModal,
+      goToSubscriptions,
+      proceedWithCoins,
     };
   }
 };

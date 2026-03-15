@@ -382,9 +382,9 @@
             <div class="flex items-center">
               <i class="fas fa-coins text-yellow-600 text-2xl mr-3"></i>
               <div>
-                <p v-if="userHasSubscription" class="font-semibold text-yellow-800">Free with Subscription</p>
+                <p v-if="userHasSubscription && !subscriptionViewsExhausted" class="font-semibold text-yellow-800">Free with Subscription</p>
                 <p v-else class="font-semibold text-yellow-800">{{ contactUnlockCoins }} Coins Required</p>
-                <p v-if="!userHasSubscription" class="text-sm text-yellow-700">Your current balance: {{ userCoins }} coins</p>
+                <p v-if="!userHasSubscription || subscriptionViewsExhausted" class="text-sm text-yellow-700">Your current balance: {{ userCoins }} coins</p>
               </div>
             </div>
           </div>
@@ -431,13 +431,13 @@
               <i class="fas fa-exclamation-triangle mr-2"></i>
               Insufficient coins. Please purchase more coins to continue.
             </p>
-            <router-link to="/student/wallet" 
+            <router-link to="/student/wallet"
                          class="inline-block mt-3 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm">
               Purchase Coins
             </router-link>
           </div>
 
-          <div v-else-if="userHasSubscription" class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+          <div v-else-if="userHasSubscription && !subscriptionViewsExhausted" class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
             <p class="text-green-800 font-medium">
               <i class="fas fa-check-circle mr-2"></i>
               You have an active subscription! Contact unlock is FREE.
@@ -445,12 +445,12 @@
           </div>
 
           <div class="flex gap-3">
-            <button 
-              @click="closeContactModal" 
+            <button
+              @click="closeContactModal"
               class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-3 rounded-lg font-medium transition">
               Reject
             </button>
-            <button 
+            <button
               @click="acceptAndUnlock"
               :disabled="(!userHasSubscription && userCoins < contactUnlockCoins) || unlocking || !acceptedPolicies"
               :class="(!userHasSubscription && userCoins < contactUnlockCoins) || unlocking || !acceptedPolicies ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'"
@@ -458,10 +458,50 @@
               <span v-if="unlocking">
                 <i class="fas fa-spinner fa-spin mr-2"></i>Processing...
               </span>
-              <span v-else-if="userHasSubscription">Accept & Unlock (Free)</span>
+              <span v-else-if="userHasSubscription && !subscriptionViewsExhausted">Accept & Unlock (Free)</span>
               <span v-else>Accept & Unlock ({{ contactUnlockCoins }} coins)</span>
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subscription Exhausted Modal -->
+    <div v-if="showExhaustedModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+        <div class="text-center mb-4">
+          <i class="fas fa-exclamation-triangle text-5xl text-orange-500 mb-3"></i>
+          <h2 class="text-2xl font-bold text-gray-800 mb-2">Subscription Views Exhausted</h2>
+          <p class="text-gray-600 text-sm">
+            You've used all <strong>{{ exhaustedData.views_used }}/{{ exhaustedData.views_allowed }}</strong> views in your subscription plan.
+          </p>
+        </div>
+        <p class="text-gray-700 mb-5 text-center">Choose how you'd like to proceed:</p>
+        <div class="space-y-3">
+          <button
+            v-if="exhaustedData.can_pay_with_coins"
+            @click="proceedWithCoinsForContact"
+            :disabled="unlocking"
+            class="w-full px-4 py-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-medium transition flex items-center justify-center">
+            <i class="fas fa-coins mr-2"></i>
+            Pay with Coins ({{ exhaustedData.coin_cost_alternative }} coins)
+          </button>
+          <div v-else class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center text-sm text-gray-600">
+            <i class="fas fa-coins mr-1"></i>
+            Insufficient coins (need {{ exhaustedData.coin_cost_alternative }}, have {{ exhaustedData.coins_available }})
+            <router-link to="/student/wallet" class="block mt-1 text-blue-600 hover:underline font-medium">Buy More Coins</router-link>
+          </div>
+          <button
+            @click="goToSubscriptions"
+            class="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition flex items-center justify-center">
+            <i class="fas fa-star mr-2"></i>
+            Upgrade Subscription Plan
+          </button>
+          <button
+            @click="closeExhaustedModal"
+            class="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium">
+            Cancel
+          </button>
         </div>
       </div>
     </div>
@@ -577,6 +617,10 @@ export default {
     const userCoins = ref(0);
     const contactUnlockCoins = ref(0);
     const acceptedPolicies = ref(false);
+    // Subscription exhausted modal
+    const showExhaustedModal = ref(false);
+    const exhaustedData = ref({ views_used: 0, views_allowed: 0, coin_cost_alternative: 0, coins_available: 0, can_pay_with_coins: false });
+    const subscriptionViewsExhausted = ref(false);
     
     // Initialize hasSubscription from user store
     if (user.value?.has_active_subscription || user.value?.subscription_active) {
@@ -776,11 +820,62 @@ export default {
         }
       } catch (error) {
         console.error('Error unlocking contact:', error);
-        if (error.response?.data?.message) {
-          alert(error.response.data.message);
+        const data = error.response?.data;
+        if (error.response?.status === 403 && data?.views_exhausted) {
+          closeContactModal();
+          exhaustedData.value = {
+            views_used: data.views_used,
+            views_allowed: data.views_allowed,
+            coin_cost_alternative: data.coin_cost_alternative,
+            coins_available: data.current_coins ?? data.coins_available,
+            can_pay_with_coins: data.can_pay_with_coins,
+          };
+          subscriptionViewsExhausted.value = true;
+          showExhaustedModal.value = true;
+        } else if (data?.message) {
+          alert(data.message);
         } else {
           alert('Failed to unlock contact. Please try again.');
         }
+      } finally {
+        unlocking.value = false;
+      }
+    }
+
+    function closeExhaustedModal() {
+      showExhaustedModal.value = false;
+    }
+
+    function goToSubscriptions() {
+      closeExhaustedModal();
+      router.push('/student/subscriptions');
+    }
+
+    async function proceedWithCoinsForContact() {
+      showExhaustedModal.value = false;
+      unlocking.value = true;
+      try {
+        const tutorId = profile.value?.id;
+        const studentId = user.value?.student?.id;
+        if (!studentId) {
+          alert('Student profile not found.');
+          return;
+        }
+        const response = await axios.post('/api/student/unlock-tutor-contact', {
+          tutor_id: tutorId,
+          student_id: studentId,
+          use_coins: true,
+        });
+        if (response.data.success) {
+          hasContactAccess.value = true;
+          canReview.value = true;
+          userCoins.value = response.data.remaining_balance || (userCoins.value - contactUnlockCoins.value);
+          await loadProfile();
+          alert('Contact details unlocked! ' + (exhaustedData.value.coin_cost_alternative) + ' coins deducted.');
+        }
+      } catch (error) {
+        console.error('Error unlocking with coins:', error);
+        alert(error.response?.data?.message || 'Failed to unlock contact.');
       } finally {
         unlocking.value = false;
       }
@@ -1008,6 +1103,12 @@ export default {
       canReview,
       existingReview,
       isEditingReview,
+      showExhaustedModal,
+      exhaustedData,
+      subscriptionViewsExhausted,
+      closeExhaustedModal,
+      goToSubscriptions,
+      proceedWithCoinsForContact,
       openContactModal,
       closeContactModal,
       acceptAndUnlock,

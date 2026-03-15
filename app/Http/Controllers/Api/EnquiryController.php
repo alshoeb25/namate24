@@ -243,6 +243,38 @@ class EnquiryController extends Controller
             return response()->json(['message' => 'Your profile is not verified'], 403);
         }
 
+        // Check subscription exhaustion before calling service - give user a choice
+        $activeSubCheck = $user->activeSubscription();
+        if ($activeSubCheck && !$activeSubCheck->canView()) {
+            $tutorCountryCode = strtoupper((string)($user->country_iso ?? ''));
+            $isIndia = in_array($tutorCountryCode, ['IN', 'IND', '91']);
+            $unlockPrice = (int)($isIndia
+                ? config('enquiry.pricing_by_nationality.unlock.indian', 49)
+                : config('enquiry.pricing_by_nationality.unlock.non_indian', 99));
+            $canPayWithCoins = $user->coins >= $unlockPrice;
+
+            if (!$request->boolean('use_coins')) {
+                return response()->json([
+                    'views_exhausted' => true,
+                    'message' => "Your subscription views are exhausted ({$activeSubCheck->views_used}/{$activeSubCheck->plan->views_allowed} used). Choose how to proceed.",
+                    'views_used' => $activeSubCheck->views_used,
+                    'views_allowed' => $activeSubCheck->plan->views_allowed,
+                    'coin_cost_alternative' => $unlockPrice,
+                    'coins_available' => $user->coins,
+                    'can_pay_with_coins' => $canPayWithCoins,
+                ], 403);
+            }
+
+            if (!$canPayWithCoins) {
+                return response()->json([
+                    'message' => 'Insufficient coins to unlock this requirement.',
+                    'required' => $unlockPrice,
+                    'balance' => $user->coins,
+                ], 422);
+            }
+            // Fall through: service will deduct coins since views are exhausted
+        }
+
         try {
             [$freshEnquiry, $unlock, $charged] = $this->enquiryService->unlockForTutor($enquiry, $user);
         } catch (InsufficientBalanceException $e) {
@@ -252,20 +284,6 @@ class EnquiryController extends Controller
                 'balance' => $user->coins,
             ], 422);
         } catch (RuntimeException $e) {
-            // Check if this is a view exhaustion error
-            if (strpos($e->getMessage(), 'Views exhausted') === 0) {
-                // Extract coin cost from error message
-                preg_match('/pay (\d+) coins/', $e->getMessage(), $matches);
-                $coinCost = $matches[1] ?? 99;
-                
-                return response()->json([
-                    'message' => $e->getMessage(),
-                    'views_exhausted' => true,
-                    'coin_cost_alternative' => (int)$coinCost,
-                    'coins_available' => $user->coins,
-                    'can_pay_with_coins' => $user->coins >= $coinCost,
-                ], 403);
-            }
             return response()->json(['message' => $e->getMessage()], 422);
         }
 

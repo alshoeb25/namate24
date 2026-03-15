@@ -33,7 +33,7 @@ class StudentController extends Controller
         // Validate the 3-section form data
         $data = $request->validate([
             // Student ID
-            'student_id' => 'nullable|integer|exists:users,id',
+            'student_id' => 'nullable|integer|exists:students,id',
             
             // Section 1: Basic Information - Location
             'city' => 'required|string|max:255',
@@ -357,7 +357,7 @@ class StudentController extends Controller
     public function updateRequirement(Request $request, $id)
     {
         $user = $request->user();
-        $studentId = $user->student->id ?? $user->id;
+        $studentId = $user->student?->id;
 
         $requirement = StudentRequirement::where('student_id', $studentId)
             ->where('id', $id)
@@ -475,7 +475,7 @@ class StudentController extends Controller
     public function closeRequirement(Request $request, $id)
     {
         $user = $request->user();
-        $studentId = $user->student->id ?? $user->id;
+        $studentId = $user->student?->id;
 
         $requirement = StudentRequirement::where('student_id', $studentId)
             ->where('id', $id)
@@ -515,7 +515,7 @@ class StudentController extends Controller
     public function deleteRequirement(Request $request, $id)
     {
         $user = $request->user();
-        $studentId = $user->student->id ?? $user->id;
+        $studentId = $user->student?->id;
 
         $requirement = StudentRequirement::where('student_id', $studentId)
             ->where('id', $id)
@@ -604,10 +604,19 @@ class StudentController extends Controller
                 ];
             });
 
+        $viewsExhausted = $hasSubscription && !$activeSubscription->canView();
+        $canPayWithCoins = $user->coins >= $requiredCoins;
+
         return response()->json([
             'enquiry_id' => $requirement->id,
             'total_interested' => count($teachers),
             'teachers' => $teachers,
+            'views_exhausted' => $viewsExhausted,
+            'views_used' => $hasSubscription ? $activeSubscription->views_used : null,
+            'views_allowed' => $hasSubscription ? $activeSubscription->plan->views_allowed : null,
+            'coin_cost_alternative' => $requiredCoins,
+            'coins_available' => $user->coins,
+            'can_pay_with_coins' => $canPayWithCoins,
             'subscription_info' => [
                 'has_subscription' => $hasSubscription,
                 'subscription_plan' => $hasSubscription ? [
@@ -619,18 +628,18 @@ class StudentController extends Controller
                     'can_view' => $activeSubscription->canView(),
                 ] : null,
                 'can_approach' => !$hasSubscription || $activeSubscription->canView(),
-                'approach_cost_type' => $hasSubscription && !$activeSubscription->canView() ? 'coins' : ($hasSubscription ? 'free' : 'coins'),
-                'approach_coin_cost' => $hasSubscription && !$activeSubscription->canView() ? $requiredCoins : ($hasSubscription ? 0 : $requiredCoins),
+                'approach_cost_type' => $viewsExhausted ? 'coins' : ($hasSubscription ? 'free' : 'coins'),
+                'approach_coin_cost' => $viewsExhausted ? $requiredCoins : ($hasSubscription ? 0 : $requiredCoins),
                 'user_coins' => $user->coins,
-                'can_approach_with_coins' => $user->coins >= $requiredCoins,
+                'can_approach_with_coins' => $canPayWithCoins,
                 'message' => $hasSubscription ? (
-                    $activeSubscription->canView()
-                        ? "Approach tutor with subscription ({$activeSubscription->getRemainingViews()} views remaining)"
-                        : "Subscription views exhausted. Pay {$requiredCoins} coins to approach tutors."
+                    $viewsExhausted
+                        ? "Subscription views exhausted. Pay {$requiredCoins} coins to approach tutors."
+                        : "Approach tutor with subscription ({$activeSubscription->getRemainingViews()} views remaining)"
                 ) : "Pay {$requiredCoins} coins to approach tutors."
             ],
             'approach_coin_cost' => $requiredCoins,
-            'approach_cost_label' => $hasSubscription && !$activeSubscription->canView() ? "₹{$requiredCoins} (views exhausted)" : ($hasSubscription ? "Free" : "₹{$requiredCoins}"),
+            'approach_cost_label' => $viewsExhausted ? "{$requiredCoins} coins" : ($hasSubscription ? "Free" : "{$requiredCoins} coins"),
             'nationality' => \App\Services\CoinPricingService::getNationalityInfo($user)['nationality'],
             'pricing_details' => [
                 'indian' => config('coins.pricing_by_nationality.approach_tutor.indian', 49),
@@ -704,25 +713,37 @@ class StudentController extends Controller
         $hasSubscription = $activeSubscription !== null;
         
         // Check subscription view limit before allowing action
-        if ($hasSubscription && !$activeSubscription->canView()) {
+        $viewsExhausted = $hasSubscription && !$activeSubscription->canView();
+        if ($viewsExhausted) {
             $remaining = $activeSubscription->getRemainingViews();
-            // Views exhausted - check if they have coins to proceed
-            if ($user->coins < $approachCost) {
+            $canPayWithCoins = $user->coins >= $approachCost;
+
+            // Unless user explicitly chose to pay with coins, show the choice modal
+            if (!$request->boolean('use_coins')) {
                 return response()->json([
                     'success' => false,
-                    'message' => "You've used all ({$activeSubscription->views_used}/{$activeSubscription->plan->views_allowed}) views. Pay {$approachCost} coins to approach or upgrade your subscription.",
+                    'message' => "Your subscription views are exhausted ({$activeSubscription->views_used}/{$activeSubscription->plan->views_allowed} used). Choose how to proceed.",
                     'views_exhausted' => true,
                     'views_used' => $activeSubscription->views_used,
                     'views_allowed' => $activeSubscription->plan->views_allowed,
                     'remaining_views' => $remaining,
                     'coin_cost_alternative' => $approachCost,
                     'coins_available' => $user->coins,
-                    'can_pay_with_coins' => false,
-                    'suggestion' => "Pay {$approachCost} coins or upgrade subscription"                
+                    'can_pay_with_coins' => $canPayWithCoins,
                 ], 403);
             }
+
+            // User chose to pay with coins - verify sufficient balance
+            if (!$canPayWithCoins) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Insufficient coins. You need {$approachCost} coins to proceed.",
+                    'required_coins' => $approachCost,
+                    'coins_available' => $user->coins,
+                ], 402);
+            }
         }
-        
+
         // Check if user has enough coins (only if no subscription)
         if (!$hasSubscription && $user->coins < $approachCost) {
             return response()->json([
@@ -731,25 +752,30 @@ class StudentController extends Controller
                 'current_balance' => $user->coins,
             ], 402);
         }
-        
-        // Deduct coins only if user does NOT have active subscription
-        if (!$hasSubscription && $approachCost > 0) {
+
+        // Deduct coins if: no subscription OR subscription views exhausted (user chose to pay with coins)
+        if ((!$hasSubscription || $viewsExhausted) && $approachCost > 0) {
             $user->decrement('coins', $approachCost);
-            
+
+            $description = 'Approached teacher ' . ($tutor->user->name ?? 'Tutor') . ' for requirement #' . $requirement->id;
+            if ($viewsExhausted) {
+                $description .= ' (subscription views exhausted)';
+            }
+
             // Record transaction
             \App\Models\CoinTransaction::create([
                 'user_id' => $user->id,
                 'type' => 'tutor_approach',
                 'amount' => -$approachCost,
-                'description' => 'Approached teacher ' . ($tutor->user->name ?? 'Tutor') . ' for requirement #' . $requirement->id,
+                'description' => $description,
                 'balance_after' => $user->fresh()->coins,
                 'meta' => json_encode([
                     'tutor_id' => $tutorId,
                     'requirement_id' => $requirement->id,
                 ]),
             ]);
-        } else if ($hasSubscription) {
-            // Track subscription view for all actions (unlimited or limited plans)
+        } else if ($hasSubscription && !$viewsExhausted) {
+            // Track subscription view only when views are still available
             \App\Models\SubscriptionViewLog::create([
                 'user_id' => $user->id,
                 'user_subscription_id' => $activeSubscription->id,
@@ -758,7 +784,7 @@ class StudentController extends Controller
                 'action_type' => 'student_approach_tutor',
                 'viewed_at' => now(),
             ]);
-            
+
             // Update views_used count
             $activeSubscription->incrementViewCount();
         }
@@ -797,14 +823,15 @@ class StudentController extends Controller
         //     }
         // }
 
+        $usedCoinsAsFallback = $viewsExhausted && $approachCost > 0;
         return response()->json([
-            'message' => $hasSubscription 
-                ? 'You have successfully approached ' . ($tutor->user->name ?? 'Tutor') . ' using your subscription!' 
+            'message' => ($hasSubscription && !$usedCoinsAsFallback)
+                ? 'You have successfully approached ' . ($tutor->user->name ?? 'Tutor') . ' using your subscription!'
                 : 'You have successfully approached ' . ($tutor->user->name ?? 'Tutor') . ' for ' . $approachCost . ' coins!',
             'requirement' => $requirement->fresh(),
-            'coins_deducted' => $hasSubscription ? 0 : $approachCost,
+            'coins_deducted' => ($hasSubscription && !$usedCoinsAsFallback) ? 0 : $approachCost,
             'current_balance' => $user->fresh()->coins,
-            'used_subscription' => $hasSubscription,
+            'used_subscription' => $hasSubscription && !$usedCoinsAsFallback,
             'subscription_info' => $hasSubscription ? [
                 'views_used' => $activeSubscription->views_used,
                 'views_allowed' => $activeSubscription->plan->views_allowed,
@@ -827,7 +854,7 @@ class StudentController extends Controller
     public function approachedTutors(Request $request)
     {
         $user = $request->user();
-        $studentId = $user->student->id ?? $user->id;
+        $studentId = $user->student?->id;
 
         // Get hired tutors from bookings
         $bookings = \App\Models\Booking::with(['tutor', 'tutor.user', 'tutor.subjects'])
