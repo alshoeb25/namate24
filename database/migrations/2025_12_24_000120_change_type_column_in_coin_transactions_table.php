@@ -8,6 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::getDriverName() === 'sqlite') return; // SQLite is typeless; skip ENUM modification
         if (Schema::hasTable('coin_transactions')) {
             DB::statement("ALTER TABLE coin_transactions MODIFY type VARCHAR(50)");
         }
@@ -15,6 +16,7 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (DB::getDriverName() === 'sqlite') return;
         if (Schema::hasTable('coin_transactions')) {
             DB::statement("ALTER TABLE coin_transactions MODIFY type ENUM('purchase','referral_bonus','referral_reward','booking','refund','admin_credit','admin_debit')");
         }

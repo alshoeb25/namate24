@@ -38,31 +38,34 @@ return new class extends Migration
         }
 
         // Now drop the columns from student_requirements
-        // Check if foreign key exists before dropping
-        $foreignKeyExists = \DB::select(
-            "SELECT CONSTRAINT_NAME 
-             FROM information_schema.KEY_COLUMN_USAGE 
-             WHERE TABLE_SCHEMA = DATABASE() 
-             AND TABLE_NAME = 'student_requirements' 
-             AND COLUMN_NAME = 'approached_teacher_id' 
-             AND CONSTRAINT_NAME LIKE '%foreign%'"
-        );
+        // Check if foreign key exists before dropping (MySQL only; SQLite has no named FKs)
+        if (\DB::getDriverName() !== 'sqlite') {
+            $foreignKeyExists = \DB::select(
+                "SELECT CONSTRAINT_NAME
+                 FROM information_schema.KEY_COLUMN_USAGE
+                 WHERE TABLE_SCHEMA = DATABASE()
+                 AND TABLE_NAME = 'student_requirements'
+                 AND COLUMN_NAME = 'approached_teacher_id'
+                 AND CONSTRAINT_NAME LIKE '%foreign%'"
+            );
 
-        if (!empty($foreignKeyExists)) {
-            $constraintName = $foreignKeyExists[0]->CONSTRAINT_NAME;
-            \DB::statement("ALTER TABLE student_requirements DROP FOREIGN KEY `{$constraintName}`");
+            if (!empty($foreignKeyExists)) {
+                $constraintName = $foreignKeyExists[0]->CONSTRAINT_NAME;
+                \DB::statement("ALTER TABLE student_requirements DROP FOREIGN KEY `{$constraintName}`");
+            }
         }
 
-        Schema::table('student_requirements', function (Blueprint $table) {
-            // Drop columns
-            if (Schema::hasColumn('student_requirements', 'approached_teacher_id')) {
-                $table->dropColumn('approached_teacher_id');
-            }
-            
-            if (Schema::hasColumn('student_requirements', 'approached_at')) {
-                $table->dropColumn('approached_at');
-            }
-        });
+        // SQLite cannot drop FK-constrained columns; skip drop in test environment
+        if (\DB::getDriverName() !== 'sqlite') {
+            Schema::table('student_requirements', function (Blueprint $table) {
+                if (Schema::hasColumn('student_requirements', 'approached_teacher_id')) {
+                    $table->dropColumn('approached_teacher_id');
+                }
+                if (Schema::hasColumn('student_requirements', 'approached_at')) {
+                    $table->dropColumn('approached_at');
+                }
+            });
+        }
     }
 
     /**

@@ -62,7 +62,7 @@ return [
         'post' => env('ENQUIRY_POST_FEE', 10),
         // Unlock enquiry cost (access via config('enquiry.fees.unlock'))
         'unlock' => env('ENQUIRY_UNLOCK_FEE', 10),
-        // Enable dynamic pricing based on demand/region (future feature)
+        // Enable dynamic pricing based on demand/region
         'dynamic_pricing' => env('ENQUIRY_DYNAMIC_PRICING', false),
         // Partial refund if enquiry auto-closes with 0 leads (0-100%)
         'refund_percentage' => env('ENQUIRY_REFUND_PERCENTAGE', 100),
@@ -100,6 +100,65 @@ return [
         'unlock_validity_days' => env('ENQUIRY_UNLOCK_VALIDITY_DAYS', 7),
         // Days to keep enquiry history before archiving
         'retention_days' => env('ENQUIRY_RETENTION_DAYS', 90),
+    ],
+
+    // ── Dynamic Pricing ────────────────────────────────────────────────────────
+    'dynamic_pricing' => [
+        // Master switch — set ENQUIRY_DYNAMIC_PRICING=true in .env to enable
+        'enabled' => env('ENQUIRY_DYNAMIC_PRICING', false),
+
+        // Subject demand classification keywords
+        'high_demand_keywords' => [
+            'math', 'mathematics', 'physics', 'chemistry', 'biology', 'science',
+            'coding', 'programming', 'computer', 'software', 'data', 'python',
+            'javascript', 'java', 'c++', 'react', 'node', 'sql',
+            'machine learning', 'ai', 'artificial intelligence',
+            'engineering', 'economics', 'finance', 'accounting',
+            'statistics', 'calculus', 'algebra',
+        ],
+        'medium_demand_keywords' => [
+            'english', 'writing', 'grammar', 'music', 'piano', 'guitar', 'violin',
+            'singing', 'dance', 'spanish', 'french', 'german', 'language',
+            'history', 'geography', 'art', 'drawing', 'yoga', 'fitness',
+            'spoken english', 'public speaking', 'communication',
+        ],
+
+        // Coin price tiers per demand level: [base_min, base_max, peak_max]
+        'demand_tiers' => [
+            'high'   => ['base_min' => 10, 'base_max' => 50,  'peak_max' => 150],
+            'medium' => ['base_min' => 10, 'base_max' => 20,  'peak_max' => 50],
+            'low'    => ['base_min' => 1,  'base_max' => 5,   'peak_max' => 10],
+        ],
+
+        // Region price multipliers (applied to base price)
+        'region_multipliers' => [
+            'high_income' => 2.0,   // US, UK, CA, AE, AU, SG …
+            'standard'    => 1.5,   // Rest of world
+            'india'       => 1.0,   // India baseline
+        ],
+
+        // Countries classified as high-income (2× multiplier)
+        'high_income_countries' => ['US', 'GB', 'CA', 'AE', 'AU', 'SG', 'NZ', 'IE', 'CH', 'NO', 'SE', 'DK'],
+
+        // Competition multiplier: each new applicant adds this fraction to price
+        'competition_rate' => 0.15,
+
+        // 36-hour decay rule
+        'decay_hours'         => 36,
+        'decay_min_applicants'=> 3,
+    ],
+
+    // ── Tutor Ranking / Bid System ────────────────────────────────────────────
+    'ranking' => [
+        // Monthly coin bid tiers → visibility level labels
+        'bid_tiers' => [
+            ['min' => 2500, 'label' => 'Extreme Visibility', 'rank_range' => [1, 5]],
+            ['min' => 1000, 'label' => 'High Visibility',    'rank_range' => [6, 20]],
+            ['min' => 500,  'label' => 'Moderate Visibility','rank_range' => [21, 50]],
+            ['min' => 0,    'label' => 'Low Visibility',     'rank_range' => [51, 999]],
+        ],
+        // Max early-access window in minutes (Rank 1 = 0 min, Rank 100 = this value)
+        'max_early_access_minutes' => 120,
     ],
 
     // Enable audit trail logging (tracks fee changes, status changes)

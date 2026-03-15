@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Exceptions\InsufficientBalanceException;
 use App\Jobs\NotifyTutorsOfNewRequirement;
+use App\Jobs\UpdateRequirementDynamicPrice;
 use App\Notifications\CoinSpentNotification;
 use App\Models\EnquiryUnlock;
 use App\Models\StudentRequirement;
@@ -14,8 +15,10 @@ use RuntimeException;
 
 class EnquiryService
 {
-    public function __construct(private WalletService $walletService)
-    {
+    public function __construct(
+        private WalletService $walletService,
+        private DynamicPricingService $dynamicPricing,
+    ) {
     }
 
     public function createForStudent(array $data, User $student, array $subjectIds = []): StudentRequirement
@@ -79,8 +82,13 @@ class EnquiryService
                 $enquiry->subjects()->sync($subjectIds);
             }
 
-            // Reload requirement with subjects for notification
-            $enquiry = $enquiry->fresh(['subjects']);
+            // Reload requirement with subjects for dynamic pricing + notification
+            $enquiry = $enquiry->fresh(['subjects', 'subject']);
+
+            // Initialize dynamic price (async-safe — runs in same request, no queue needed at creation)
+            if (config('enquiry.fees.dynamic_pricing', false)) {
+                $this->dynamicPricing->initializePrice($enquiry);
+            }
 
             Log::info('New enquiry posted, dispatching tutor notifications', [
                 'requirement_id' => $enquiry->id,
@@ -238,6 +246,11 @@ class EnquiryService
 
             return [$lockedEnquiry->fresh(), $unlock, true];
         });
+
+        // Recalculate dynamic price in background after new unlock
+        if ($result[2] && config('enquiry.fees.dynamic_pricing', false)) {
+            UpdateRequirementDynamicPrice::dispatch($result[0]->id)->onQueue('default');
+        }
 
         // Send coin spent notification outside transaction (only if coins were deducted)
         if ($transaction) {

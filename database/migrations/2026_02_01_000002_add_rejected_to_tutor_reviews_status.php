@@ -18,7 +18,9 @@ return new class extends Migration
             return;
         }
 
-        DB::statement("ALTER TABLE tutor_reviews MODIFY COLUMN status ENUM('pending','approved','rejected') DEFAULT 'pending'");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE tutor_reviews MODIFY COLUMN status ENUM('pending','approved','rejected') DEFAULT 'pending'");
+        }
     }
 
     public function down(): void
@@ -27,6 +29,7 @@ return new class extends Migration
             return;
         }
 
+        if (DB::getDriverName() === 'sqlite') return;
         DB::statement("ALTER TABLE tutor_reviews MODIFY COLUMN status ENUM('pending','approved') DEFAULT 'pending'");
     }
 };

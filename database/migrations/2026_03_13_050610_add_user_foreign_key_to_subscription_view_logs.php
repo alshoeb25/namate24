@@ -15,14 +15,12 @@ return new class extends Migration
             // Ensure user_id column exists as unsigned big integer
             if (!Schema::hasColumn('subscription_view_logs', 'user_id')) {
                 $table->unsignedBigInteger('user_id')->after('id')->comment('Reference to user who performed the action');
+                // Add FK only when we add the column (fresh installs already have it)
+                $table->foreign('user_id', 'svl_user_fk')
+                    ->references('id')
+                    ->on('users')
+                    ->onDelete('cascade');
             }
-            
-            // Add foreign key constraint for user_id
-            // This references the users table to ensure referential integrity
-            $table->foreign('user_id', 'svl_user_fk')
-                ->references('id')
-                ->on('users')
-                ->onDelete('cascade');
         });
     }
 

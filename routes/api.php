@@ -400,6 +400,10 @@ Route::middleware('auth:api')->group(function() {
         // Settings
         Route::get('settings', [TutorProfileController::class, 'getSettings'])->name('settings');
         Route::post('settings', [TutorProfileController::class, 'updateSettings'])->name('update-settings');
+
+        // Ranking Bid
+        Route::get('ranking-bid', [\App\Http\Controllers\Api\TutorRankingController::class, 'show'])->name('ranking-bid');
+        Route::post('ranking-bid', [\App\Http\Controllers\Api\TutorRankingController::class, 'update'])->name('update-ranking-bid');
     });
 
     // WhatsApp Contact Routes (Public)

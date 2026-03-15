@@ -6,6 +6,7 @@ use App\Exceptions\InsufficientBalanceException;
 use App\Http\Controllers\Controller;
 use App\Models\EnquiryUnlock;
 use App\Models\StudentRequirement;
+use App\Services\DynamicPricingService;
 use App\Services\EnquiryService;
 use App\Services\LabelService;
 use Illuminate\Http\Request;
@@ -15,7 +16,8 @@ class EnquiryController extends Controller
 {
     public function __construct(
         private EnquiryService $enquiryService,
-        private LabelService $labelService
+        private LabelService $labelService,
+        private DynamicPricingService $dynamicPricing,
     ) {
     }
 
@@ -43,6 +45,11 @@ class EnquiryController extends Controller
             return response()->json(['message' => 'Your profile is not verified'], 403);
         }
 
+        // ── Early-access filter (Ranking system) ─────────────────────────────
+        // Tutors with higher monthly_bid see requirements sooner.
+        // posted_at + early_access_minutes <= NOW()
+        $earlyAccessMinutes = $tutor->early_access_minutes ?? 120;
+
         $query = StudentRequirement::query()
             ->where('status', 'active')
             ->where(function ($q) {
@@ -52,6 +59,11 @@ class EnquiryController extends Controller
             ->whereHas('student', function ($q) {
                 $q->where('is_disabled', false)
                   ->whereHas('user', fn($u) => $u->where('is_disabled', false));
+            })
+            ->where(function ($q) use ($earlyAccessMinutes) {
+                // Requirement is visible only after posted_at + delay has passed
+                $q->whereNull('posted_at')
+                  ->orWhere('posted_at', '<=', now()->subMinutes($earlyAccessMinutes));
             })
             ->with(['subject', 'subjects', 'student.user'])
             ->withExists([
@@ -128,16 +140,19 @@ class EnquiryController extends Controller
                 'is_full' => $enquiry->current_leads >= $enquiry->max_leads,
             ]);
             
-            // Add dynamic unlock pricing based on tutor's (user's) nationality
-            // Tutor unlocking requirements uses unlock pricing (49/99)
+            // Add dynamic unlock pricing based on tutor's nationality + dynamic pricing
             $isIndia = $user && $user->country_iso === 'IN';
-            $unlockPrice = $isIndia 
+            $staticPrice = $isIndia
                 ? config('enquiry.pricing_by_nationality.unlock.indian', 49)
                 : config('enquiry.pricing_by_nationality.unlock.non_indian', 99);
+            $unlockPrice = $this->dynamicPricing->getEffectiveUnlockPrice($enquiry, $user->country_iso ?? '');
             $enquiry->setAttribute('unlock_price', $unlockPrice);
             $enquiry->setAttribute('pricing_details', [
-                'indian' => config('enquiry.pricing_by_nationality.unlock.indian', 49),
-                'non_indian' => config('enquiry.pricing_by_nationality.unlock.non_indian', 99),
+                'indian'       => config('enquiry.pricing_by_nationality.unlock.indian', 49),
+                'non_indian'   => config('enquiry.pricing_by_nationality.unlock.non_indian', 99),
+                'dynamic_price'=> $enquiry->dynamic_price ?? 0,
+                'demand_level' => $enquiry->demand_level ?? null,
+                'is_dynamic'   => config('enquiry.fees.dynamic_pricing', false) && ($enquiry->dynamic_price ?? 0) > 0,
             ]);
             
             return $enquiry;

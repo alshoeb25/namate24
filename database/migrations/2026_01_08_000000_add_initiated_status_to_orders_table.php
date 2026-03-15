@@ -12,6 +12,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (DB::getDriverName() === 'sqlite') return;
         // Add 'initiated' to the orders status enum
         DB::statement("ALTER TABLE `orders` MODIFY COLUMN `status` ENUM('pending', 'initiated', 'completed', 'failed', 'cancelled') DEFAULT 'initiated'");
     }
@@ -21,6 +22,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (DB::getDriverName() === 'sqlite') return;
         // Remove 'initiated' from the orders status enum
         DB::statement("ALTER TABLE `orders` MODIFY COLUMN `status` ENUM('pending', 'completed', 'failed', 'cancelled') DEFAULT 'pending'");
     }
