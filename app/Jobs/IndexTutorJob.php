@@ -32,6 +32,11 @@ class IndexTutorJob implements ShouldQueue
      */
     public function handle(): void
     {
+        // Skip when Elasticsearch is disabled (e.g., test environment)
+        if (!config('elasticsearch.enabled', false)) {
+            return;
+        }
+
         try {
             $tutor = Tutor::with(['subjects', 'user'])->find($this->tutorId);
 

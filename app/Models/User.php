@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -14,7 +15,7 @@ use Filament\Panel;
 
 class User extends Authenticatable implements JWTSubject, FilamentUser
 {
-    use Notifiable, HasRoles;
+    use HasFactory, Notifiable, HasRoles;
 
     protected $fillable = ['name','email','phone','country_code','city','area','address','lat','lng','country','country_iso','password',
     'avatar','role','phone_otp','phone_otp_expires_at','phone_verified_at','email_verified_at',

@@ -19,7 +19,9 @@ class StudentRequirement extends Model
         // Lead/coin fields
         'post_fee','unlock_price','max_leads','current_leads','lead_status','posted_at',
         // Teachers view tracking
-        'teachers_viewed_at','teachers_view_coins'
+        'teachers_viewed_at','teachers_view_coins',
+        // Dynamic pricing fields
+        'dynamic_price','base_price','demand_level','region_code','price_decayed','decay_checked_at','last_price_update',
     ];
 
     protected $casts = [
@@ -29,6 +31,11 @@ class StudentRequirement extends Model
         'posted_at' => 'datetime',
         'hired_at' => 'datetime',
         'teachers_viewed_at' => 'datetime',
+        'price_decayed' => 'boolean',
+        'decay_checked_at' => 'datetime',
+        'last_price_update' => 'datetime',
+        'dynamic_price' => 'integer',
+        'base_price' => 'integer',
     ];
 
     protected $appends = ['subject_name', 'subject_names'];

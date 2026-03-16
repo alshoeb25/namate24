@@ -11,10 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (\DB::getDriverName() === 'sqlite') return; // SQLite: no named FK drops
         Schema::table('student_tutor_contacts', function (Blueprint $table) {
             // Drop the incorrect foreign key that references users
             $table->dropForeign('stc_tutor_fk');
-            
+
             // Add correct foreign key referencing tutors table
             $table->foreign('tutor_id', 'stc_tutor_fk')
                   ->references('id')

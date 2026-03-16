@@ -11,6 +11,17 @@ class EnquiryUnlock extends Model
         'enquiry_id',
         'tutor_id',
         'unlock_price',
+        'student_viewed_at',
+        'auto_refunded',
+        'auto_refunded_at',
+        'created_at',
+        'updated_at',
+    ];
+
+    protected $casts = [
+        'auto_refunded' => 'boolean',
+        'student_viewed_at' => 'datetime',
+        'auto_refunded_at' => 'datetime',
     ];
 
     public function enquiry(): BelongsTo

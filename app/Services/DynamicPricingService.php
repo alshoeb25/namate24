@@ -122,8 +122,8 @@ class DynamicPricingService
             return true;
         }
 
-        // Only apply decay within the first 36 hours
-        if (!$req->posted_at || $req->posted_at->diffInHours(now()) > self::DECAY_HOURS) {
+        // Only apply decay once the requirement is older than 36 hours
+        if (!$req->posted_at || $req->posted_at->diffInHours(now()) < self::DECAY_HOURS) {
             $req->update(['decay_checked_at' => now()]);
             return false;
         }

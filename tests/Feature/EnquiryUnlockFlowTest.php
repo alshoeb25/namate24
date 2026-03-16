@@ -61,6 +61,16 @@ class EnquiryUnlockFlowTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Seed roles required by Spatie Permission
+        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'student', 'guard_name' => 'web']);
+        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'tutor',   'guard_name' => 'web']);
+        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin',   'guard_name' => 'web']);
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private function makeStudent(array $userAttrs = []): array
@@ -70,7 +80,7 @@ class EnquiryUnlockFlowTest extends TestCase
             'country_iso' => 'IN',
         ], $userAttrs));
         $user->assignRole('student');
-        $student = Student::create(['user_id' => $user->id]);
+        $student = Student::create(['user_id' => $user->id, 'is_disabled' => false]);
         return [$user, $student];
     }
 
@@ -93,7 +103,10 @@ class EnquiryUnlockFlowTest extends TestCase
 
     private function makeRequirement(Student $student, array $attrs = []): StudentRequirement
     {
-        $subject = Subject::firstOrCreate(['name' => 'Mathematics']);
+        $subject = Subject::firstOrCreate(
+            ['name' => 'Mathematics'],
+            ['name' => 'Mathematics', 'slug' => 'mathematics']
+        );
         return StudentRequirement::create(array_merge([
             'student_id'    => $student->id,
             'subject_id'    => $subject->id,
@@ -151,8 +164,8 @@ class EnquiryUnlockFlowTest extends TestCase
         $req                 = $this->makeRequirement($student);
         $cost                = $this->unlockPrice($tUser); // 49 for IN
 
-        $this->actingAs($tUser)
-             ->postJson("/api/enquiry/{$req->id}/unlock")
+        $this->actingAs($tUser, 'api')
+             ->postJson("/api/enquiries/{$req->id}/unlock")
              ->assertOk()
              ->assertJsonPath('charged', true)
              ->assertJsonPath('coins_charged', $cost);
@@ -169,8 +182,8 @@ class EnquiryUnlockFlowTest extends TestCase
         [$tUser, $tutor]   = $this->makeTutor(['coins' => 10]); // not enough
         $req               = $this->makeRequirement($student);
 
-        $this->actingAs($tUser)
-             ->postJson("/api/enquiry/{$req->id}/unlock")
+        $this->actingAs($tUser, 'api')
+             ->postJson("/api/enquiries/{$req->id}/unlock")
              ->assertStatus(422)
              ->assertJsonStructure(['message', 'required', 'balance']);
 
@@ -191,8 +204,8 @@ class EnquiryUnlockFlowTest extends TestCase
 
         $this->giveSubscription($tUser, viewsAllowed: null); // unlimited
 
-        $this->actingAs($tUser)
-             ->postJson("/api/enquiry/{$req->id}/unlock")
+        $this->actingAs($tUser, 'api')
+             ->postJson("/api/enquiries/{$req->id}/unlock")
              ->assertOk()
              ->assertJsonPath('charged', true)
              ->assertJsonPath('coins_charged', 0)
@@ -211,8 +224,8 @@ class EnquiryUnlockFlowTest extends TestCase
 
         $sub = $this->giveSubscription($tUser, viewsAllowed: 5, viewsUsed: 2);
 
-        $this->actingAs($tUser)
-             ->postJson("/api/enquiry/{$req->id}/unlock")
+        $this->actingAs($tUser, 'api')
+             ->postJson("/api/enquiries/{$req->id}/unlock")
              ->assertOk()
              ->assertJsonPath('coins_charged', 0)
              ->assertJsonPath('used_subscription', true);
@@ -234,8 +247,8 @@ class EnquiryUnlockFlowTest extends TestCase
 
         $this->giveSubscription($tUser, viewsAllowed: 5, viewsUsed: 5); // exhausted
 
-        $response = $this->actingAs($tUser)
-                         ->postJson("/api/enquiry/{$req->id}/unlock")
+        $response = $this->actingAs($tUser, 'api')
+                         ->postJson("/api/enquiries/{$req->id}/unlock")
                          ->assertStatus(403);
 
         $response->assertJsonPath('views_exhausted', true)
@@ -256,8 +269,8 @@ class EnquiryUnlockFlowTest extends TestCase
 
         $this->giveSubscription($tUser, viewsAllowed: 5, viewsUsed: 5);
 
-        $this->actingAs($tUser)
-             ->postJson("/api/enquiry/{$req->id}/unlock", ['use_coins' => true])
+        $this->actingAs($tUser, 'api')
+             ->postJson("/api/enquiries/{$req->id}/unlock", ['use_coins' => true])
              ->assertOk()
              ->assertJsonPath('charged', true);
 
@@ -274,8 +287,8 @@ class EnquiryUnlockFlowTest extends TestCase
 
         $this->giveSubscription($tUser, viewsAllowed: 5, viewsUsed: 5);
 
-        $this->actingAs($tUser)
-             ->postJson("/api/enquiry/{$req->id}/unlock", ['use_coins' => true])
+        $this->actingAs($tUser, 'api')
+             ->postJson("/api/enquiries/{$req->id}/unlock", ['use_coins' => true])
              ->assertStatus(422)
              ->assertJsonStructure(['message', 'required', 'balance']);
 
@@ -295,7 +308,7 @@ class EnquiryUnlockFlowTest extends TestCase
         $req               = $this->makeRequirement($student);
 
         // Set a high-demand subject name via the relationship
-        $subject = Subject::firstOrCreate(['name' => 'Python Programming']);
+        $subject = Subject::firstOrCreate(['name' => 'Python Programming'], ['name' => 'Python Programming', 'slug' => 'python-programming']);
         $req->subjects()->sync([$subject->id]);
         $req->load('subjects');
 
@@ -309,7 +322,7 @@ class EnquiryUnlockFlowTest extends TestCase
 
         [$sUser, $student] = $this->makeStudent();
         $req               = $this->makeRequirement($student);
-        $subject           = Subject::firstOrCreate(['name' => 'Piano']);
+        $subject           = Subject::firstOrCreate(['name' => 'Piano'], ['name' => 'Piano', 'slug' => 'piano']);
         $req->subjects()->sync([$subject->id]);
         $req->load('subjects');
 
@@ -322,7 +335,10 @@ class EnquiryUnlockFlowTest extends TestCase
         $service = new DynamicPricingService();
 
         [$sUser, $student] = $this->makeStudent();
-        $req               = $this->makeRequirement($student, ['other_subject' => 'Ancient Pottery']);
+        // Create a low-demand subject and requirement pointing to it
+        $lowSubject = Subject::firstOrCreate(['name' => 'Ancient Pottery'], ['name' => 'Ancient Pottery', 'slug' => 'ancient-pottery']);
+        $req        = $this->makeRequirement($student, ['subject_id' => $lowSubject->id]);
+        $req->subjects()->sync([]);  // detach any many-to-many subjects
         $req->load('subjects', 'subject');
 
         $this->assertEquals('low', $service->classifyDemandLevel($req));
@@ -435,8 +451,8 @@ class EnquiryUnlockFlowTest extends TestCase
         // Requirement posted just now
         $req = $this->makeRequirement($student, ['posted_at' => now()]);
 
-        $response = $this->actingAs($tUser)
-                         ->getJson('/api/enquiries')
+        $response = $this->actingAs($tUser, 'api')
+                         ->getJson('/api/tutor-jobs')
                          ->assertOk();
 
         $ids = collect($response->json('data'))->pluck('id')->toArray();
@@ -455,8 +471,8 @@ class EnquiryUnlockFlowTest extends TestCase
         // Requirement posted 60 minutes ago — still inside the 120-min window
         $req = $this->makeRequirement($student, ['posted_at' => now()->subMinutes(60)]);
 
-        $response = $this->actingAs($tUser)
-                         ->getJson('/api/enquiries')
+        $response = $this->actingAs($tUser, 'api')
+                         ->getJson('/api/tutor-jobs')
                          ->assertOk();
 
         $ids = collect($response->json('data'))->pluck('id')->toArray();
@@ -595,7 +611,7 @@ class EnquiryUnlockFlowTest extends TestCase
 
         $this->giveSubscription($sUser, viewsAllowed: null); // unlimited
 
-        $this->actingAs($sUser)
+        $this->actingAs($sUser, 'api')
              ->postJson("/api/student/requirements/{$req->id}/approach-teacher", [
                  'teacher_id' => $tutor->id,
              ])
@@ -618,7 +634,7 @@ class EnquiryUnlockFlowTest extends TestCase
         ]);
 
         // No subscription — coins will be deducted
-        $this->actingAs($sUser)
+        $this->actingAs($sUser, 'api')
              ->postJson("/api/student/requirements/{$req->id}/approach-teacher", [
                  'teacher_id' => $tutor->id,
              ])
@@ -643,7 +659,7 @@ class EnquiryUnlockFlowTest extends TestCase
 
         $this->giveSubscription($sUser, viewsAllowed: 3, viewsUsed: 3); // exhausted
 
-        $response = $this->actingAs($sUser)
+        $response = $this->actingAs($sUser, 'api')
                          ->postJson("/api/student/requirements/{$req->id}/approach-teacher", [
                              'teacher_id' => $tutor->id,
                          ])
@@ -665,8 +681,8 @@ class EnquiryUnlockFlowTest extends TestCase
         [$tUser, $tutor]   = $this->makeTutor(['coins' => 500, 'country_iso' => 'US']);
         $req               = $this->makeRequirement($student);
 
-        $response = $this->actingAs($tUser)
-                         ->postJson("/api/enquiry/{$req->id}/unlock")
+        $response = $this->actingAs($tUser, 'api')
+                         ->postJson("/api/enquiries/{$req->id}/unlock")
                          ->assertOk();
 
         $nonIndianPrice = (int) config('enquiry.pricing_by_nationality.unlock.non_indian', 99);
@@ -681,8 +697,8 @@ class EnquiryUnlockFlowTest extends TestCase
         [$tUser, $tutor]   = $this->makeTutor(['coins' => 500, 'country_iso' => 'IN']);
         $req               = $this->makeRequirement($student);
 
-        $response = $this->actingAs($tUser)
-                         ->postJson("/api/enquiry/{$req->id}/unlock")
+        $response = $this->actingAs($tUser, 'api')
+                         ->postJson("/api/enquiries/{$req->id}/unlock")
                          ->assertOk();
 
         $indianPrice = (int) config('enquiry.pricing_by_nationality.unlock.indian', 49);
@@ -703,12 +719,12 @@ class EnquiryUnlockFlowTest extends TestCase
         $cost              = $this->unlockPrice($tUser);
 
         // First unlock
-        $this->actingAs($tUser)->postJson("/api/enquiry/{$req->id}/unlock")->assertOk();
+        $this->actingAs($tUser, 'api')->postJson("/api/enquiries/{$req->id}/unlock")->assertOk();
         $coinsAfterFirst = $tUser->fresh()->coins;
 
         // Second unlock — should return charged=false, no extra deduction
-        $this->actingAs($tUser)
-             ->postJson("/api/enquiry/{$req->id}/unlock")
+        $this->actingAs($tUser, 'api')
+             ->postJson("/api/enquiries/{$req->id}/unlock")
              ->assertOk()
              ->assertJsonPath('charged', false);
 
@@ -731,12 +747,12 @@ class EnquiryUnlockFlowTest extends TestCase
         [$tUser2, $tutor2] = $this->makeTutor(['coins' => 500]);
         [$tUser3, $tutor3] = $this->makeTutor(['coins' => 500]);
 
-        $this->actingAs($tUser1)->postJson("/api/enquiry/{$req->id}/unlock")->assertOk();
-        $this->actingAs($tUser2)->postJson("/api/enquiry/{$req->id}/unlock")->assertOk();
+        $this->actingAs($tUser1, 'api')->postJson("/api/enquiries/{$req->id}/unlock")->assertOk();
+        $this->actingAs($tUser2, 'api')->postJson("/api/enquiries/{$req->id}/unlock")->assertOk();
 
         // 3rd tutor should be rejected — max reached
-        $this->actingAs($tUser3)
-             ->postJson("/api/enquiry/{$req->id}/unlock")
+        $this->actingAs($tUser3, 'api')
+             ->postJson("/api/enquiries/{$req->id}/unlock")
              ->assertStatus(422);
 
         $this->assertEquals('full', $req->fresh()->lead_status);

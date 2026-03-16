@@ -31,6 +31,10 @@ class RemoveRequirementFromIndexJob implements ShouldQueue
      */
     public function handle(): void
     {
+        if (!config('elasticsearch.enabled', false)) {
+            return;
+        }
+
         try {
             // Build Elasticsearch client
             $client = ClientBuilder::create()

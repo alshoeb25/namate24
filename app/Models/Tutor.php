@@ -22,7 +22,9 @@ class Tutor extends Model
         'charge_type','min_fee','max_fee','fee_notes',
         'experience_total_years','experience_teaching_years','experience_online_years',
         'travel_willing','travel_distance_km','online_available','has_digital_pen','helps_homework','employed_full_time',
-        'opportunities','languages'
+        'opportunities','languages',
+        // Ranking / early-access fields
+        'monthly_bid','rank','early_access_minutes','rotation_order','rank_updated_at',
     ];
 
     protected $appends = ['photo_url'];

@@ -32,6 +32,11 @@ class IndexRequirementJob implements ShouldQueue
      */
     public function handle(): void
     {
+        // Skip when Elasticsearch is disabled (e.g., test environment)
+        if (!config('elasticsearch.enabled', false)) {
+            return;
+        }
+
         try {
             $requirement = StudentRequirement::with(['student', 'subject'])->find($this->requirementId);
 

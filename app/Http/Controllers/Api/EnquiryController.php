@@ -317,9 +317,9 @@ class EnquiryController extends Controller
 
         // Calculate the actual unlock price that was charged (or would have been)
         $isIndia = $user->country_iso === 'IN';
-        $unlockPrice = $isIndia
+        $unlockPrice = (int) ($isIndia
             ? config('enquiry.pricing_by_nationality.unlock.indian', 49)
-            : config('enquiry.pricing_by_nationality.unlock.non_indian', 99);
+            : config('enquiry.pricing_by_nationality.unlock.non_indian', 99));
 
         // Get subscription info
         $activeSubscription = $user->activeSubscription();

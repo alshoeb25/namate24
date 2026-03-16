@@ -20,6 +20,11 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (\DB::getDriverName() === 'sqlite') {
+            // SQLite doesn't support named FK drops; fresh test DBs start with correct schema.
+            return;
+        }
+
         // ── Step 1: Drop all incorrect FKs first (so data can be updated freely) ──
         Schema::table('student_requirements', function (Blueprint $table) {
             $table->dropForeign('student_requirements_student_id_foreign');
