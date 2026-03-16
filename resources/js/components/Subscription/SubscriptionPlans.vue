@@ -51,15 +51,22 @@
               <span class="highlight">{{ subscription.plan_name }}</span>
             </div>
             <div class="status-item">
-              <label>Price:</label>
+              <label>Plan Price:</label>
               <span class="highlight">
-                <span v-if="isIndiaUser">₹{{ subscription.display_price }}</span>
+                <span v-if="isIndiaUser">₹{{ subscription.base_price }}</span>
                 <span v-else>${{ subscription.display_price }}</span>
               </span>
             </div>
             <div v-if="isIndiaUser && subscription.gst_amount > 0" class="status-item">
               <label>GST (18%):</label>
               <span>₹{{ (subscription.gst_amount).toFixed(2) }}</span>
+            </div>
+            <div class="status-item">
+              <label>Total Amount:</label>
+              <span class="highlight">
+                <span v-if="isIndiaUser">₹{{ Number(subscription.price).toFixed(2) }}</span>
+                <span v-else>${{ Number(subscription.price).toFixed(2) }}</span>
+              </span>
             </div>
           </div>
 
@@ -86,11 +93,11 @@
               <span>{{ formatDate(subscription.activated_at) }}</span>
             </div>
             <div class="status-item">
-              <label>Expires On:</label>
-              <span class="highlight">{{ formatDate(subscription.expires_at) }}</span>
+              <label>Expired On:</label>
+              <span class="highlight">{{ formatDate(subscription.expires_at) }} <small class="text-muted">(+{{ subscription.validity_days }} days)</small></span>
             </div>
             <div class="status-item">
-              <label>Days Remaining:</label>
+              <label>Remaining:</label>
               <span class="countdown">{{ subscription.remaining_days }} days</span>
             </div>
           </div>
@@ -142,6 +149,24 @@
         Select a subscription plan to unlock access to tutor profiles and requirements with the specified view limits.
       </p>
 
+      <!-- Region Toggle -->
+      <div class="region-toggle">
+        <button
+          class="region-btn"
+          :class="{ active: selectedRegion === 'india' }"
+          @click="selectedRegion = 'india'"
+        >
+          🇮🇳 India (INR)
+        </button>
+        <button
+          class="region-btn"
+          :class="{ active: selectedRegion === 'international' }"
+          @click="selectedRegion = 'international'"
+        >
+          🌍 Foreign National (USD)
+        </button>
+      </div>
+
       <div class="plans-grid">
         <div
           v-for="plan in plans"
@@ -154,17 +179,30 @@
             <span v-if="plan.id === 1" class="badge-popular">Most Popular</span>
           </div>
 
-          <div class="plan-price">
-            <span v-if="isIndiaUser" class="currency">₹</span>
-            <span v-else class="currency">$</span>
-            <span class="amount">{{ plan.display_price }}</span>
-            <span class="period">/month</span>
-          </div>
+          <!-- India Pricing -->
+          <template v-if="selectedRegion === 'india'">
+            <div class="plan-price">
+              <span class="currency">₹</span>
+              <span class="amount">{{ plan.base_price }}</span>
+              <span class="period">/month</span>
+            </div>
+            <div v-if="plan.gst_amount > 0" class="gst-breakdown">
+              <small>+ GST (18%): ₹{{ (plan.gst_amount).toFixed(2) }}</small>
+              <small class="total-price">Total: ₹{{ Number(plan.price).toFixed(2) }}</small>
+            </div>
+          </template>
 
-          <div v-if="isIndiaUser && plan.gst_amount > 0" class="gst-breakdown">
-            <small>Base: ₹{{ (plan.price - plan.gst_amount).toFixed(2) }}</small>
-            <small>+ GST (18%): ₹{{ (plan.gst_amount).toFixed(2) }}</small>
-          </div>
+          <!-- International / Foreign National Pricing -->
+          <template v-else>
+            <div class="plan-price">
+              <span class="currency">$</span>
+              <span class="amount">{{ foreignPrice(plan) }}</span>
+              <span class="period">/month</span>
+            </div>
+            <div class="foreign-note">
+              <small>No tax applied · Billed in USD</small>
+            </div>
+          </template>
 
           <div class="plan-features">
             <p class="feature">
@@ -199,9 +237,9 @@
             <span>{{ subscription.plan_name }}</span>
           </div>
           <div class="status-item">
-            <label>Price:</label>
+            <label>Plan Price:</label>
             <span>
-              <span v-if="isIndiaUser">₹{{ subscription.display_price }}</span>
+              <span v-if="isIndiaUser">₹{{ subscription.base_price }}</span>
               <span v-else>${{ subscription.display_price }}</span>
             </span>
           </div>
@@ -210,11 +248,18 @@
             <span>₹{{ (subscription.gst_amount).toFixed(2) }}</span>
           </div>
           <div class="status-item">
-            <label>Expires:</label>
-            <span>{{ subscription.expires_at }}</span>
+            <label>Total Amount:</label>
+            <span class="highlight">
+              <span v-if="isIndiaUser">₹{{ Number(subscription.price).toFixed(2) }}</span>
+              <span v-else>${{ Number(subscription.price).toFixed(2) }}</span>
+            </span>
           </div>
           <div class="status-item">
-            <label>Days Remaining:</label>
+            <label>Expired On:</label>
+            <span>{{ formatDate(subscription.expires_at) }} <small>(+{{ subscription.validity_days }} days)</small></span>
+          </div>
+          <div class="status-item">
+            <label>Remaining:</label>
             <span class="highlight">{{ subscription.remaining_days }} days</span>
           </div>
           <div class="status-item">
@@ -378,6 +423,7 @@ export default {
       error: null,
       success: null,
       isIndiaUser: false,
+      selectedRegion: 'india',
       razorpayReady: !!(typeof window !== 'undefined' && window.Razorpay),
     };
   },
@@ -405,7 +451,7 @@ export default {
         const response = await axios.get('/api/subscriptions/plans');
         this.plans = response.data.data;
         this.isIndiaUser = response.data.is_india_user;
-        
+
         // If no active subscription, show plans tab
         if (!this.hasActiveSubscription) {
           this.activeTab = 'browse';
@@ -654,6 +700,13 @@ export default {
         this.error = error.response?.data?.message || 'Failed to cancel subscription';
         this.cancelling = false;
       }
+    },
+
+    foreignPrice(plan) {
+      // Match backend getUSDPriceForPlan logic
+      if (plan.id === 1) return '60.00';
+      if (plan.id === 2) return '15.00';
+      return (plan.base_price * 0.12).toFixed(2);
     },
 
     formatDate(dateString) {
@@ -979,6 +1032,17 @@ export default {
   margin: 4px 0;
 }
 
+.gst-breakdown .total-price {
+  color: #4CAF50;
+  font-weight: 600;
+}
+
+.text-muted {
+  color: #999;
+  font-size: 13px;
+  font-weight: normal;
+}
+
 .plan-features {
   margin-bottom: 20px;
 }
@@ -1256,7 +1320,42 @@ export default {
 .plans-description {
   font-size: 16px;
   color: #666;
+  margin-bottom: 20px;
+}
+
+.region-toggle {
+  display: flex;
+  gap: 10px;
   margin-bottom: 30px;
+  background: #f5f5f5;
+  padding: 6px;
+  border-radius: 30px;
+  width: fit-content;
+}
+
+.region-btn {
+  background: transparent;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #666;
+  transition: all 0.25s ease;
+}
+
+.region-btn.active {
+  background: white;
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.foreign-note {
+  font-size: 12px;
+  color: #999;
+  margin-top: 5px;
+  margin-bottom: 2px;
 }
 
 /* Responsive */
