@@ -119,11 +119,11 @@ const routes = [
   { path: '/forgot-password', name: 'forgot-password', component: ForgotPassword },
   { path: '/reset-password', name: 'reset-password', component: ResetPassword },
 
-  // Tutor Wallet Routes
-  { path: '/tutor/wallet', name: 'tutor.wallet', component: () => import('../pages/TutorWallet.vue') },
-  { path: '/tutor/wallet/payment-history', name: 'tutor.payment-history', component: () => import('../pages/PaymentHistory.vue') },
-  { path: '/tutor/wallet/coin-transactions', name: 'tutor.coin-transactions', component: () => import('../pages/CoinTransactions.vue') },
-  { path: '/tutor/wallet/referrals', name: 'tutor.referrals', component: () => import('../pages/ReferralPage.vue') },
+  // Tutor Wallet Routes (temporarily disabled)
+  // { path: '/tutor/wallet', name: 'tutor.wallet', component: () => import('../pages/TutorWallet.vue') },
+  // { path: '/tutor/wallet/payment-history', name: 'tutor.payment-history', component: () => import('../pages/PaymentHistory.vue') },
+  // { path: '/tutor/wallet/coin-transactions', name: 'tutor.coin-transactions', component: () => import('../pages/CoinTransactions.vue') },
+  // { path: '/tutor/wallet/referrals', name: 'tutor.referrals', component: () => import('../pages/ReferralPage.vue') },
   { path: '/tutor/subscriptions', name: 'tutor.subscriptions', component: () => import('../pages/TutorSubscriptions.vue') },
 
   // Profile Management
@@ -141,10 +141,10 @@ const routes = [
       { path: 'requirement-details/:id', name: 'student.requirement-details', component: StudentRequirementDetail, props: true },
       { path: 'requirements/:id/edit', name: 'student.requirement-edit', component: RequestTutor },
       { path: 'contacted-tutors', name: 'student.contacted-tutors', component: ContactedTutors },
-      { path: 'wallet', name: 'student.wallet', component: () => import('../pages/StudentWallet.vue') },
-      { path: 'wallet/payment-history', name: 'student.payment-history', component: () => import('../pages/PaymentHistory.vue') },
-      { path: 'wallet/coin-transactions', name: 'student.coin-transactions', component: () => import('../pages/CoinTransactions.vue') },
-      { path: 'wallet/referrals', name: 'student.referrals', component: () => import('../pages/ReferralPage.vue') },
+      // { path: 'wallet', name: 'student.wallet', component: () => import('../pages/StudentWallet.vue') },
+      // { path: 'wallet/payment-history', name: 'student.payment-history', component: () => import('../pages/PaymentHistory.vue') },
+      // { path: 'wallet/coin-transactions', name: 'student.coin-transactions', component: () => import('../pages/CoinTransactions.vue') },
+      // { path: 'wallet/referrals', name: 'student.referrals', component: () => import('../pages/ReferralPage.vue') },
       { path: 'subscriptions', name: 'student.subscriptions', component: StudentSubscriptions },
       { path: 'reviews', name: 'student.reviews', component: StudentReviews },
       { path: 'settings', name: 'student.settings', component: () => import('../pages/StudentSettings.vue') },

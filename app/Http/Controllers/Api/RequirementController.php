@@ -49,40 +49,80 @@ class RequirementController extends Controller
             })
             ->count();
         
+        $coinsDeducted = 0;
+        
         // First 3 requirements are free, then payment required
         if ($requirementCount >= 3) {
-            // Check if user has sufficient coins
-            $requiredCoins = config('coins.requirement_post_fee', 10); // Default 10 coins
+            // ✅ Check if user has active subscription
+            $activeSubscription = $user->activeSubscription();
+            $hasSubscription = $activeSubscription !== null;
             
-            if ($user->coins < $requiredCoins) {
-                return response()->json([
-                    'error' => 'Insufficient coins',
-                    'message' => "You need {$requiredCoins} coins to post a new requirement. Your first 3 requirements were free.",
-                    'required_coins' => $requiredCoins,
-                    'current_coins' => $user->coins,
-                ], 402); // 402 Payment Required
+            if ($hasSubscription && $activeSubscription->canView()) {
+                // ✅ FREE with active subscription
+                \App\Models\SubscriptionViewLog::create([
+                    'user_id' => $user->id,
+                    'user_subscription_id' => $activeSubscription->id,
+                    'viewable_id' => null,
+                    'viewable_type' => 'requirement_post',
+                    'action_type' => 'student_post_requirement',
+                    'viewed_at' => now(),
+                ]);
+                
+                // Update views_used count
+                $activeSubscription->incrementViewCount();
+                
+                $coinsDeducted = 0;
+            } else {
+                // ❌ Deduct coins (no subscription or views exhausted)
+                $requiredCoins = config('coins.requirement_post_fee', 10); // Default 10 coins
+                
+                if ($user->coins < $requiredCoins) {
+                    return response()->json([
+                        'error' => 'Insufficient coins',
+                        'message' => $hasSubscription 
+                            ? "Your subscription views are exhausted. You need {$requiredCoins} coins to post a requirement."
+                            : "You need {$requiredCoins} coins to post a new requirement. Your first 3 requirements were free.",
+                        'required_coins' => $requiredCoins,
+                        'current_coins' => $user->coins,
+                        'has_subscription' => $hasSubscription,
+                        'views_exhausted' => $hasSubscription,
+                    ], 402); // 402 Payment Required
+                }
+                
+                // Deduct coins
+                $user->decrement('coins', $requiredCoins);
+                
+                // Create transaction record
+                \App\Models\CoinTransaction::create([
+                    'user_id' => $user->id,
+                    'amount' => -$requiredCoins,
+                    'type' => 'debit',
+                    'description' => 'Post requirement fee',
+                    'balance_after' => $user->fresh()->coins,
+                    'meta' => json_encode([
+                        'reason' => $hasSubscription ? 'subscription_views_exhausted' : 'post_fee',
+                    ]),
+                ]);
+                
+                $coinsDeducted = $requiredCoins;
             }
-            
-            // Deduct coins
-            $user->decrement('coins', $requiredCoins);
-            
-            // Create transaction record
-            \App\Models\CoinTransaction::create([
-                'user_id' => $user->id,
-                'amount' => -$requiredCoins,
-                'type' => 'debit',
-                'description' => 'Post requirement fee',
-                'balance_after' => $user->fresh()->coins,
-            ]);
         }
 
-        $requirement = StudentRequirement::create(array_merge($data, ['student_id'=>$studentId]));
+        $requirement = StudentRequirement::create(array_merge($data, [
+            'student_id' => $studentId,
+            'posted_at' => now(),
+        ]));
         
         return response()->json([
             'requirement' => $requirement,
-            'coins_deducted' => $requirementCount >= 3 ? config('coins.requirement_post_fee', 10) : 0,
+            'coins_deducted' => $coinsDeducted,
             'remaining_coins' => $user->fresh()->coins,
-            'message' => $requirementCount >= 3 ? 'Requirement posted successfully. Coins deducted.' : 'Requirement posted successfully (Free).',
+            'subscription_used' => $coinsDeducted === 0 && $requirementCount >= 3,
+            'message' => $requirementCount < 3 
+                ? 'Requirement posted successfully (Free).'
+                : ($coinsDeducted === 0
+                    ? 'Requirement posted successfully (Free with subscription).'
+                    : 'Requirement posted successfully. Coins deducted.'),
         ], 201);
     }
 

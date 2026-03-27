@@ -114,46 +114,33 @@ class PublicTutorProfileController extends Controller
         $hasSubscription = $activeSubscription !== null;
 
         // Check subscription view limit and set required coins accordingly
-        // If has subscription with available views: require 0 coins
-        // If has subscription but views exhausted: require coins as fallback
+        // If has subscription with available views: require 0 coins (FREE)
+        // If has subscription but views exhausted: only show upgrade option (NO coins)
         // If no subscription: require coins
         
         $requiredCoins = 0;
         
         if ($hasSubscription && $activeSubscription->canView()) {
-            // Has subscription with available views - no coins needed
+            // ✅ Has subscription with available views - no coins needed (FREE)
             $requiredCoins = 0;
-        } else if ($hasSubscription && !$activeSubscription->canView()) {
-            // Has subscription but views exhausted - require explicit coin payment choice
-            $requiredCoins = \App\Services\CoinPricingService::getCoinCost($user, 'contact_unlock');
-            $canPayWithCoins = $user->coins >= $requiredCoins;
-
-            // Unless user explicitly chose to pay with coins, show the choice modal
-            if (!$request->boolean('use_coins')) {
-                return response()->json([
-                    'success' => false,
-                    'message' => "Your subscription views are exhausted ({$activeSubscription->views_used}/{$activeSubscription->plan->views_allowed} used). Choose how to proceed.",
-                    'views_exhausted' => true,
-                    'views_used' => $activeSubscription->views_used,
-                    'views_allowed' => $activeSubscription->plan->views_allowed,
-                    'coin_cost_alternative' => $requiredCoins,
-                    'current_coins' => $user->coins,
-                    'can_pay_with_coins' => $canPayWithCoins,
-                ], 403);
-            }
-
-            // User chose to pay with coins
-            if (!$canPayWithCoins) {
-                return response()->json([
-                    'success' => false,
-                    'message' => "Insufficient coins. You need {$requiredCoins} coins to proceed.",
-                    'required_coins' => $requiredCoins,
-                    'current_coins' => $user->coins,
-                    'can_pay_with_coins' => false,
-                ], 402);
-            }
-        } else {
-            // No subscription - calculate coin cost
+        } 
+        else if ($hasSubscription && !$activeSubscription->canView()) {
+            // ⚠️  Has subscription but views exhausted - only show upgrade option
+            return response()->json([
+                'success' => false,
+                'message' => "Your subscription views are exhausted ({$activeSubscription->views_used}/{$activeSubscription->plan->views_allowed} used). Please upgrade your subscription to continue.",
+                'views_exhausted' => true,
+                'views_used' => $activeSubscription->views_used,
+                'views_allowed' => $activeSubscription->plan->views_allowed,
+                'subscription_info' => [
+                    'plan_name' => $activeSubscription->plan->name ?? null,
+                    'expires_at' => $activeSubscription->expires_at,
+                    'action' => 'upgrade_subscription',
+                ],
+            ], 403);
+        } 
+        else {
+            // ❌ No subscription - require coins
             $requiredCoins = \App\Services\CoinPricingService::getCoinCost($user, 'contact_unlock');
             
             // Check coin balance - block if insufficient

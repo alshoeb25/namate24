@@ -114,7 +114,7 @@ export default {
     type: {
       type: String,
       required: true,
-      validator: (value) => ['teacher', 'student'].includes(value)
+      validator: (value) => ['teacher', 'student', ''].includes(value)
     },
     redirectTo: {
       type: String,

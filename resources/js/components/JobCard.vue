@@ -26,10 +26,9 @@
           {{ isFull ? 'Lead Full' : 'Open' }}
         </span>
         <div class="mt-2 text-sm text-gray-500">{{ counterLabel }} tutors</div>
-        <div class="mt-2 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-semibold">
-          <i class="fas fa-coins"></i>
-          <span v-if="userHasSubscription">Free to unlock</span>
-          <span v-else>{{ localEnquiry.unlock_price || 0 }} coins to unlock</span>
+        <div class="mt-2 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">
+          <i class="fas fa-check-circle"></i>
+          <span>Requires Subscription</span>
         </div>
       </div>
     </div>
@@ -59,12 +58,12 @@
       </div>
     </div>
 
-    <div class="mt-5 p-4 rounded-lg border" :class="hasUnlocked ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'">
+    <div class="mt-5 p-4 rounded-lg border" :class="hasUnlocked ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50'">
       <div class="flex items-center justify-between gap-2">
-        <div class="text-sm font-semibold" :class="hasUnlocked ? 'text-green-700' : 'text-gray-800'">
+        <div class="text-sm font-semibold" :class="hasUnlocked ? 'text-green-700' : 'text-blue-800'">
           {{ hasUnlocked ? 'Contact unlocked' : 'Unlock to view contact' }}
         </div>
-        <div class="text-xs text-gray-500">{{ hasUnlocked ? 'No extra charge' : (userHasSubscription ? 'Free' : unlockLabel) }}</div>
+        <div class="text-xs" :class="hasUnlocked ? 'text-green-600' : 'text-blue-600'">{{ hasUnlocked ? 'No extra charge' : 'Subscription required' }}</div>
       </div>
 
       <div v-if="hasUnlocked" class="mt-3 space-y-1 text-sm text-gray-800">
@@ -82,7 +81,7 @@
                 class="px-4 py-2 rounded-lg text-white font-semibold shadow-sm"
                 :class="(!canUnlock || unlocking) ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'">
           <span v-if="unlocking">Unlocking...</span>
-          <span v-else>{{ userHasSubscription ? 'Unlock Free' : unlockLabel }}</span>
+          <span v-else>Unlock Contact</span>
         </button>
         <p v-if="isFull" class="mt-2 text-xs text-red-600">Lead closed. Maximum tutors reached.</p>
       </div>
@@ -140,7 +139,7 @@ const progressWidth = computed(() => {
   return `${Math.min(100, (current / max) * 100)}%`;
 });
 
-const unlockLabel = computed(() => userHasSubscription.value ? 'Unlock Contact (Free)' : `Unlock Contact (${localEnquiry.value.unlock_price || 0} coins)`);
+// ✅ No need for unlockLabel - only showing "Unlock Contact"
 
 const unlock = async () => {
   if (!userStore.token) {

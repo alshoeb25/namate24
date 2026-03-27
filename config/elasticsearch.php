@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'enabled' => env('ELASTICSEARCH_ENABLED', true),
+
      'hosts' => [
         env('ELASTICSEARCH_SCHEME', 'http') . '://' .
         env('ELASTICSEARCH_HOST', '127.0.0.1') . ':' .

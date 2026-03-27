@@ -143,25 +143,19 @@ class EnquiryService
             
             // Check subscription view limit before allowing action
             if ($hasSubscription && !$activeSubscription->canView()) {
-                $remaining = $activeSubscription->getRemainingViews();
-                
-                // Check if tutor has coins to proceed as fallback
-                if ($lockedTutor->coins < $unlockPrice) {
-                    throw new RuntimeException(
-                        "You've used all ({$activeSubscription->views_used}/{$activeSubscription->plan->views_allowed}) views. "
-                        . "Pay {$unlockPrice} coins or upgrade your subscription."
-                    );
-                }
-                // If they have coins, we'll deduct them below as fallback
+                // ✅ Only show upgrade option (no coin fallback)
+                throw new RuntimeException(
+                    "You've used all ({$activeSubscription->views_used}/{$activeSubscription->plan->views_allowed}) subscription views. "
+                    . "Please upgrade your subscription to continue."
+                );
             }
 
             // Debit coins logic:
             // Case 1: NO subscription - deduct coins if sufficient
             // Case 2: HAS subscription + views available - log view, NO coins
-            // Case 3: HAS subscription + views exhausted - deduct coins as fallback
             
             if ($unlockPrice > 0 && !$hasSubscription) {
-                // Case 1: NO subscription - must have coins
+                // ✅ Case 1: NO subscription - must have coins
                 try {
                     $transaction = $this->walletService->debit(
                         $lockedTutor,
@@ -184,32 +178,8 @@ class EnquiryService
                     throw $e;
                 }
             } else if ($hasSubscription && $activeSubscription->canView()) {
-                // Case 2: HAS subscription with available views - log view, NO coins
+                // ✅ Case 2: HAS subscription with available views - log view, NO coins
                 $transaction = null;
-            } else if ($hasSubscription && !$activeSubscription->canView() && $unlockPrice > 0) {
-                // Case 3: HAS subscription but views EXHAUSTED - deduct coins as fallback
-                try {
-                    $transaction = $this->walletService->debit(
-                        $lockedTutor,
-                        $unlockPrice,
-                        'enquiry_unlock',
-                        'Unlocked enquiry #' . $lockedEnquiry->id . ' (subscription views exhausted)',
-                        [
-                            'enquiry_id' => $lockedEnquiry->id,
-                            'student_id' => $lockedEnquiry->student_id,
-                            'reason' => 'subscription_views_exhausted',
-                        ]
-                    );
-                } catch (InsufficientBalanceException $e) {
-                    throw $e;
-                } catch (\Exception $e) {
-                    \Log::error('Failed to create fallback coin transaction for enquiry unlock', [
-                        'enquiry_id' => $lockedEnquiry->id,
-                        'tutor_id' => $tutorId,
-                        'error' => $e->getMessage(),
-                    ]);
-                    throw $e;
-                }
             }
             
             // Track subscription view if user has active subscription (all types, unlimited or limited)

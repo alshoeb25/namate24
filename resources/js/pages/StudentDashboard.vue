@@ -59,16 +59,6 @@
                 <p class="text-sm text-gray-500 text-center mt-1">View your posted requirements</p>
             </router-link>
             
-            <!-- Wallet -->
-            <router-link to="/student/wallet"
-                class="dashboard-card flex flex-col items-center justify-center gap-4 bg-white rounded-2xl p-6 shadow-md hover:shadow-xl">
-                <div class="icon-container bg-gradient-to-br from-yellow-500 to-orange-600">
-                    <i class="fas fa-wallet text-white text-2xl"></i>
-                </div>
-                <h3 class="text-xl font-semibold text-gray-800 text-center">Wallet</h3>
-                <p class="text-sm text-gray-500 text-center mt-1">Manage your credits</p>
-            </router-link>
-
             <!-- Subscriptions -->
             <router-link to="/student/subscriptions"
                 class="dashboard-card flex flex-col items-center justify-center gap-4 bg-white rounded-2xl p-6 shadow-md hover:shadow-xl">
@@ -146,18 +136,6 @@
                 <div>
                     <p class="text-lg font-semibold text-gray-800">My Requirements</p>
                     <p class="text-sm text-gray-500">View your posted requirements</p>
-                </div>
-                <i class="fas fa-chevron-right text-gray-400 ml-auto"></i>
-            </router-link>
-
-            <!-- Wallet -->
-            <router-link to="/student/wallet" class="dashboard-card flex items-center gap-4 bg-white rounded-2xl p-4 shadow-md">
-                <div class="icon-container-mobile bg-gradient-to-br from-yellow-500 to-orange-600">
-                    <i class="fas fa-wallet text-white"></i>
-                </div>
-                <div>
-                    <p class="text-lg font-semibold text-gray-800">Wallet</p>
-                    <p class="text-sm text-gray-500">Manage your credits</p>
                 </div>
                 <i class="fas fa-chevron-right text-gray-400 ml-auto"></i>
             </router-link>

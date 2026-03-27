@@ -179,21 +179,9 @@
           You've used all <strong>{{ exhaustedData.views_used }}/{{ exhaustedData.views_allowed }}</strong> views in your subscription plan.
         </p>
       </div>
-      <p class="text-gray-700 mb-5 text-center">Choose how you'd like to proceed:</p>
+      <p class="text-gray-700 mb-5 text-center">Please upgrade your subscription to continue accessing premium features.</p>
       <div class="space-y-3">
-        <button
-          v-if="exhaustedData.can_pay_with_coins"
-          @click="proceedWithCoins"
-          :disabled="unlocking"
-          class="w-full px-4 py-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-medium transition flex items-center justify-center">
-          <i class="fas fa-coins mr-2"></i>
-          Pay with Coins ({{ exhaustedData.coin_cost_alternative }} coins)
-        </button>
-        <div v-else class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center text-sm text-gray-600">
-          <i class="fas fa-coins mr-1"></i>
-          Insufficient coins (need {{ exhaustedData.coin_cost_alternative }}, have {{ exhaustedData.coins_available }})
-          <router-link to="/tutor/wallet" class="block mt-1 text-blue-600 hover:underline font-medium">Buy More Coins</router-link>
-        </div>
+        <!-- ✅ Only show upgrade option (removed coin payment option) -->
         <button
           @click="goToSubscriptions"
           class="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition flex items-center justify-center">
@@ -397,25 +385,9 @@ export default {
     }
 
     async function proceedWithCoins() {
-      showExhaustedModal.value = false;
-      unlocking.value = true;
-      try {
-        const res = await axios.post(`/api/enquiries/${route.params.id}/unlock`, { use_coins: true });
-        requirement.value = res.data.enquiry;
-        if (res.data.has_subscription !== undefined) {
-          hasSubscription.value = res.data.has_subscription;
-        }
-        const coinAmount = res.data.coins_charged || 0;
-        if (res.data.charged && userStore.user) {
-          userStore.user.coins -= coinAmount;
-        }
-        alert(`Unlocked successfully! ${coinAmount} coins deducted.`);
-      } catch (error) {
-        console.error('Error proceeding with coins:', error);
-        alert(error.response?.data?.message || 'Failed to unlock requirement');
-      } finally {
-        unlocking.value = false;
-      }
+      // ✅ Coin payment fallback removed - only showing subscription upgrade
+      // Redirect user to subscription upgrade
+      goToSubscriptions();
     }
 
     function openUnlockModal() {

@@ -417,13 +417,15 @@
             </button>
           </div>
 
-          <!-- Coin Requirement Notice -->
-          <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+          <!-- ✅ Subscription info box (no coins) -->
+          <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
             <div class="flex items-center">
-              <i class="fas fa-coins text-yellow-600 text-2xl mr-3"></i>
+              <i class="fas fa-check-circle text-blue-600 text-2xl mr-3"></i>
               <div>
-                <p class="font-semibold text-yellow-800">{{ contactUnlockCoins }} Coins Required</p>
-                <p class="text-sm text-yellow-700">Your current balance: {{ userCoins }} coins</p>
+                <p v-if="hasSubscription" class="font-semibold text-blue-800">✅ Active Subscription</p>
+                <p v-else class="font-semibold text-blue-800">❌ No Active Subscription</p>
+                <p v-if="!hasSubscription" class="text-sm text-blue-700">Upgrade your subscription to unlock contact details for free</p>
+                <p v-else class="text-sm text-blue-700">You can unlock contact details with your subscription</p>
               </div>
             </div>
           </div>
@@ -460,30 +462,52 @@
             </h3>
             <div class="bg-gray-50 rounded-lg p-4 max-h-48 overflow-y-auto text-sm text-gray-700">
               <ol class="space-y-2 list-decimal list-inside">
-                <li><strong>Nationality-Based Pricing:</strong> The cost of {{ contactUnlockCoins }} coins is based on your registered country. Indian users pay 199 coins, non-Indian users pay 399 coins.</li>
-                <li>Once you unlock contact details, {{ contactUnlockCoins }} coins will be deducted from your account.</li>
+                <li><strong>Subscription Required:</strong> Contact details can only be unlocked with an active subscription.</li>
                 <li>Contact details are provided as-is and the platform is not responsible for the accuracy.</li>
                 <li>You agree to use contact information only for educational purposes.</li>
                 <li>Any misuse of contact information may result in account suspension.</li>
-                <li>Coins are non-refundable once contact details are unlocked.</li>
                 <li>The platform does not guarantee response from the tutor.</li>
                 <li>All transactions through the platform should be documented for your safety.</li>
                 <li>You agree to our privacy policy and data protection guidelines.</li>
-                <li>By clicking "Accept & Unlock", you confirm that you have read, understood, and agree to all terms and conditions including the nationality-based pricing structure.</li>
+                <li>By clicking "Accept & Unlock", you confirm that you have read, understood, and agree to all terms and conditions.</li>
               </ol>
             </div>
           </div>
 
-          <!-- Insufficient Coins Warning -->
-          <div v-if="userCoins < contactUnlockCoins" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p class="text-red-800 font-medium">
+          <div class="mb-6">
+            <label class="flex items-start gap-3 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                v-model="acceptedPolicies"
+                class="mt-1"
+              />
+              <span>
+                I have read and agree to the
+                <a href="/terms-and-conditions" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Terms and Conditions</a>
+                and the
+                <a href="/safety-documents" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Safety Documents</a>.
+              </span>
+            </label>
+          </div>
+
+          <!-- ✅ Subscription required warning (no coins mentioned) -->
+          <div v-if="!hasSubscription" class="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+            <p class="text-orange-800 font-medium">
               <i class="fas fa-exclamation-triangle mr-2"></i>
-              Insufficient coins. Please purchase more coins to continue.
+              You need an active subscription to unlock contact details.
             </p>
-            <router-link to="/student/wallet" 
-                         class="inline-block mt-3 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm">
-              Purchase Coins
+            <router-link to="/student/subscriptions"
+                         class="inline-block mt-3 bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 text-sm">
+              Upgrade Subscription
             </router-link>
+          </div>
+
+          <!-- ✅ No coin checks - only show subscription status message -->
+          <div v-if="hasSubscription" class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <p class="text-green-800 font-medium">
+              <i class="fas fa-check-circle mr-2"></i>
+              ✅ You have an active subscription! Contact unlock is included.
+            </p>
           </div>
 
           <!-- Action Buttons -->
@@ -495,13 +519,13 @@
             </button>
             <button 
               @click="acceptAndUnlock"
-              :disabled="userCoins < contactUnlockCoins || unlocking"
-              :class="userCoins < contactUnlockCoins || unlocking ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'"
+              :disabled="!hasSubscription || unlocking || !acceptedPolicies"
+              :class="!hasSubscription || unlocking || !acceptedPolicies ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'"
               class="flex-1 text-white py-3 rounded-lg font-medium transition">
               <span v-if="unlocking">
                 <i class="fas fa-spinner fa-spin mr-2"></i>Processing...
               </span>
-              <span v-else>Accept & Unlock ({{ contactUnlockCoins }} coins)</span>
+              <span v-else>Accept & Unlock</span>
             </button>
           </div>
         </div>
@@ -585,8 +609,8 @@ export default {
     const showContactModal = ref(false);
     const unlocking = ref(false);
     const hasContactAccess = ref(false);
-    const userCoins = ref(0);
-    const contactUnlockCoins = ref(0);
+    const hasSubscription = ref(false);
+    const acceptedPolicies = ref(false);
     
     // Review modal
     const showReviewModal = ref(false);
@@ -635,7 +659,7 @@ export default {
         // Check if student has already unlocked this tutor's contact
         if (isLoggedInStudent.value && profile.value?.user_id) {
           await checkContactAccess();
-          await loadUserCoins();
+          // ✅ No need to load coin data - only subscription status
         }
       } catch (error) {
         console.error('Error loading profile:', error);
@@ -662,27 +686,6 @@ export default {
       }
     }
 
-    async function loadUserCoins() {
-      try {
-        const response = await axios.get('/api/student/coins/balance');
-        userCoins.value = response.data.balance || 0;
-      } catch (error) {
-        console.error('Error loading coins:', error);
-        userCoins.value = 0;
-      }
-    }
-
-    async function loadContactUnlockCoins() {
-      try {
-        const response = await axios.get('/api/student/contact-unlock-coins');
-        if (response.data?.contact_unlock_coins !== undefined) {
-          contactUnlockCoins.value = Number(response.data.contact_unlock_coins);
-        }
-      } catch (error) {
-        console.error('Error loading contact unlock coins:', error);
-      }
-    }
-
     async function openContactModal() {
       if (!isLoggedInStudent.value) {
         alert('Please login as a student to contact tutors');
@@ -695,9 +698,7 @@ export default {
         return;
       }
       
-      if (!contactUnlockCoins.value) {
-        await loadContactUnlockCoins();
-      }
+      // ✅ No need to load coin data - only subscription status checked via API
       showContactModal.value = true;
     }
 
@@ -706,10 +707,13 @@ export default {
     }
 
     async function acceptAndUnlock() {
-      if (userCoins.value < contactUnlockCoins.value) {
-        alert('Insufficient coins. Please purchase more coins.');
+      if (!acceptedPolicies.value) {
+        alert('Please accept the Terms and Conditions and Safety Documents.');
         return;
       }
+      
+      // ✅ No coin check - only subscription logic
+      // Users must upgrade subscription if views exhausted
 
       unlocking.value = true;
       try {
@@ -729,7 +733,7 @@ export default {
         if (response.data.success) {
           hasContactAccess.value = true;
           canReview.value = true;
-          userCoins.value = response.data.remaining_balance || (userCoins.value - contactUnlockCoins.value);
+          // ✅ No coin balance update (only subscription tracking)
           
           // Reload profile to get contact details
           await loadProfile();
@@ -918,7 +922,7 @@ export default {
       if (!userStore.user) {
         await userStore.fetchUser();
       }
-      await loadContactUnlockCoins();
+      // ✅ No need to load coin data - only subscription status checked via API
       await loadProfile();
     });
 
@@ -932,8 +936,8 @@ export default {
       showContactModal,
       unlocking,
       hasContactAccess,
-      userCoins,
-      contactUnlockCoins,
+      hasSubscription,
+      acceptedPolicies,
       showReviewModal,
       reviewRating,
       reviewComment,
