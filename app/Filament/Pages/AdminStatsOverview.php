@@ -18,9 +18,6 @@ class AdminStatsOverview extends BaseStatsOverviewWidget
                 'tutors' => User::role('tutor')->count(),
                 'students' => User::role('student')->count(),
                 'active_enquiries' => StudentRequirement::where('lead_status', '!=', 'closed')->count(),
-                'coins_distributed' => CoinTransaction::whereIn('type', ['coin_purchase', 'referral_reward', 'referral_bonus'])
-                    ->where('amount', '>', 0)
-                    ->sum('amount'),
                 'paid_revenue' => Order::where('status', 'paid')->sum('amount'),
             ];
         });
@@ -38,10 +35,6 @@ class AdminStatsOverview extends BaseStatsOverviewWidget
                 ->description('Open or full enquiries')
                 ->descriptionIcon('heroicon-m-document-text')
                 ->color('warning'),
-            BaseStatsOverviewWidget\Stat::make('Coins Distributed', $metrics['coins_distributed'])
-                ->description('Total coins given out')
-                ->descriptionIcon('heroicon-m-banknotes')
-                ->color('primary'),
             BaseStatsOverviewWidget\Stat::make('Payment Revenue', '₹' . number_format($metrics['paid_revenue'], 2))
                 ->description('From successful orders')
                 ->descriptionIcon('heroicon-m-currency-rupee')

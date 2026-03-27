@@ -14,10 +14,10 @@
     <div v-if="showRefundModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
         <div class="text-center mb-4">
-          <i class="fas fa-coins text-5xl text-yellow-500 mb-4"></i>
+          <i class="fas fa-undo-alt text-5xl text-green-500 mb-4"></i>
           <h2 class="text-2xl font-bold text-gray-800 mb-2">Refund Available</h2>
         </div>
-        <p class="text-gray-700 mb-4">You will receive a refund of <strong class="text-lg text-green-600">{{ refundAmount }} coins</strong> since no teacher has unlocked your enquiry yet.</p>
+        <p class="text-gray-700 mb-4">You are eligible for a refund since no teacher has unlocked your enquiry yet.</p>
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <p class="text-sm text-blue-800"><i class="fas fa-info-circle mr-2"></i>This is the amount you paid when posting this enquiry.</p>
         </div>
@@ -52,19 +52,9 @@
                 <p class="text-sm font-semibold text-orange-800 mb-1">Subscription Views Exhausted</p>
                 <p class="text-sm text-orange-700 mb-3">
                   You've used all <strong>{{ exhaustedData.views_used }}/{{ exhaustedData.views_allowed }}</strong> subscription views.
-                  To approach a tutor, choose one of the options below:
+                  Please upgrade your plan to approach more tutors.
                 </p>
                 <div class="flex flex-wrap gap-2">
-                  <button
-                    v-if="exhaustedData.can_pay_with_coins"
-                    @click="(pendingTeacherId = null, showInterestedModal = false, showExhaustedModal = true)"
-                    class="px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-white rounded text-sm font-medium transition">
-                    <i class="fas fa-coins mr-1"></i>Use Coins ({{ exhaustedData.coin_cost_alternative }})
-                  </button>
-                  <span v-else class="text-xs text-orange-600 self-center">
-                    <i class="fas fa-coins mr-1"></i>Need {{ exhaustedData.coin_cost_alternative }} coins (have {{ exhaustedData.coins_available }})
-                    — <router-link to="/student/wallet" class="underline font-medium">Buy Coins</router-link>
-                  </span>
                   <button
                     @click="$router.push('/student/subscriptions')"
                     class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition">
@@ -75,16 +65,13 @@
             </div>
           </div>
 
-          <!-- Normal cost info -->
-          <div v-else class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-            <p class="text-sm text-yellow-800">
+          <!-- Subscription info -->
+          <div v-else class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+            <p class="text-sm text-green-800">
               <i class="fas fa-info-circle mr-2"></i>
               <strong>Note:</strong>
-              Approaching a tutor will cost
-              <strong v-if="approachCostType === 'free'">Free</strong>
-              <strong v-else>{{ approachCoinCost }} coins</strong>
-              <span v-if="approachCostType === 'free'"> — included with your subscription</span>
-              <span v-else> (based on your nationality)</span>.
+              <span v-if="userHasSubscription">Approaching tutors is <strong>free</strong> with your active subscription.</span>
+              <span v-else>A subscription is required to approach tutors. <router-link to="/student/subscriptions" class="underline font-semibold">Subscribe now</router-link></span>
               You'll be able to see their contact details after approaching.
             </p>
           </div>
@@ -138,10 +125,12 @@
                 <button
                   v-if="!teacher.has_approached"
                   @click="selectTeacher(teacher.id)"
-                  :disabled="approachLoading"
-                  class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition disabled:bg-gray-400">
-                  <i class="fas fa-check-circle mr-1"></i>
-                  {{ approachLoading ? 'Processing...' : (approachCostType === 'free' ? 'Approach (Free)' : 'Approach (' + approachCoinCost + ' coins)') }}
+                  :disabled="approachLoading || !userHasSubscription"
+                  class="px-4 py-2 rounded-lg font-medium transition disabled:bg-gray-400"
+                  :class="userHasSubscription ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'">
+                  <i class="fas fa-check-circle mr-1" v-if="userHasSubscription"></i>
+                  <i class="fas fa-crown mr-1" v-else></i>
+                  {{ approachLoading ? 'Processing...' : (userHasSubscription ? 'Approach (Free)' : 'Subscribe to Approach') }}
                 </button>
                 <div v-else class="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium">
                   <i class="fas fa-check-circle mr-1"></i>Approached
@@ -178,69 +167,23 @@
         </div>
 
         <div class="p-6">
-          <p class="text-gray-600 text-sm mb-5 text-center">How would you like to proceed for this service?</p>
+          <p class="text-gray-600 text-sm mb-5 text-center">Upgrade your subscription to get more tutor views.</p>
 
-          <!-- Two Option Cards -->
-          <div class="grid grid-cols-2 gap-3 mb-4">
-            <!-- Coins Option -->
-            <div
-              v-if="exhaustedData.can_pay_with_coins"
-              class="border-2 border-yellow-300 rounded-xl p-4 cursor-pointer hover:border-yellow-500 hover:bg-yellow-50 transition group"
-              @click="openConfirmFromExhausted">
-              <div class="text-center">
-                <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-yellow-200 transition">
-                  <i class="fas fa-coins text-yellow-600 text-xl"></i>
-                </div>
-                <h3 class="font-bold text-gray-800 mb-1">Pay with Coins</h3>
-                <p class="text-2xl font-bold text-yellow-600 mb-1">{{ exhaustedData.coin_cost_alternative }}</p>
-                <p class="text-xs text-gray-500">coins per approach</p>
-                <div class="mt-3 bg-yellow-50 rounded-lg px-2 py-1.5">
-                  <p class="text-xs text-gray-600">Your balance: <strong class="text-gray-800">{{ exhaustedData.coins_available }} coins</strong></p>
-                  <p class="text-xs text-green-600 font-medium">After: {{ exhaustedData.coins_available - exhaustedData.coin_cost_alternative }} coins</p>
-                </div>
+          <!-- Upgrade Plan Option -->
+          <div
+            class="border-2 border-blue-300 rounded-xl p-4 cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition group mb-4"
+            @click="goToSubscriptions">
+            <div class="text-center">
+              <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-blue-200 transition">
+                <i class="fas fa-crown text-blue-600 text-xl"></i>
+              </div>
+              <h3 class="font-bold text-gray-800 mb-1">Upgrade Plan</h3>
+              <p class="text-sm font-semibold text-blue-600 mb-1">More Views</p>
+              <p class="text-xs text-gray-500">unlimited or higher limit</p>
+              <div class="mt-3 bg-blue-50 rounded-lg px-2 py-1.5">
+                <p class="text-xs text-blue-700 font-medium">Best value for active use</p>
               </div>
             </div>
-
-            <!-- Insufficient coins placeholder -->
-            <div v-else class="border-2 border-gray-200 rounded-xl p-4 opacity-60 cursor-not-allowed">
-              <div class="text-center">
-                <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <i class="fas fa-coins text-gray-400 text-xl"></i>
-                </div>
-                <h3 class="font-bold text-gray-500 mb-1">Pay with Coins</h3>
-                <p class="text-2xl font-bold text-gray-400 mb-1">{{ exhaustedData.coin_cost_alternative }}</p>
-                <p class="text-xs text-gray-400">coins required</p>
-                <div class="mt-3 bg-red-50 rounded-lg px-2 py-1.5">
-                  <p class="text-xs text-red-600">Only {{ exhaustedData.coins_available }} coins available</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Upgrade Plan Option -->
-            <div
-              class="border-2 border-blue-300 rounded-xl p-4 cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition group"
-              @click="goToSubscriptions">
-              <div class="text-center">
-                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-blue-200 transition">
-                  <i class="fas fa-crown text-blue-600 text-xl"></i>
-                </div>
-                <h3 class="font-bold text-gray-800 mb-1">Upgrade Plan</h3>
-                <p class="text-sm font-semibold text-blue-600 mb-1">More Views</p>
-                <p class="text-xs text-gray-500">unlimited or higher limit</p>
-                <div class="mt-3 bg-blue-50 rounded-lg px-2 py-1.5">
-                  <p class="text-xs text-blue-700 font-medium">Best value for active use</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Buy coins link if insufficient -->
-          <div v-if="!exhaustedData.can_pay_with_coins" class="bg-orange-50 border border-orange-200 rounded-lg px-4 py-3 mb-4 flex items-center gap-2">
-            <i class="fas fa-info-circle text-orange-500 text-sm"></i>
-            <p class="text-xs text-orange-700">
-              You need {{ exhaustedData.coin_cost_alternative - exhaustedData.coins_available }} more coins.
-              <router-link to="/student/wallet" class="font-semibold text-orange-800 underline ml-1">Buy Coins →</router-link>
-            </p>
           </div>
 
           <button
@@ -252,7 +195,7 @@
       </div>
     </div>
 
-    <!-- Confirm Approach Modal (coins deduction confirmation) -->
+    <!-- Confirm Approach Modal -->
     <div v-if="showConfirmModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
         <!-- Header -->
@@ -276,9 +219,9 @@
             </div>
           </div>
 
-          <!-- Cost Breakdown -->
-          <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
-            <p class="text-xs font-semibold text-yellow-800 uppercase tracking-wide mb-3">Payment Summary</p>
+          <!-- Subscription Info -->
+          <div class="bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
+            <p class="text-xs font-semibold text-green-800 uppercase tracking-wide mb-3">Approach Details</p>
             <div class="space-y-2">
               <div class="flex justify-between text-sm">
                 <span class="text-gray-600">Service</span>
@@ -286,17 +229,7 @@
               </div>
               <div class="flex justify-between text-sm">
                 <span class="text-gray-600">Cost</span>
-                <span class="font-bold text-yellow-700">{{ confirmData.coinCost }} coins</span>
-              </div>
-              <div class="border-t border-yellow-200 pt-2 mt-2 space-y-1">
-                <div class="flex justify-between text-xs text-gray-500">
-                  <span>Balance before</span>
-                  <span>{{ confirmData.balanceBefore }} coins</span>
-                </div>
-                <div class="flex justify-between text-xs font-semibold">
-                  <span class="text-gray-700">Balance after</span>
-                  <span class="text-green-700">{{ confirmData.balanceBefore - confirmData.coinCost }} coins</span>
-                </div>
+                <span class="font-bold text-green-700">Free with Subscription</span>
               </div>
             </div>
           </div>
@@ -465,7 +398,7 @@
         <button v-if="canRefund"
                 @click="openRefundModal(requirement.id)"
                 class="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition whitespace-nowrap">
-          <i class="fas fa-coins mr-1"></i>Get Refund
+          <i class="fas fa-undo-alt mr-1"></i>Get Refund
         </button>
         <button v-if="canClose"
                 @click="closeRequirement(requirement.id)"
@@ -526,15 +459,10 @@ export default {
     });
 
     const approachCostDisplay = computed(() => {
-      // Use the label from API if available
-      if (approachCostLabel.value) {
-        return approachCostLabel.value;
-      }
-      // Fallback to old logic
       if (userHasSubscription.value) {
         return 'Free';
       }
-      return `${approachCoinCost.value} coins`;
+      return 'Subscription required';
     });
 
     const fetchRequirement = async () => {
@@ -579,7 +507,7 @@ export default {
         refundRequirementId.value = null;
         
         // Show success message with refund details
-        alert(`Refund successful! ${refundedCoins} coins refunded.`);
+        alert(`Refund successful!`);
         
         // Navigate back to requirements list
         router.push('/student/requirements');
@@ -638,76 +566,20 @@ export default {
         return;
       }
 
-      // For coin-based approach, show confirm modal instead of browser confirm()
-      if (approachCostType.value !== 'free') {
-        const teacher = interestedTeachers.value.find(t => t.id === teacherId);
-        pendingTeacherId.value = teacherId;
-        confirmData.value = {
-          teacherName: teacher?.name || 'Tutor',
-          coinCost: approachCoinCost.value,
-          balanceBefore: exhaustedData.value.coins_available || 0,
-          useCoinsForExhausted: false,
-        };
-        // Fetch current coin balance if we don't have it
-        if (!confirmData.value.balanceBefore) {
-          try {
-            const userResp = await axios.get('/api/user');
-            confirmData.value.balanceBefore = userResp.data.coins || 0;
-          } catch {}
-        }
-        showInterestedModal.value = false;
-        showConfirmModal.value = true;
+      // If user doesn't have subscription, redirect to subscriptions page
+      if (!userHasSubscription.value) {
+        router.push('/student/subscriptions');
         return;
       }
 
-      // Free (subscription) approach — proceed directly
-      approachLoading.value = true;
-      try {
-        const response = await axios.post(`/api/student/requirements/${requirement.value.id}/approach-teacher`, {
-          teacher_id: teacherId
-        });
-        
-        console.log('Approach response:', response.data);
-        
-        // Show success message based on cost type
-        let successMessage = 'Successfully approached! ';
-        
-        if (approachCostType.value === 'subscription' && userHasSubscription.value) {
-          successMessage += 'Contact details sent for free with your subscription.';
-        } else if (approachCostType.value === 'coins' || viewsExhausted.value) {
-          successMessage += `${response.data.coins_deducted} coins deducted.`;
-        } else {
-          successMessage += 'Contact details sent.';
-        }
-        
-        alert(successMessage);
-        
-        // Reload interested teachers from database to show updated contact details
-        const teachersResponse = await axios.get(`/api/student/requirements/${requirement.value.id}/interested-teachers`);
-        interestedTeachers.value = teachersResponse.data.teachers || [];
-        
-        // Update requirement status
-        requirement.value.status = 'approached';
-        
-        // Refresh requirement details to update status
-        await fetchRequirement();
-      } catch (err) {
-        console.error('Error approaching teacher:', err);
-        if (err.response?.status === 403 && err.response.data?.views_exhausted) {
-          // Subscription exhausted - show choice modal
-          exhaustedData.value = err.response.data;
-          pendingTeacherId.value = teacherId;
-          showExhaustedModal.value = true;
-        } else if (err.response?.status === 402) {
-          alert(err.response.data.message);
-        } else if (err.response?.status === 422) {
-          alert(err.response?.data?.message || 'You have already approached this tutor.');
-        } else {
-          alert(err.response?.data?.message || 'Failed to approach teacher');
-        }
-      } finally {
-        approachLoading.value = false;
-      }
+      // Show confirm modal for subscription approach
+      const teacher = interestedTeachers.value.find(t => t.id === teacherId);
+      pendingTeacherId.value = teacherId;
+      confirmData.value = {
+        teacherName: teacher?.name || 'Tutor',
+      };
+      showInterestedModal.value = false;
+      showConfirmModal.value = true;
     };
 
     const closeExhaustedModal = () => {
@@ -721,47 +593,17 @@ export default {
     };
 
     const proceedWithCoins = async () => {
-      if (!pendingTeacherId.value) return;
-      showExhaustedModal.value = false;
-      approachLoading.value = true;
-      try {
-        const response = await axios.post(`/api/student/requirements/${requirement.value.id}/approach-teacher`, {
-          teacher_id: pendingTeacherId.value,
-          use_coins: true,
-        });
-        alert(`Successfully approached! ${response.data.coins_deducted} coins deducted.`);
-        pendingTeacherId.value = null;
-        const teachersResponse = await axios.get(`/api/student/requirements/${requirement.value.id}/interested-teachers`);
-        interestedTeachers.value = teachersResponse.data.teachers || [];
-        requirement.value.status = 'approached';
-        await fetchRequirement();
-      } catch (err) {
-        console.error('Error proceeding with coins:', err);
-        alert(err.response?.data?.message || 'Failed to approach teacher');
-      } finally {
-        approachLoading.value = false;
-      }
+      // Deprecated - coins no longer used
     };
 
     const openConfirmFromExhausted = () => {
-      const teacher = interestedTeachers.value.find(t => t.id === pendingTeacherId.value);
-      confirmData.value = {
-        teacherName: teacher?.name || 'Tutor',
-        coinCost: exhaustedData.value.coin_cost_alternative,
-        balanceBefore: exhaustedData.value.coins_available,
-        useCoinsForExhausted: true,
-      };
-      showExhaustedModal.value = false;
-      showConfirmModal.value = true;
+      // Deprecated - coins no longer used, redirect to subscriptions
+      goToSubscriptions();
     };
 
     const cancelConfirm = () => {
       showConfirmModal.value = false;
-      if (confirmData.value.useCoinsForExhausted) {
-        showExhaustedModal.value = true;
-      } else {
-        showInterestedModal.value = true;
-      }
+      showInterestedModal.value = true;
     };
 
     const confirmApproach = async () => {
@@ -770,12 +612,8 @@ export default {
       showConfirmModal.value = false;
       try {
         const payload = { teacher_id: pendingTeacherId.value };
-        if (confirmData.value.useCoinsForExhausted) {
-          payload.use_coins = true;
-        }
         const response = await axios.post(`/api/student/requirements/${requirement.value.id}/approach-teacher`, payload);
-        const coinsMsg = response.data.coins_deducted ? ` ${response.data.coins_deducted} coins deducted.` : '';
-        alert(`Successfully approached!${coinsMsg}`);
+        alert('Successfully approached! Contact details are now available.');
         pendingTeacherId.value = null;
         const teachersResponse = await axios.get(`/api/student/requirements/${requirement.value.id}/interested-teachers`);
         interestedTeachers.value = teachersResponse.data.teachers || [];
@@ -803,7 +641,7 @@ export default {
         
         // Show success message
         if (response.data.refund_amount && response.data.refund_amount > 0) {
-          alert(`Requirement closed! ${response.data.refund_amount} coins refunded.`);
+          alert(`Requirement closed! Refund processed.`);
         } else {
           alert('Requirement closed successfully!');
         }

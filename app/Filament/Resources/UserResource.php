@@ -68,7 +68,6 @@ class UserResource extends Resource
                     Forms\Components\TextInput::make('email')->disabled(),
                     Forms\Components\TextInput::make('phone')->disabled(),
                     Forms\Components\TextInput::make('role')->label('Base Role')->disabled(),
-                    Forms\Components\TextInput::make('coins')->disabled(),
                     Forms\Components\Toggle::make('is_disabled')->label('Account Disabled')->disabled(),
                     Forms\Components\Textarea::make('disabled_reason')->label('Disabled Reason')->disabled()->columnSpanFull(),
                     Forms\Components\TextInput::make('disabled_at')->label('Disabled At')->disabled(),
@@ -398,55 +397,6 @@ class UserResource extends Resource
                                 'user_id' => $record->id,
                             ],
                         ]);
-                    }),
-                Action::make('addCoins')
-                    ->label('Add Coins')
-                    ->icon('heroicon-o-plus-circle')
-                    ->color('info')
-                    ->form([
-                        Forms\Components\TextInput::make('coins')
-                            ->label('Coins to Add')
-                            ->numeric()
-                            ->required()
-                            ->minValue(1)
-                            ->maxValue(500)
-                            ->helperText('Maximum 500 coins per transaction'),
-                        Forms\Components\Textarea::make('reason')
-                            ->label('Reason')
-                            ->required()
-                            ->rows(3)
-                            ->helperText('Why are you adding coins to this user?'),
-                    ])
-                    ->action(function (User $record, array $data) {
-                        $coinsToAdd = (int)$data['coins'];
-                        
-                        // Ensure max 500 coins
-                        if ($coinsToAdd > 500) {
-                            $coinsToAdd = 500;
-                        }
-                        
-                        // Add coins to user
-                        $record->increment('coins', $coinsToAdd);
-                        
-                        // Log the activity
-                        \App\Models\AdminActivityLog::create([
-                            'admin_id' => auth()->id(),
-                            'action' => 'add_coins_to_user',
-                            'target_type' => 'user',
-                            'target_id' => $record->id,
-                            'notes' => $data['reason'],
-                            'metadata' => [
-                                'coins_added' => $coinsToAdd,
-                                'user_coins_before' => $record->coins - $coinsToAdd,
-                                'user_coins_after' => $record->coins,
-                            ],
-                        ]);
-                        
-                        \Filament\Notifications\Notification::make()
-                            ->success()
-                            ->title('Success')
-                            ->body("Added {$coinsToAdd} coins to {$record->name}")
-                            ->send();
                     }),
             ])
             ->bulkActions([]);

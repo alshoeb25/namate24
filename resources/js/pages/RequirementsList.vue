@@ -19,21 +19,21 @@
       <div v-if="showRefundModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
           <div class="text-center mb-4">
-            <i class="fas fa-coins text-5xl text-yellow-500 mb-4"></i>
+            <i class="fas fa-undo-alt text-5xl text-green-500 mb-4"></i>
             <h2 class="text-2xl font-bold text-gray-800 mb-2">Refund Available</h2>
           </div>
           <p v-if="!refundIsFreePost" class="text-gray-700 mb-4">
-            You’re eligible for a refund of <strong class="text-lg text-green-600">{{ refundAmount }} coins</strong> because no tutor has unlocked this requirement.
+            You're eligible for a refund because no tutor has unlocked this requirement.
           </p>
           <p v-else class="text-gray-700 mb-4">
-            This was a free post. No coins will be refunded, but your free post will be restored after you close this requirement.
+            This was a free post. No refund will be issued, but your free post will be restored after you close this requirement.
           </p>
           <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <p class="text-sm text-blue-800 font-semibold mb-2"><i class="fas fa-file-contract mr-2"></i>Terms & Conditions</p>
             <ul class="text-sm text-blue-800 list-disc pl-5 space-y-1">
               <li>Refunds are available only if no tutor has unlocked your requirement.</li>
               <li>Closing a requirement is final and cannot be undone.</li>
-              <li>Coins (or free post credit) will be restored to your wallet and can’t be withdrawn as cash.</li>
+              <li>Refund (or free post credit) will be restored and can't be withdrawn as cash.</li>
               <li>Refund processing is immediate and will reflect in your balance.</li>
             </ul>
           </div>
@@ -60,15 +60,17 @@
             </button>
           </div>
           
-          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-            <p class="text-sm text-yellow-800">
+          <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+            <p class="text-sm text-green-800">
               <i class="fas fa-info-circle mr-2"></i>
-              <strong>Note:</strong> Approaching a tutor will cost <strong>{{ approachCostDisplay }}</strong>
-              <span v-if="userHasSubscription" class="ml-2 inline-flex items-center">
-                <i class="fas fa-check-circle text-green-600 mr-1"></i>
-                <span class="text-green-700 font-semibold">(Free with your subscription)</span>
+              <strong>Note:</strong> Approaching tutors is
+              <span v-if="userHasSubscription">
+                <strong>free</strong> with your active subscription.
               </span>
-              (based on your nationality). You'll be able to see their contact details after approaching.
+              <span v-else>
+                available with a subscription. <router-link to="/student/subscriptions" class="underline font-semibold">Subscribe now</router-link>
+              </span>
+              You'll be able to see their contact details after approaching.
             </p>
           </div>
 
@@ -121,9 +123,12 @@
                   <button 
                     v-if="!teacher.has_approached"
                     @click="selectTeacher(teacher.id)"
-                    :disabled="approachLoading"
-                    class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition disabled:bg-gray-400">
-                    <i class="fas fa-check-circle mr-1"></i>{{ approachLoading ? 'Processing...' : 'Approach (' + approachCostDisplay + ')' }}
+                    :disabled="approachLoading || !userHasSubscription"
+                    class="px-4 py-2 rounded-lg font-medium transition disabled:bg-gray-400"
+                    :class="userHasSubscription ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'">
+                    <i class="fas fa-check-circle mr-1" v-if="userHasSubscription"></i>
+                    <i class="fas fa-crown mr-1" v-else></i>
+                    {{ approachLoading ? 'Processing...' : (userHasSubscription ? 'Approach (Free)' : 'Subscribe to Approach') }}
                   </button>
                   <div v-else class="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium">
                     <i class="fas fa-check-circle mr-1"></i>Approached
@@ -329,7 +334,7 @@ export default {
       if (userHasSubscription.value) {
         return 'Free';
       }
-      return `${approachCoinCost.value} coins`;
+      return 'Subscription required';
     });
 
     const fetchRequirements = async (page = 1) => {
@@ -406,7 +411,7 @@ export default {
         if (response.data.free_post_restored) {
           alert('Refund successful! Your free post has been restored.');
         } else if (response.data.refund_amount && response.data.refund_amount > 0) {
-          alert(`Refund successful! ${response.data.refund_amount} coins refunded.`);
+          alert('Refund successful!');
         } else {
           alert('Refund successful!');
         }
@@ -447,9 +452,15 @@ export default {
       // Prepare confirmation message based on subscription status
       const confirmMessage = userHasSubscription.value 
         ? 'Are you sure you want to approach this tutor?\n\nThis will be FREE with your active subscription and you will receive their contact details.'
-        : `Are you sure you want to approach this tutor?\n\nThis will cost ${approachCoinCost.value} coins and you will receive their contact details.`;
+        : 'A subscription is required to approach tutors. Would you like to subscribe now?';
       
       if (!confirm(confirmMessage)) {
+        return;
+      }
+
+      // Redirect non-subscribers to subscription page
+      if (!userHasSubscription.value) {
+        router.push('/student/subscriptions');
         return;
       }
       
@@ -459,10 +470,8 @@ export default {
           teacher_id: teacherId
         });
         
-        // Show success message based on subscription status
-        const successMessage = userHasSubscription.value 
-          ? 'Contact details sent for free with your subscription!'
-          : `Successfully approached! ${response.data.coins_deducted} coins deducted.`;
+        // Show success message
+        const successMessage = 'Successfully approached! Contact details are now available.';
         alert(successMessage);
         
         // Reload interested teachers from database to show updated contact details

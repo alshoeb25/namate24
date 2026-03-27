@@ -1064,7 +1064,14 @@ export default {
                 }
               });
             }
-            return list;
+            // Deduplicate by name + group_name
+            const seen = new Set();
+            return list.filter(item => {
+              const key = `${item.name}|${item.group_name}`;
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            });
           };
 
           const allLevels = normalizeLevels(levelsRes.data);
@@ -1073,9 +1080,11 @@ export default {
           classOptions.value = allLevels.filter(isGrade);
           levelOptions.value = allLevels.filter(lvl => !isGrade(lvl));
 
-          // If API only returns one group, reuse it for both
-          if (levelOptions.value.length === 0) levelOptions.value = allLevels;
-          if (classOptions.value.length === 0) classOptions.value = allLevels;
+          // Only use fallback if the API returned nothing at all
+          if (levelOptions.value.length === 0 && classOptions.value.length === 0) {
+            levelOptions.value = allLevels;
+            classOptions.value = allLevels;
+          }
         } catch (levelError) {
           console.error('Failed to fetch levels, using fallback:', levelError);
           // Fallback options

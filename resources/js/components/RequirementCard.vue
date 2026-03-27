@@ -44,7 +44,7 @@
           <i class="fas fa-unlock"></i> Unlocked
         </div>
         <div v-else-if="requirement.unlock_price" class="px-3 py-1 bg-yellow-100 text-yellow-600 rounded-full text-xs font-medium">
-          <i class="fas fa-lock"></i> {{ requirement.unlock_price }} coins
+          <i class="fas fa-lock"></i> Subscription Required
         </div>
         <div v-if="requirement.lead_info" class="text-xs text-gray-600">
           {{ requirement.lead_info.spots_available }}/{{ requirement.lead_info.max_leads }} spots
@@ -122,17 +122,17 @@
     <div class="flex gap-3 pt-4 border-t border-gray-200">
       <button 
         v-if="!requirement.has_unlocked"
-        @click="openUnlockModal" 
+        @click="handleUnlockClick" 
         :disabled="unlocking || requirement.lead_info?.is_full"
         :class="[
           'flex-1 py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2',
           requirement.lead_info?.is_full 
             ? 'bg-gray-400 text-white cursor-not-allowed'
-            : 'bg-green-600 text-white hover:bg-green-700'
+            : userHasSubscription ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-blue-600 text-white hover:bg-blue-700'
         ]"
       >
-        <i :class="unlocking ? 'fas fa-spinner fa-spin' : 'fas fa-unlock'"></i>
-        {{ unlocking ? 'Unlocking...' : requirement.lead_info?.is_full ? 'Full' : (userHasSubscription ? 'Unlock (Free)' : `Unlock (${requirement.unlock_price || 0} coins)`) }}
+        <i :class="unlocking ? 'fas fa-spinner fa-spin' : userHasSubscription ? 'fas fa-unlock' : 'fas fa-crown'"></i>
+        {{ unlocking ? 'Unlocking...' : requirement.lead_info?.is_full ? 'Full' : (userHasSubscription ? 'Unlock (Free)' : 'Subscribe to Unlock') }}
       </button>
       <button 
         @click="viewDetails" 
@@ -163,12 +163,11 @@
           </button>
         </div>
 
-        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+        <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
           <div class="flex items-center">
-            <i class="fas fa-coins text-yellow-600 text-2xl mr-3"></i>
+            <i class="fas fa-crown text-green-600 text-2xl mr-3"></i>
             <div>
-              <p v-if="userHasSubscription" class="font-semibold text-yellow-800">Free with Subscription</p>
-              <p v-else class="font-semibold text-yellow-800">{{ requirement.unlock_price || 0 }} Coins Required</p>
+              <p class="font-semibold text-green-800">Free with your Subscription</p>
             </div>
           </div>
         </div>
@@ -199,8 +198,7 @@
             <span v-if="unlocking">
               <i class="fas fa-spinner fa-spin mr-2"></i>Processing...
             </span>
-            <span v-else-if="userHasSubscription">Accept & Unlock (Free)</span>
-            <span v-else>Accept & Unlock ({{ requirement.unlock_price || 0 }} coins)</span>
+            <span v-else>Accept & Unlock (Free)</span>
           </button>
         </div>
       </div>
@@ -260,20 +258,8 @@ export default {
           hasSubscription.value = res.data.has_subscription;
         }
         
-        // Use coins_charged from response for accuracy, fallback to unlock_price
-        const coinAmount = res.data.coins_charged || res.data.unlock_price || props.requirement.unlock_price || 0;
-        
-        // Update wallet balance in user store if coins were charged
-        if (res.data.charged && userStore.user) {
-          userStore.user.coins -= coinAmount;
-        }
-        
-        // Show appropriate success message
-        if (userHasSubscription.value) {
-          alert('Unlocked successfully! (Free with subscription)');
-        } else {
-          alert(`Unlocked successfully! ${coinAmount} coins deducted.`);
-        }
+        // Show success message
+        alert('Unlocked successfully!');
       } catch (error) {
         console.error('Error unlocking requirement:', error);
         if (error.response?.status === 401 || error.response?.status === 403) {
@@ -286,6 +272,14 @@ export default {
       } finally {
         unlocking.value = false;
       }
+    }
+
+    function handleUnlockClick() {
+      if (!userHasSubscription.value) {
+        router.push('/tutor/subscriptions');
+        return;
+      }
+      openUnlockModal();
     }
 
     function openUnlockModal() {
@@ -331,6 +325,7 @@ export default {
       hasSubscription,
       userHasSubscription,
       unlock,
+      handleUnlockClick,
       openUnlockModal,
       closeUnlockModal,
       confirmUnlock,

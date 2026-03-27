@@ -69,7 +69,7 @@ class ReferralResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return static::canAccess();
+        return false; // Hidden: subscription-only model, no coin wallet
     }
 
     public static function canViewAny(): bool
