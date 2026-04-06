@@ -190,6 +190,27 @@
                 {{ subscription.coins_carry_forward_text }}
               </span>
             </div>
+            <div class="flex items-start gap-3">
+              <i class="fas fa-headset text-blue-500 mt-0.5 font-bold"></i>
+              <div class="flex-1">
+                <p class="text-gray-700"><strong>Priority Support:</strong></p>
+                <p class="text-xs text-gray-600">{{ subscription.priority_support || 'No' }}</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <i class="fas fa-users text-purple-500 mt-0.5 font-bold"></i>
+              <div class="flex-1">
+                <p class="text-gray-700"><strong>Backend Team Support:</strong></p>
+                <p class="text-xs text-gray-600">{{ subscription.backend_team_support || 'No' }}</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <i class="fas fa-book text-orange-500 mt-0.5 font-bold"></i>
+              <div class="flex-1">
+                <p class="text-gray-700"><strong>eBooks & Content:</strong></p>
+                <p class="text-xs text-gray-600">{{ subscription.ebooks_content || 'No' }}</p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -228,6 +249,18 @@
               <p class="text-gray-600">{{ plan.views_text }}</p>
               <p class="text-gray-600">{{ plan.access_delay_text }}</p>
               <p class="text-gray-600 font-semibold" :class="plan.coins_carry_forward ? 'text-green-600' : 'text-orange-600'">{{ plan.coins_carry_forward_text }}</p>
+              <p class="text-gray-600 mt-2 pt-2 border-t border-gray-200">
+                <i class="fas fa-headset mr-1" :class="plan.has_priority_support ? 'text-green-600' : 'text-gray-400'"></i>
+                <strong>Priority Support:</strong> {{ plan.priority_support }}
+              </p>
+              <p class="text-gray-600">
+                <i class="fas fa-users mr-1" :class="plan.has_backend_team_support ? 'text-green-600' : 'text-gray-400'"></i>
+                <strong>Backend Team:</strong> {{ plan.backend_team_support }}
+              </p>
+              <p class="text-gray-600">
+                <i class="fas fa-book mr-1" :class="plan.has_ebook_content ? 'text-green-600' : 'text-gray-400'"></i>
+                <strong>eBooks:</strong> {{ plan.ebooks_content }}
+              </p>
             </div>
             <p class="views-text">Valid for {{ plan.validity_text }}</p>
             <button class="btn btn-primary">Select</button>
@@ -345,6 +378,29 @@
               <div class="flex items-start gap-3">
                 <i class="fas fa-redo text-indigo-500 mt-0.5 font-bold"></i>
                 <span class="text-gray-700">{{ plan.coins_carry_forward_text }}</span>
+              </div>
+              <div class="border-t border-gray-200 pt-3 mt-3 space-y-2">
+                <div class="flex items-start gap-3">
+                  <i class="fas fa-headset mt-0.5 font-bold" :class="plan.has_priority_support ? 'text-green-600' : 'text-gray-400'"></i>
+                  <div class="flex-1">
+                    <p class="text-gray-700"><strong>Priority Support:</strong></p>
+                    <p :class="plan.has_priority_support ? 'text-green-600 font-semibold' : 'text-gray-500'">{{ plan.priority_support }}</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-3">
+                  <i class="fas fa-users mt-0.5 font-bold" :class="plan.has_backend_team_support ? 'text-green-600' : 'text-gray-400'"></i>
+                  <div class="flex-1">
+                    <p class="text-gray-700"><strong>Backend Team Support:</strong></p>
+                    <p :class="plan.has_backend_team_support ? 'text-green-600 font-semibold' : 'text-gray-500'">{{ plan.backend_team_support }}</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-3">
+                  <i class="fas fa-book mt-0.5 font-bold" :class="plan.has_ebook_content ? 'text-green-600' : 'text-gray-400'"></i>
+                  <div class="flex-1">
+                    <p class="text-gray-700"><strong>eBooks & Content:</strong></p>
+                    <p :class="plan.has_ebook_content ? 'text-green-600 font-semibold' : 'text-gray-500'">{{ plan.ebooks_content }}</p>
+                  </div>
+                </div>
               </div>
               <div v-if="plan.description" class="text-xs text-gray-500 italic pt-2 border-t border-gray-100">
                 {{ plan.description }}

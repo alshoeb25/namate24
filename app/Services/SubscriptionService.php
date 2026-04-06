@@ -67,6 +67,12 @@ class SubscriptionService
                 'description' => $plan->description,
                 'display_order' => $plan->display_order,
                 'is_india' => $isIndiaUser,
+                'priority_support' => $plan->has_priority_support ? 'Yes — within minutes' : 'No',
+                'has_priority_support' => $plan->has_priority_support,
+                'backend_team_support' => $plan->has_backend_team_support ? 'Yes' : 'No',
+                'has_backend_team_support' => $plan->has_backend_team_support,
+                'ebooks_content' => $plan->has_ebook_content ? 'Yes (conditions apply)' : 'No',
+                'has_ebook_content' => $plan->has_ebook_content,
             ];
         });
 
@@ -560,6 +566,12 @@ class SubscriptionService
             'currency' => $pricing['currency'],
             'gst_amount' => $pricing['gst_amount'] ?? 0,
             'gst_rate' => $pricing['gst'],
+            'priority_support' => $plan->has_priority_support ? 'Yes — within minutes' : 'No',
+            'has_priority_support' => $plan->has_priority_support,
+            'backend_team_support' => $plan->has_backend_team_support ? 'Yes' : 'No',
+            'has_backend_team_support' => $plan->has_backend_team_support,
+            'ebooks_content' => $plan->has_ebook_content ? 'Yes (conditions apply)' : 'No',
+            'has_ebook_content' => $plan->has_ebook_content,
         ];
     }
     
@@ -814,6 +826,12 @@ class SubscriptionService
             'gst_rate' => $pricing['gst'],
             'validity_days' => $subscription->plan->validity_days,
             'validity_text' => $this->getValidityText($subscription->plan->validity_days),
+            'priority_support' => $subscription->plan->has_priority_support ? 'Yes — within minutes' : 'No',
+            'has_priority_support' => $subscription->plan->has_priority_support,
+            'backend_team_support' => $subscription->plan->has_backend_team_support ? 'Yes' : 'No',
+            'has_backend_team_support' => $subscription->plan->has_backend_team_support,
+            'ebooks_content' => $subscription->plan->has_ebook_content ? 'Yes (conditions apply)' : 'No',
+            'has_ebook_content' => $subscription->plan->has_ebook_content,
         ];
     }
 
