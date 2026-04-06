@@ -164,6 +164,18 @@ class User extends Authenticatable implements JWTSubject, FilamentUser
     }
 
     /**
+     * Get user's most recent subscription (active or lapsed)
+     * Used for checking lapsed PRO subscriptions that retain coins
+     */
+    public function getMostRecentSubscription()
+    {
+        return $this->subscriptions()
+            ->where('status', 'active')
+            ->orderBy('expires_at', 'desc')
+            ->first();
+    }
+
+    /**
      * Check if user has active subscription
      */
     public function hasActiveSubscription(): bool

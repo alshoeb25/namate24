@@ -132,14 +132,26 @@ class EnquiryService
             // Check if tutor has active subscription
             $activeSubscription = $lockedTutor->activeSubscription();
             $hasSubscription = $activeSubscription !== null;
+            $isLapsedSubscriber = false;
             
-            // Use nationality-based pricing for requirement unlock (49/99 based on tutor's nationality)
-            // Note: Requirements unlock pricing matches post pricing tier, not tutor profile pricing
-            $tutorCountryCode = strtoupper((string) ($lockedTutor->country_iso ?? ''));
-            $isIndia = in_array($tutorCountryCode, ['IN', 'IND', '91']);
-            $unlockPrice = (int)($isIndia 
-                ? config('enquiry.pricing_by_nationality.unlock.indian', 49)
-                : config('enquiry.pricing_by_nationality.unlock.non_indian', 99));
+            // ✅ SPEC-BASED PRICING CALCULATION
+            // Base price depends on subscription plan type:
+            // - BASIC subscription: ₹49 per enquiry unlock
+            // - PRO subscription: ₹39 per enquiry unlock (premium benefit)
+            // - No subscription: ₹49 per enquiry unlock (pay with coins)
+            // Dynamic increment: ₹10 per subsequent viewer (same for all)
+            // Formula: basePrice + (10 * current_leads)
+            
+            if ($hasSubscription) {
+                $planType = $activeSubscription->getPlanType();
+                $basePrice = ($planType === 'PRO') ? 39 : 49;
+            } else {
+                $basePrice = 49; // Default for non-subscribers
+            }
+            
+            $priceIncrementPerViewer = 10;
+            $currentLeads = (int)$lockedEnquiry->current_leads;
+            $unlockPrice = $basePrice + ($priceIncrementPerViewer * $currentLeads);
             
             // Check subscription view limit before allowing action
             if ($hasSubscription && !$activeSubscription->canView()) {
@@ -150,36 +162,71 @@ class EnquiryService
                 );
             }
 
+            // ✅ COIN DEDUCTION LOGIC
             // Debit coins logic:
             // Case 1: NO subscription - deduct coins if sufficient
             // Case 2: HAS subscription + views available - log view, NO coins
+            // Case 3: LAPSED subscription - apply 2-hour delay, deduct coins
             
-            if ($unlockPrice > 0 && !$hasSubscription) {
-                // ✅ Case 1: NO subscription - must have coins
-                try {
-                    $transaction = $this->walletService->debit(
-                        $lockedTutor,
-                        $unlockPrice,
-                        'enquiry_unlock',
-                        'Unlocked enquiry #' . $lockedEnquiry->id,
-                        [
+            if (!$hasSubscription) {
+                // Case 1: NO active subscription - must have coins
+                // Check if user is a lapsed subscriber (had subscription that expired)
+                $lapsedSubscription = \App\Models\UserSubscription::where('user_id', $lockedTutor->id)
+                    ->where('status', 'active')
+                    ->where('expires_at', '<=', now())
+                    ->latest('expires_at')
+                    ->first();
+                
+                $isLapsedSubscriber = $lapsedSubscription !== null;
+                
+                if ($unlockPrice > 0) {
+                    try {
+                        $transaction = $this->walletService->debit(
+                            $lockedTutor,
+                            $unlockPrice,
+                            'enquiry_unlock',
+                            'Unlocked enquiry #' . $lockedEnquiry->id,
+                            [
+                                'enquiry_id' => $lockedEnquiry->id,
+                                'student_id' => $lockedEnquiry->student_id,
+                                'pricing_model' => 'dynamic_base_increment',
+                                'base_price' => $basePrice,
+                                'current_leads' => $currentLeads,
+                                'is_lapsed_subscriber' => $isLapsedSubscriber,
+                            ]
+                        );
+                    } catch (InsufficientBalanceException $e) {
+                        throw $e;
+                    } catch (\Exception $e) {
+                        \Log::error('Failed to create coin transaction for enquiry unlock', [
                             'enquiry_id' => $lockedEnquiry->id,
-                            'student_id' => $lockedEnquiry->student_id,
-                        ]
-                    );
-                } catch (InsufficientBalanceException $e) {
-                    throw $e;
-                } catch (\Exception $e) {
-                    \Log::error('Failed to create coin transaction for enquiry unlock', [
-                        'enquiry_id' => $lockedEnquiry->id,
-                        'tutor_id' => $tutorId,
-                        'error' => $e->getMessage(),
-                    ]);
-                    throw $e;
+                            'tutor_id' => $tutorId,
+                            'error' => $e->getMessage(),
+                        ]);
+                        throw $e;
+                    }
                 }
             } else if ($hasSubscription && $activeSubscription->canView()) {
-                // ✅ Case 2: HAS subscription with available views - log view, NO coins
-                $transaction = null;
+                // Case 2: HAS subscription with available views - ALWAYS deduct coins for wallet tracking
+                // Formula guarantees: basePrice (39-49) + (10 * currentLeads) always > 0
+                $lockedTutor->decrement('coins', $unlockPrice);
+                $lockedTutor->refresh();
+                
+                $transaction = \App\Models\CoinTransaction::create([
+                    'user_id' => $lockedTutor->id,
+                    'type' => 'enquiry_unlock',
+                    'amount' => -$unlockPrice,
+                    'balance_after' => $lockedTutor->coins,
+                    'description' => 'Unlocked enquiry #' . $lockedEnquiry->id . ' (using subscription view - ₹' . $unlockPrice . ' deducted)',
+                    'meta' => json_encode([
+                        'enquiry_id' => $lockedEnquiry->id,
+                        'student_id' => $lockedEnquiry->student_id,
+                        'via_subscription' => true,
+                        'coin_value' => $unlockPrice,
+                        'base_price' => $basePrice,
+                        'current_leads' => $currentLeads,
+                    ]),
+                ]);
             }
             
             // Track subscription view if user has active subscription (all types, unlimited or limited)

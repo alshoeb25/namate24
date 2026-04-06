@@ -159,9 +159,10 @@ const unlock = async () => {
       hasSubscription.value = response.data.has_subscription;
     }
     
-    // Show appropriate success message
+    // Show appropriate success message with deduction amount
     if (userHasSubscription.value) {
-      successMsg.value = response.data.message || 'Unlocked successfully! (Free with subscription)';
+      const deductedAmount = response.data.enquiry?.unlock_price || 49;
+      successMsg.value = response.data.message || `Unlocked successfully! (Deducted -₹${deductedAmount} coins)`;
     } else {
       successMsg.value = response.data.message || 'Unlocked successfully!';
     }

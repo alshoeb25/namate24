@@ -742,6 +742,7 @@ class StudentController extends Controller
         // Deduct coins if: no subscription OR subscription views exhausted (user chose to pay with coins)
         if ((!$hasSubscription || $viewsExhausted) && $approachCost > 0) {
             $user->decrement('coins', $approachCost);
+            $user->refresh(); // Refresh to get updated balance
 
             $description = 'Approached teacher ' . ($tutor->user->name ?? 'Tutor') . ' for requirement #' . $requirement->id;
             if ($viewsExhausted) {
@@ -754,14 +755,19 @@ class StudentController extends Controller
                 'type' => 'tutor_approach',
                 'amount' => -$approachCost,
                 'description' => $description,
-                'balance_after' => $user->fresh()->coins,
+                'balance_after' => $user->coins,
                 'meta' => json_encode([
                     'tutor_id' => $tutorId,
                     'requirement_id' => $requirement->id,
                 ]),
             ]);
         } else if ($hasSubscription && !$viewsExhausted) {
-            // Track subscription view only when views are still available
+            // HAS subscription with available views - ALWAYS deduct coins for wallet tracking
+            // CoinPricingService always returns valid cost (49 or 99 based on nationality)
+            $user->decrement('coins', $approachCost);
+            $user->refresh(); // Refresh to get updated balance
+            
+            // Track subscription view AND create transaction for tracking
             \App\Models\SubscriptionViewLog::create([
                 'user_id' => $user->id,
                 'user_subscription_id' => $activeSubscription->id,
@@ -773,6 +779,21 @@ class StudentController extends Controller
 
             // Update views_used count
             $activeSubscription->incrementViewCount();
+
+            // Record a transaction showing the coin value of the view used (even though from subscription)
+            \App\Models\CoinTransaction::create([
+                'user_id' => $user->id,
+                'type' => 'tutor_approach',
+                'amount' => -$approachCost,
+                'description' => 'Approached teacher ' . ($tutor->user->name ?? 'Tutor') . ' for requirement #' . $requirement->id . ' (using subscription view - ₹' . $approachCost . ' deducted)',
+                'balance_after' => $user->coins,
+                'meta' => json_encode([
+                    'tutor_id' => $tutorId,
+                    'requirement_id' => $requirement->id,
+                    'via_subscription' => true,
+                    'coin_value' => $approachCost,
+                ]),
+            ]);
         }
 
         // Save approached tutor record
@@ -1068,14 +1089,6 @@ class StudentController extends Controller
             ], 404);
         }
 
-        // Prevent tutors from contacting themselves
-        if ($user->id === $tutorId) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You cannot unlock contact for your own profile'
-            ], 422);
-        }
-
         // Check if already unlocked
         $existingContact = \DB::table('student_tutor_contacts')
             ->where('student_id', $student->id)
@@ -1089,7 +1102,7 @@ class StudentController extends Controller
             ], 422);
         }
 
-        // Check if tutor exists in tutors table
+        // Check if tutor exists
         $tutor = \DB::table('tutors')->where('id', $tutorId)->first();
         if (!$tutor) {
             return response()->json([
@@ -1097,212 +1110,77 @@ class StudentController extends Controller
                 'message' => 'Tutor not found'
             ], 404);
         }
-        
-        // Get the tutor's user record for reference
-        $tutorUser = User::find($tutor->user_id);
-        if (!$tutorUser || $tutorUser->role !== 'tutor') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Tutor user profile not found'
-            ], 404);
-        }
-
-        // Check if student has active subscription
-        $activeSubscription = $user->activeSubscription();
-        $hasSubscription = $activeSubscription !== null;
-
-        // Check subscription view limit and set required coins accordingly
-        // If has subscription with available views: require 0 coins (FREE)
-        // If has subscription but views exhausted: only show upgrade option (NO coins)
-        // If no subscription: require coins
-        
-        $requiredCoins = 0;
-        
-        if ($hasSubscription && $activeSubscription->canView()) {
-            // ✅ Has subscription with available views - no coins needed (FREE)
-            $requiredCoins = 0;
-        } 
-        else if ($hasSubscription && !$activeSubscription->canView()) {
-            // ⚠️  Has subscription but views exhausted - only show upgrade option
-            return response()->json([
-                'success' => false,
-                'message' => "You've used all ({$activeSubscription->views_used}/{$activeSubscription->plan->views_allowed}) subscription views. Please upgrade your subscription to continue.",
-                'views_exhausted' => true,
-                'views_used' => $activeSubscription->views_used,
-                'views_allowed' => $activeSubscription->plan->views_allowed,
-                'subscription_info' => [
-                    'plan_name' => $activeSubscription->plan->name ?? null,
-                    'expires_at' => $activeSubscription->expires_at,
-                    'action' => 'upgrade_subscription',
-                ],
-            ], 403);
-        } 
-        else {
-            // ❌ No subscription - require coins
-            $requiredCoins = \App\Services\CoinPricingService::getCoinCost($user, 'contact_unlock');
-            
-            // Check coin balance - block if insufficient
-            if ($user->coins < $requiredCoins) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Insufficient coins. You need ' . $requiredCoins . ' coins to unlock contact details.',
-                    'required' => $requiredCoins,
-                    'current_balance' => $user->coins
-                ], 402);
-            }
-        }
 
         try {
-            \DB::beginTransaction();
-
-            // Deduct coins logic:
-            // Case 1: NO subscription - deduct coins
-            // Case 2: HAS subscription + views available - log view, NO coins
-            // Case 3: HAS subscription + views exhausted - deduct coins as fallback
+            // Use CoinSpendingService to check and deduct coins
+            $coinSpendingService = app(\App\Services\CoinSpendingService::class);
             
-            if (!$hasSubscription && $requiredCoins > 0) {
-                // NO subscription case - deduct coins
-                $user->coins -= $requiredCoins;
-                $user->save();
-
-                // Record transaction
-                \DB::table('coin_transactions')->insert([
-                    'user_id' => $user->id,
-                    'added_by_admin_id' => null,
-                    'type' => 'tutor_unlock_contact',
-                    'amount' => -$requiredCoins,
-                    'balance_after' => $user->coins,
-                    'description' => "Unlocked contact details for tutor: {$tutor->name}",
-                    'payment_id' => null,
-                    'order_id' => null,
-                    'meta' => json_encode([
-                        'tutor_id' => $tutorId,
-                        'student_id' => $student->id,
-                    ]),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            } else if ($hasSubscription && $activeSubscription->canView()) {
-                // HAS subscription with available views - log the view, NO coin deduction
-                \App\Models\SubscriptionViewLog::create([
-                    'user_id' => $user->id,
-                    'user_subscription_id' => $activeSubscription->id,
+            $result = $coinSpendingService->checkAndDeductCoins(
+                $user,
+                'tutor_unlock_contact',
+                [
+                    'tutor_id' => $tutorId,
+                    'student_id' => $student->id,
                     'viewable_id' => $tutorId,
                     'viewable_type' => 'contact_unlock',
-                    'action_type' => 'student_contact_unlock',
-                    'viewed_at' => now(),
-                ]);
-                
-                // Update views_used count
-                $activeSubscription->incrementViewCount();
-            } else if ($hasSubscription && !$activeSubscription->canView() && $requiredCoins > 0) {
-                // HAS subscription but views EXHAUSTED - using coins as fallback
-                $user->coins -= $requiredCoins;
-                $user->save();
+                ]
+            );
 
-                // Record transaction for exhausted subscription fallback
-                \DB::table('coin_transactions')->insert([
-                    'user_id' => $user->id,
-                    'added_by_admin_id' => null,
-                    'type' => 'tutor_unlock_contact',
-                    'amount' => -$requiredCoins,
-                    'balance_after' => $user->coins,
-                    'description' => "Unlocked contact details for tutor (subscription views exhausted): {$tutor->name}",
-                    'payment_id' => null,
-                    'order_id' => null,
-                    'meta' => json_encode([
-                        'tutor_id' => $tutorId,
-                        'student_id' => $student->id,
-                        'reason' => 'subscription_views_exhausted'
-                    ]),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-                
-                // Log the subscription view attempt (even though views are exhausted)
-                \App\Models\SubscriptionViewLog::create([
-                    'user_id' => $user->id,
-                    'user_subscription_id' => $activeSubscription->id,
-                    'viewable_id' => $tutorId,
-                    'viewable_type' => 'contact_unlock',
-                    'action_type' => 'student_contact_unlock',
-                    'viewed_at' => now(),
-                ]);
+            if (!$result['success']) {
+                return response()->json($result, $result['status_code']);
             }
 
             // Create contact record
             \DB::table('student_tutor_contacts')->insert([
                 'student_id' => $student->id,
                 'tutor_id' => $tutorId,
-                'coins_spent' => $requiredCoins,
+                'coins_spent' => $result['coins_deducted'] ?? 0,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
-            \DB::commit();
-
             \Log::info('Student unlocked tutor contact', [
                 'student_id' => $student->id,
                 'tutor_id' => $tutorId,
-                'coins_spent' => $requiredCoins,
-                'remaining_balance' => $user->fresh()->coins
+                'coins_spent' => $result['coins_deducted'] ?? 0,
+                'remaining_balance' => $result['balance_after'],
             ]);
 
-            return response()->json([
+            // Check if user has active subscription
+            $hasSubscription = $user->activeSubscription() !== null;
+            $responseData = [
                 'success' => true,
-                'message' => ($hasSubscription && $activeSubscription->canView()) 
-                    ? 'Contact details unlocked with subscription' 
-                    : 'Contact details unlocked successfully',
-                'remaining_balance' => $user->fresh()->coins,
-                'coins_spent' => ($hasSubscription && $activeSubscription->canView()) ? 0 : $requiredCoins,
-                'used_subscription' => ($hasSubscription && $activeSubscription->canView()),
-                'subscription_info' => $hasSubscription ? [
+                'message' => 'Contact details unlocked successfully',
+                'remaining_balance' => $result['balance_after'],
+                'coins_spent' => $result['coins_deducted'] ?? 0,
+                'used_subscription' => $hasSubscription,
+            ];
+
+            // Add subscription info if user has active subscription
+            if ($hasSubscription) {
+                $activeSubscription = $user->activeSubscription();
+                $responseData['subscription_info'] = [
+                    'plan_name' => $activeSubscription->plan->name,
                     'views_used' => $activeSubscription->views_used,
                     'views_allowed' => $activeSubscription->plan->views_allowed,
                     'remaining_views' => $activeSubscription->getRemainingViews(),
                     'unlimited_views' => $activeSubscription->plan->views_allowed === null,
-                ] : null,
-            ]);
-
-        } catch (\Illuminate\Database\QueryException $qe) {
-            \DB::rollBack();
-            
-            // Handle foreign key constraint violations specifically
-            if (strpos($qe->getMessage(), 'FOREIGN KEY') !== false || strpos($qe->getMessage(), '1452') !== false) {
-                \Log::error('Foreign key constraint violation - tutor contact', [
-                    'error' => $qe->getMessage(),
-                    'student_id' => $student->id,
-                    'tutor_id' => $tutorId,
-                ]);
-                
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid tutor or student reference. Please try again.'
-                ], 422);
+                ];
             }
-            
-            \Log::error('Database error unlocking tutor contact', [
-                'error' => $qe->getMessage(),
-                'student_id' => $student->id,
-                'tutor_id' => $tutorId,
-            ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to unlock contact: Database error'
-            ], 500);
+            return response()->json($responseData);
+
         } catch (\Exception $e) {
-            \DB::rollBack();
             \Log::error('Error unlocking tutor contact', [
-                'error' => $e->getMessage(),
-                'student_id' => $student->id,
+                'user_id' => $user->id,
                 'tutor_id' => $tutorId,
-                'trace' => $e->getTraceAsString()
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to unlock contact: ' . $e->getMessage()
+                'message' => 'Failed to unlock contact details. Please try again.',
+                'error' => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
     }

@@ -64,6 +64,93 @@ class WalletController extends Controller
     }
 
     /**
+     * Get wallet view - Balance and Transactions ONLY (no purchase options)
+     * GET /api/wallet/view
+     */
+    public function view(Request $request)
+    {
+        $user = $request->user();
+        $perPage = (int) ($request->per_page ?? 10);
+        $page = (int) ($request->page ?? 1);
+        $typeFilter = $request->get('type', 'all');
+        $search = $request->get('search');
+
+        // Get paginated transactions
+        $query = CoinTransaction::where('user_id', $user->id);
+
+        // Apply type filter
+        if ($typeFilter !== 'all') {
+            if ($typeFilter === 'credit') {
+                $query->where('amount', '>', 0);
+            } elseif ($typeFilter === 'debit') {
+                $query->where('amount', '<', 0);
+            } else {
+                $query->where('type', $typeFilter);
+            }
+        }
+
+        // Apply search filter
+        if ($search) {
+            $query->where('description', 'like', "%{$search}%");
+        }
+
+        $transactions = $query->orderBy('created_at', 'desc')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        // Format transactions for display
+        $data = $transactions->getCollection()->map(function ($tx) {
+            $isDebit = $tx->amount < 0;
+            return [
+                'id' => $tx->id,
+                'type' => $tx->type,
+                'description' => $tx->description,
+                'amount' => $tx->amount,
+                'amount_formatted' => ($isDebit ? '-' : '+') . '₹' . abs($tx->amount),
+                'is_debit' => $isDebit,
+                'is_credit' => !$isDebit,
+                'direction' => $isDebit ? 'DEBIT' : 'CREDIT',
+                'balance_after' => $tx->balance_after,
+                'created_at' => $tx->created_at->format('Y-m-d H:i:s'),
+                'created_date' => $tx->created_at->format('d M Y'),
+                'meta' => $tx->meta ?? [],
+            ];
+        })->values();
+
+        // Calculate stats
+        $stats = $this->calculateAndSyncBalance($user);
+
+        return response()->json([
+            'success' => true,
+            'wallet' => [
+                'balance' => $stats['net_balance'],
+                'total_earned' => $stats['total_earned'],
+                'total_spent' => $stats['total_spent'],
+                'balance_formatted' => '₹' . number_format($stats['net_balance'], 2),
+                'earned_formatted' => '₹' . number_format($stats['total_earned'], 2),
+                'spent_formatted' => '₹' . number_format($stats['total_spent'], 2),
+            ],
+            'transactions' => [
+                'data' => $data,
+                'pagination' => [
+                    'current_page' => $transactions->currentPage(),
+                    'per_page' => $transactions->perPage(),
+                    'total' => $transactions->total(),
+                    'last_page' => $transactions->lastPage(),
+                    'from' => $transactions->firstItem(),
+                    'to' => $transactions->lastItem(),
+                    'has_more_pages' => $transactions->hasMorePages(),
+                ],
+            ],
+            'summary' => [
+                'total_transactions' => $transactions->total(),
+                'total_purchases' => $stats['total_purchases'],
+                'enquiries_posted' => $stats['enquiries_posted'],
+                'contacts_unlocked' => $stats['contacts_unlocked'],
+            ],
+        ]);
+    }
+
+    /**
      * Get payment history with filters
      */
     public function paymentHistory(Request $request)
@@ -480,6 +567,132 @@ class WalletController extends Controller
     }
 
     /**
+     * Get subscription-related coin spent transactions
+     * GET /api/wallet/subscription-coins-spent
+     */
+    public function subscriptionCoinsSpent(Request $request)
+    {
+        $user = $request->user();
+        $perPage = (int) ($request->per_page ?? 20);
+        $page = (int) ($request->page ?? 1);
+        $search = $request->get('search');
+
+        $query = CoinTransaction::where('user_id', $user->id)
+            ->where('amount', '<=', 0)  // Debits and subscription views (amount < 0 or amount = 0)
+            ->whereIn('type', [
+                'requirement_view',
+                'tutor_unlock_contact',
+                'tutor_approach',
+                'enquiry_unlock',
+                'student_contact_unlock',
+                'tutor_requirement_view',
+                'tutor_enquiry_unlock',
+                'profile_unlock'
+            ]);
+
+        // Search in description
+        if ($search) {
+            $query->where('description', 'like', "%{$search}%");
+        }
+
+        $query->orderBy('created_at', 'desc');
+        $paginator = $query->paginate($perPage, ['*'], 'page', $page);
+
+        // Map to friendly format
+        $data = $paginator->getCollection()->map(function ($tx) {
+            $typeLabels = [
+                'requirement_view' => 'Viewed Requirement',
+                'tutor_requirement_view' => 'Viewed Requirement',
+                'tutor_requirement_view_lapsed' => 'Viewed Requirement (Lapsed PRO)',
+                'student_contact_unlock' => 'Unlocked Tutor Contact',
+                'student_contact_unlock_lapsed' => 'Unlocked Tutor Contact (Lapsed PRO)',
+                'tutor_unlock_contact' => 'Unlocked Student Contact',
+                'tutor_approach' => 'Approached Tutor',
+                'enquiry_unlock' => 'Unlocked Enquiry',
+                'tutor_enquiry_unlock' => 'Unlocked Enquiry',
+                'profile_unlock' => 'Unlocked Tutor Profile',
+            ];
+
+            $isLapsed = strpos($tx->type, '_lapsed') !== false;
+            $meta = $tx->meta ? (is_string($tx->meta) ? json_decode($tx->meta, true) : $tx->meta) : [];
+
+            return [
+                'id' => $tx->id,
+                'type' => $tx->type,
+                'type_label' => $typeLabels[$tx->type] ?? ucwords(str_replace('_', ' ', $tx->type)),
+                'description' => $tx->description,
+                'amount_spent' => abs($tx->amount),
+                'balance_after' => $tx->balance_after,
+                'is_lapsed' => $isLapsed,
+                'subscription_status' => $isLapsed ? 'Lapsed PRO' : 'Active Subscription',
+                'meta' => $meta,
+                'created_at' => $tx->created_at,
+                'created_date' => $tx->created_at->format('d M Y'),
+                'created_time' => $tx->created_at->format('H:i A'),
+            ];
+        })->values();
+
+        // Calculate statistics
+        $totalLapsed = CoinTransaction::where('user_id', $user->id)
+            ->where('amount', '<', 0)
+            ->whereRaw("type LIKE '%_lapsed'")
+            ->sum(DB::raw('ABS(amount)'));
+
+        $totalSpentOnRequirementView = CoinTransaction::where('user_id', $user->id)
+            ->where('amount', '<', 0)
+            ->whereIn('type', ['requirement_view', 'tutor_requirement_view', 'tutor_requirement_view_lapsed'])
+            ->sum(DB::raw('ABS(amount)'));
+
+        $totalSpentOnContacts = CoinTransaction::where('user_id', $user->id)
+            ->where('amount', '<', 0)
+            ->whereIn('type', ['student_contact_unlock', 'student_contact_unlock_lapsed', 'tutor_unlock_contact'])
+            ->sum(DB::raw('ABS(amount)'));
+
+        $totalSpentOnEnquiries = CoinTransaction::where('user_id', $user->id)
+            ->where('amount', '<', 0)
+            ->whereIn('type', ['enquiry_unlock', 'tutor_enquiry_unlock'])
+            ->sum(DB::raw('ABS(amount)'));
+
+        return response()->json([
+            'wallet' => [
+                'balance' => $user->coins,
+                'balance_formatted' => '₹' . number_format($user->coins, 2),
+            ],
+            'transactions' => [
+                'data' => $data,
+                'pagination' => [
+                    'current_page' => $paginator->currentPage(),
+                    'per_page' => $paginator->perPage(),
+                    'total' => $paginator->total(),
+                    'last_page' => $paginator->lastPage(),
+                    'from' => $paginator->firstItem(),
+                    'to' => $paginator->lastItem(),
+                    'has_more_pages' => $paginator->hasMorePages(),
+                ],
+            ],
+            'stats' => [
+                'total_coins_spent' => CoinTransaction::where('user_id', $user->id)
+                    ->where('amount', '<', 0)
+                    ->whereIn('type', [
+                        'requirement_view',
+                        'tutor_unlock_contact',
+                        'enquiry_unlock',
+                        'student_contact_unlock',
+                        'tutor_requirement_view',
+                        'tutor_enquiry_unlock',
+                        'tutor_requirement_view_lapsed',
+                        'student_contact_unlock_lapsed'
+                    ])
+                    ->sum(DB::raw('ABS(amount)')),
+                'coins_spent_by_lapsed' => $totalLapsed,
+                'coins_spent_on_requirement_views' => $totalSpentOnRequirementView,
+                'coins_spent_on_contacts' => $totalSpentOnContacts,
+                'coins_spent_on_enquiries' => $totalSpentOnEnquiries,
+            ],
+        ]);
+    }
+
+    /**
      * Get all available coin packages
      */
     public function packages(Request $request)
@@ -719,6 +932,215 @@ class WalletController extends Controller
             \Log::error('Coin purchase failed', [
                 'user_id' => $user->id,
                 'package_id' => $package->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to create order',
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred',
+            ], 500);
+        }
+    }
+
+    /**
+     * Purchase custom coin amount
+     * Allows users to buy custom amounts (minimum 99 coins/rupees)
+     * 
+     * Route: POST /api/wallet/purchase-custom-coins
+     */
+    public function purchaseCustomCoins(Request $request)
+    {
+        $request->validate([
+            'coins' => 'required|integer|min:99', // Minimum 99 coins
+            'reason' => 'nullable|string', // Why they're buying (e.g., 'insufficient_for_unlock')
+        ]);
+
+        $user = $request->user();
+        $requestedCoins = (int) $request->coins;
+
+        // Calculate pricing based on user location
+        $isIndia = CoinPricingService::isIndiaUser($user);
+        
+        // Special pricing: 99 coins = $15 for non-Indian users
+        if ($requestedCoins === 99 && !$isIndia) {
+            $priceInUSD = 15;
+            $subtotal = $priceInUSD;
+            $gstRate = 0;
+            $gstAmount = 0;
+            $totalAmount = $subtotal;
+            $currency = 'USD';
+        } 
+        // Pricing calculation: 1.25 USD per 100 coins = 0.0125 USD per coin
+        else if (!$isIndia) {
+            // Non-Indian users: USD pricing
+            $basePricePerCoin = 1.25 / 100;
+            $priceInUSD = $requestedCoins * $basePricePerCoin;
+            $subtotal = $priceInUSD;
+            $gstRate = 0;
+            $gstAmount = 0;
+            $totalAmount = $subtotal;
+            $currency = 'USD';
+        }
+        else {
+            // Indian users: INR pricing with GST
+            $basePricePerCoin = 1.25 / 100; // USD price per coin
+            $priceInUSD = $requestedCoins * $basePricePerCoin;
+            $conversionRate = 83.5; // USD to INR
+            $subtotal = $priceInUSD * $conversionRate;
+            $gstRate = 0.18;
+            $gstAmount = $subtotal * $gstRate;
+            $totalAmount = $subtotal + $gstAmount;
+            $currency = 'INR';
+        }
+
+        DB::beginTransaction();
+
+        try {
+            // Mark any previous INITIATED orders as FAILED
+            $failedOrdersCount = Order::where('user_id', $user->id)
+                ->whereIn('status', ['INITIATED', 'initiated'])
+                ->update([
+                    'status' => 'failed',
+                    'updated_at' => now(),
+                ]);
+
+            if ($failedOrdersCount > 0) {
+                PaymentTransaction::where('user_id', $user->id)
+                    ->whereIn('status', ['INITIATED', 'initiated'])
+                    ->update([
+                        'status' => 'FAILED',
+                        'updated_at' => now(),
+                    ]);
+            }
+
+            // Create internal order
+            $receipt = 'custom_coins_' . $user->id . '_' . time();
+
+            $order = Order::create([
+                'user_id' => $user->id,
+                'amount' => $totalAmount,
+                'currency' => $currency,
+                'package_id' => null, // No package for custom purchase
+                'coins' => $requestedCoins,
+                'bonus_coins' => 0,
+                'status' => 'INITIATED',
+                'receipt' => $receipt,
+                'meta' => [
+                    'package_name' => 'Custom Coins (' . $requestedCoins . ')',
+                    'is_custom' => true,
+                    'purchase_reason' => $request->reason ?? 'custom_purchase',
+                    'user_country' => $user->country,
+                    'user_country_iso' => $user->country_iso,
+                    'pricing' => [
+                        'is_india' => $isIndia,
+                        'gst_rate' => $gstRate,
+                        'subtotal' => $subtotal,
+                        'tax_amount' => $gstAmount,
+                        'total_amount' => $totalAmount,
+                        'currency' => $currency,
+                    ],
+                ],
+            ]);
+
+            // Create Razorpay order
+            $rzp = new RazorpayApi(
+                config('services.razorpay.key'),
+                config('services.razorpay.secret')
+            );
+
+            $razorpayAmount = (int) round($totalAmount * 100);
+            
+            $razorpayOrder = $rzp->order->create([
+                'amount' => $razorpayAmount,
+                'currency' => $currency,
+                'receipt' => $receipt,
+                'payment_capture' => 1,
+                'notes' => [
+                    'db_order_id' => $order->id,
+                    'user_id' => $user->id,
+                    'type' => 'custom_coin_purchase',
+                    'coins' => $requestedCoins,
+                    'reason' => $request->reason ?? 'custom_purchase',
+                    'user_country' => $user->country,
+                    'user_country_iso' => $user->country_iso,
+                    'is_india' => $isIndia ? 'true' : 'false',
+                    'display_currency' => $currency,
+                    'display_amount' => $totalAmount,
+                ],
+            ]);
+
+            // Update order with Razorpay ID
+            $order->update([
+                'razorpay_order_id' => $razorpayOrder['id'],
+            ]);
+
+            // Create payment transaction
+            $transaction = PaymentTransaction::create([
+                'user_id' => $user->id,
+                'razorpay_order_id' => $razorpayOrder['id'],
+                'amount' => $totalAmount,
+                'currency' => $currency,
+                'status' => 'INITIATED',
+                'type' => 'custom_coin_purchase',
+                'description' => 'Custom coin purchase: ' . $requestedCoins . ' coins',
+                'meta' => [
+                    'db_order_id' => $order->id,
+                    'package_id' => null,
+                    'coins' => $requestedCoins,
+                    'is_custom' => true,
+                    'purchase_reason' => $request->reason ?? 'custom_purchase',
+                    'pricing' => [
+                        'is_india' => $isIndia,
+                        'gst_rate' => $gstRate,
+                        'subtotal' => $subtotal,
+                        'tax_amount' => $gstAmount,
+                        'total_amount' => $totalAmount,
+                        'currency' => $currency,
+                        'price_per_coin' => $basePricePerCoin,
+                    ],
+                ],
+            ]);
+
+            DB::commit();
+
+            // Schedule payment status check
+            CheckPendingPaymentStatus::dispatch($order->id, $transaction->id)
+                ->delay(now()->addMinutes(15));
+
+            return response()->json([
+                'success' => true,
+                'order' => [
+                    'id' => $razorpayOrder['id'],
+                    'db_order_id' => $order->id,
+                    'razorpay_order_id' => $razorpayOrder['id'],
+                    'amount' => $razorpayAmount,
+                    'currency' => $currency,
+                ],
+                'transaction_id' => $transaction->id,
+                'coins' => [
+                    'requested' => $requestedCoins,
+                    'bonus' => 0,
+                    'total' => $requestedCoins,
+                ],
+                'pricing' => [
+                    'is_india' => $isIndia,
+                    'subtotal' => $subtotal,
+                    'gst_rate' => $gstRate,
+                    'tax_amount' => $gstAmount,
+                    'total' => $totalAmount,
+                    'currency' => $currency,
+                    'display_price' => ($isIndia ? '₹' : '$') . round($totalAmount, 2),
+                ],
+            ]);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            \Log::error('Custom coin purchase failed', [
+                'user_id' => $user->id,
+                'coins' => $requestedCoins,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);

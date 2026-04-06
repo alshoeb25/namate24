@@ -433,18 +433,27 @@
               <i class="fas fa-exclamation-triangle mr-2"></i>
               You need an active subscription to unlock contact details.
             </p>
+            <p class="text-sm text-orange-700 mt-2">
+              <strong>Coin cost:</strong> 49-99 coins (based on your location)
+            </p>
             <router-link to="/student/subscriptions"
                          class="inline-block mt-3 bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 text-sm">
               Upgrade Subscription
             </router-link>
           </div>
 
-          <!-- ✅ No coin checks - only show subscription status message -->
+          <!-- ✅ Subscription active - show coin cost -->
           <div v-if="hasSubscription" class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
             <p class="text-green-800 font-medium">
               <i class="fas fa-check-circle mr-2"></i>
-              ✅ You have an active subscription! Contact unlock is included.
+              ✅ You have an active subscription!
             </p>
+            <div class="mt-3 flex gap-2">
+              <div class="flex-1 bg-white rounded p-2 text-center border border-green-200">
+                <p class="text-xs text-gray-600">Contact unlock cost</p>
+                <p class="text-sm font-bold text-green-600">{{ unlockContactCostDisplay }}</p>
+              </div>
+            </div>
           </div>
 
           <div class="flex gap-3">
@@ -461,7 +470,10 @@
               <span v-if="unlocking">
                 <i class="fas fa-spinner fa-spin mr-2"></i>Processing...
               </span>
-              <span v-else>Accept & Unlock</span>
+              <span v-else class="flex flex-col items-center">
+                <span>Accept & Unlock</span>
+                <span class="text-xs">View used from subscription</span>
+              </span>
             </button>
           </div>
         </div>
@@ -639,7 +651,20 @@ export default {
       if (hasSubscription.value) return true;
       // Fallback: check user store
       return user.value?.has_active_subscription || user.value?.subscription_active || false;
-    });    
+    });
+
+    const userPlanType = computed(() => {
+      return user.value?.subscription?.plan_type || 'BASIC';
+    });
+
+    const unlockContactCostDisplay = computed(() => {
+      if (userHasSubscription.value) {
+        const cost = userPlanType.value === 'PRO' ? 39 : 49;
+        return `-${cost} coins`;
+      }
+      return 'Subscription required';
+    });
+
     const approvedReviews = computed(() => {
       if (!profile.value?.reviews) return [];
       return profile.value.reviews;
@@ -743,13 +768,15 @@ export default {
         return;
       }
       
-      // ✅ No coin check - only subscription logic
-      // Users must upgrade subscription if views exhausted
-      
       unlocking.value = true;
       try {
         const tutorId = profile.value?.id;
         const studentId = user.value?.student?.id;
+        
+        if (!tutorId) {
+          alert('Tutor ID not found. Please refresh the page and try again.');
+          return;
+        }
         
         if (!studentId) {
           alert('Student profile not found. Please create a student profile first.');
@@ -764,13 +791,21 @@ export default {
         if (response.data.success) {
           hasContactAccess.value = true;
           canReview.value = true;
-          // ✅ No coin balance update (only subscription tracking)
+          
+          // Show success message with coins/views info
+          let message = response.data.message;
+          if (response.data.coins_spent && response.data.coins_spent > 0) {
+            message += ` [${response.data.coins_spent} coins deducted, Balance: ${response.data.remaining_balance}]`;
+          } else if (response.data.used_subscription) {
+            message += ` [View used, Remaining views: ${response.data.subscription_info?.remaining_views || 'N/A'}]`;
+          }
+          
+          alert(message);
           
           // Reload profile to get contact details
           await loadProfile();
           
           closeContactModal();
-          alert('Contact details unlocked successfully! This tutor is now added to your "My Tutors" section.');
         }
       } catch (error) {
         console.error('Error unlocking contact:', error);
@@ -1013,6 +1048,8 @@ export default {
       hasContactAccess,
       hasSubscription,
       userHasSubscription,
+      userPlanType,
+      unlockContactCostDisplay,
       acceptedPolicies,
       showReviewModal,
       reviewRating,

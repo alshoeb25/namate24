@@ -197,6 +197,26 @@ class PublicTutorProfileController extends Controller
                 
                 // Update views_used count
                 $activeSubscription->incrementViewCount();
+
+                // Record transaction showing the coin value of the view used (even though from subscription)
+                DB::table('coin_transactions')->insert([
+                    'user_id' => $user->id,
+                    'added_by_admin_id' => null,
+                    'type' => 'tutor_unlock_contact',
+                    'amount' => -$requiredCoins,
+                    'balance_after' => $user->coins,
+                    'description' => 'Unlocked contact details for tutor ' . ($tutorUser->name ?? 'Unknown') . ' (using subscription view - value: ' . $requiredCoins . ' coins)',
+                    'payment_id' => null,
+                    'order_id' => null,
+                    'meta' => json_encode([
+                        'tutor_id' => $tutorId,
+                        'student_id' => $studentId,
+                        'via_subscription' => true,
+                        'coin_value' => $requiredCoins,
+                    ]),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
             } else if ($hasSubscription && !$activeSubscription->canView() && $requiredCoins > 0) {
                 // HAS subscription but views EXHAUSTED - using coins as fallback
                 $user->coins -= $requiredCoins;

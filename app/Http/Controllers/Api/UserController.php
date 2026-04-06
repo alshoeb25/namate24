@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
@@ -47,6 +48,8 @@ class UserController extends Controller
 
         // Assign tutor role if not already assigned
         if (!$user->hasRole('tutor')) {
+            // Ensure tutor role exists before assigning
+            Role::firstOrCreate(['name' => 'tutor', 'guard_name' => 'web']);
             $user->assignRole('tutor');
         }
 
@@ -78,6 +81,8 @@ class UserController extends Controller
 
         // Assign student role if not already assigned
         if (!$user->hasRole('student')) {
+            // Ensure student role exists before assigning
+            Role::firstOrCreate(['name' => 'student', 'guard_name' => 'web']);
             $user->assignRole('student');
         }
 

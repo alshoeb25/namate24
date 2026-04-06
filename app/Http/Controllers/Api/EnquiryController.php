@@ -50,6 +50,31 @@ class EnquiryController extends Controller
         // posted_at + early_access_minutes <= NOW()
         $earlyAccessMinutes = $tutor->early_access_minutes ?? 120;
 
+        // ✅ SPEC: Subscription-based visibility delay
+        // BASIC subscribers: 90 minute delay
+        // PRO subscribers: See immediately (0 delay - premium perk)
+        // Lapsed/None: 2-hour delay (120 minutes)
+        $activeSubscription = \App\Models\UserSubscription::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->where('expires_at', '>', now())
+            ->latest('activated_at')
+            ->first();
+        
+        // Determine delay based on subscription status
+        if ($activeSubscription) {
+            $planType = $activeSubscription->getPlanType();
+            // BASIC plan: 90 minute delay (premium feature = earlier access)
+            if ($planType === 'BASIC') {
+                $delayMinutes = 90; // BASIC: 90 min delay
+            } else {
+                // PRO plan: See immediately (immediate access = best perk)
+                $delayMinutes = 0; // PRO: Immediate access
+            }
+        } else {
+            // No active subscription: 2-hour delay
+            $delayMinutes = 120;
+        }
+
         $query = StudentRequirement::query()
             ->where('status', 'active')
             ->where(function ($q) {
@@ -60,10 +85,10 @@ class EnquiryController extends Controller
                 $q->where('is_disabled', false)
                   ->whereHas('user', fn($u) => $u->where('is_disabled', false));
             })
-            ->where(function ($q) use ($earlyAccessMinutes) {
+            ->where(function ($q) use ($delayMinutes) {
                 // Requirement is visible only after posted_at + delay has passed
                 $q->whereNull('posted_at')
-                  ->orWhere('posted_at', '<=', now()->subMinutes($earlyAccessMinutes));
+                  ->orWhere('posted_at', '<=', now()->subMinutes($delayMinutes));
             })
             ->with(['subject', 'subjects', 'student.user'])
             ->withExists([
@@ -145,14 +170,41 @@ class EnquiryController extends Controller
             $staticPrice = $isIndia
                 ? config('enquiry.pricing_by_nationality.unlock.indian', 49)
                 : config('enquiry.pricing_by_nationality.unlock.non_indian', 99);
-            $unlockPrice = $this->dynamicPricing->getEffectiveUnlockPrice($enquiry, $user->country_iso ?? '');
-            $enquiry->setAttribute('unlock_price', $unlockPrice);
+            
+            // ✅ SPEC-BASED DYNAMIC PRICING
+            // Base price depends on subscription plan type:
+            // - BASIC subscription: ₹49 per enquiry
+            // - PRO subscription: ₹39 per enquiry (premium benefit)
+            // - No subscription: ₹49 per enquiry
+            // Increment: ₹10 per subsequent viewer (same for all)
+            // Formula: basePrice + (10 * current_leads)
+            
+            // Determine base price based on tutor's subscription
+            $tutorUser = $enquiry->student?->user; // This is showing to tutor, so we use user's plan
+            if ($tutorUser) {
+                $tutorSubscription = $tutorUser->activeSubscription();
+                if ($tutorSubscription) {
+                    $planType = $tutorSubscription->getPlanType();
+                    $basePrice = ($planType === 'PRO') ? 39 : 49;
+                } else {
+                    $basePrice = 49;
+                }
+            } else {
+                $basePrice = 49;
+            }
+            
+            $priceIncrementPerViewer = 10;
+            $currentLeads = (int)$enquiry->current_leads;
+            $dynamicUnlockPrice = $basePrice + ($priceIncrementPerViewer * $currentLeads);
+            
+            $enquiry->setAttribute('unlock_price', $dynamicUnlockPrice);
             $enquiry->setAttribute('pricing_details', [
-                'indian'       => config('enquiry.pricing_by_nationality.unlock.indian', 49),
-                'non_indian'   => config('enquiry.pricing_by_nationality.unlock.non_indian', 99),
-                'dynamic_price'=> $enquiry->dynamic_price ?? 0,
-                'demand_level' => $enquiry->demand_level ?? null,
-                'is_dynamic'   => config('enquiry.fees.dynamic_pricing', false) && ($enquiry->dynamic_price ?? 0) > 0,
+                'base_price'       => $basePrice,
+                'current_leads'    => $currentLeads,
+                'price_increment_per_viewer' => $priceIncrementPerViewer,
+                'calculated_price' => $dynamicUnlockPrice,
+                'pricing_model'    => 'dynamic_base_increment',
+                'description'      => "₹{$basePrice} base + ₹{$priceIncrementPerViewer} × {$currentLeads} leads = ₹{$dynamicUnlockPrice}",
             ]);
             
             return $enquiry;
@@ -204,13 +256,35 @@ class EnquiryController extends Controller
         // Always recalculate for consistency with what will be charged at unlock
         
         $isIndia = $user->country_iso === 'IN';
-        $unlockPrice = $isIndia
-            ? config('enquiry.pricing_by_nationality.unlock.indian', 49)
-            : config('enquiry.pricing_by_nationality.unlock.non_indian', 99);
-        $payload['unlock_price'] = $unlockPrice;
+        
+        // ✅ SPEC-BASED DYNAMIC PRICING
+        // Base price depends on subscription plan type:
+        // - BASIC subscription: ₹49 per enquiry
+        // - PRO subscription: ₹39 per enquiry (premium benefit)
+        // - No subscription: ₹49 per enquiry
+        // Increment: ₹10 per subsequent viewer (same for all)
+        
+        // Determine base price based on tutor's subscription
+        $tutorSubscription = $user->activeSubscription();
+        if ($tutorSubscription) {
+            $planType = $tutorSubscription->getPlanType();
+            $basePrice = ($planType === 'PRO') ? 39 : 49;
+        } else {
+            $basePrice = 49;
+        }
+        
+        $priceIncrementPerViewer = 10;
+        $currentLeads = (int)$enquiry->current_leads;
+        $dynamicUnlockPrice = $basePrice + ($priceIncrementPerViewer * $currentLeads);
+        
+        $payload['unlock_price'] = $dynamicUnlockPrice;
         $payload['pricing_details'] = [
-            'indian' => config('enquiry.pricing_by_nationality.unlock.indian', 49),
-            'non_indian' => config('enquiry.pricing_by_nationality.unlock.non_indian', 99),
+            'base_price'       => $basePrice,
+            'current_leads'    => $currentLeads,
+            'price_increment_per_viewer' => $priceIncrementPerViewer,
+            'calculated_price' => $dynamicUnlockPrice,
+            'pricing_model'    => 'dynamic_base_increment',
+            'description'      => "₹{$basePrice} base + ₹{$priceIncrementPerViewer} × {$currentLeads} leads = ₹{$dynamicUnlockPrice}",
             'tutor_country' => $user->country_iso,
         ];
        
@@ -302,9 +376,26 @@ class EnquiryController extends Controller
 
         // Calculate the actual unlock price that was charged (or would have been)
         $isIndia = $user->country_iso === 'IN';
-        $unlockPrice = (int) ($isIndia
-            ? config('enquiry.pricing_by_nationality.unlock.indian', 49)
-            : config('enquiry.pricing_by_nationality.unlock.non_indian', 99));
+        
+        // ✅ SPEC-BASED DYNAMIC PRICING
+        // Base price depends on subscription plan type:
+        // - BASIC subscription: ₹49 per enquiry
+        // - PRO subscription: ₹39 per enquiry (premium benefit)
+        // - No subscription: ₹49 per enquiry
+        // Increment: ₹10 per subsequent viewer (same for all)
+        
+        // Determine base price based on tutor's subscription
+        $tutorSubscription = $user->activeSubscription();
+        if ($tutorSubscription) {
+            $planType = $tutorSubscription->getPlanType();
+            $basePrice = ($planType === 'PRO') ? 39 : 49;
+        } else {
+            $basePrice = 49;
+        }
+        
+        $priceIncrementPerViewer = 10;
+        $currentLeads = (int)($freshEnquiry->current_leads - 1); // Before increment
+        $unlockPrice = $basePrice + ($priceIncrementPerViewer * $currentLeads);
 
         // Get subscription info
         $activeSubscription = $user->activeSubscription();
@@ -322,7 +413,14 @@ class EnquiryController extends Controller
             'charged' => $charged,
             'coins_charged' => $charged && !$hasSubscription ? $unlockPrice : 0,
             'used_subscription' => $charged && $hasSubscription,
+            'pricing_breakdown' => [
+                'base_price' => $basePrice,
+                'leads_before_unlock' => $currentLeads,
+                'price_increment_per_viewer' => $priceIncrementPerViewer,
+                'calculated_price' => $unlockPrice,
+            ],
             'subscription_info' => $hasSubscription ? [
+                'plan_name' => $activeSubscription->plan->name,
                 'views_used' => $activeSubscription->views_used,
                 'views_allowed' => $activeSubscription->plan->views_allowed,
                 'remaining_views' => $activeSubscription->getRemainingViews(),

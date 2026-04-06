@@ -79,10 +79,74 @@ class SubscriptionPlanResource extends Resource
                         
                         TextInput::make('views_allowed')
                             ->label('Views/Queries Allowed')
-                            ->required()
                             ->numeric()
                             ->minValue(1)
-                            ->placeholder('100'),
+                            ->placeholder('Leave empty for unlimited views'),
+                    ]),
+
+                Section::make('Coins Configuration')
+                    ->description('Set coin rewards and pricing')
+                    ->schema([
+                        TextInput::make('coins_included')
+                            ->label('Coins Included')
+                            ->required()
+                            ->numeric()
+                            ->minValue(0)
+                            ->default(0)
+                            ->placeholder('350 for Pro, 0 for Basic')
+                            ->helperText('Coins credited to user on purchase'),
+                        
+                        TextInput::make('cost_per_view')
+                            ->label('Cost Per View (Coins)')
+                            ->numeric()
+                            ->minValue(1)
+                            ->placeholder('39 for Pro, 49 for Basic')
+                            ->helperText('Cost if user pays with coins after subscription exhausted'),
+                    ]),
+
+                Section::make('Access Control')
+                    ->description('Control when users can access new requirements')
+                    ->schema([
+                        TextInput::make('access_delay_hours')
+                            ->label('Access Delay (Hours)')
+                            ->required()
+                            ->numeric()
+                            ->minValue(0)
+                            ->default(0)
+                            ->placeholder('0 for immediate, 2 for delayed')
+                            ->helperText('Delay before users can view new requirements'),
+                    ]),
+
+                Section::make('Plan Features')
+                    ->description('Enable/disable premium features')
+                    ->schema([
+                        Toggle::make('has_priority_support')
+                            ->label('Priority Support')
+                            ->default(false)
+                            ->helperText('Support response within minutes'),
+                        
+                        Toggle::make('has_ebook_content')
+                            ->label('eBooks & Content')
+                            ->default(false)
+                            ->helperText('Access to exclusive eBooks and study materials'),
+                    ]),
+
+                Section::make('Carryforward & Grace Period')
+                    ->description('Handle subscription lapse behavior')
+                    ->schema([
+                        Toggle::make('coins_carry_forward')
+                            ->label('Coins Carry Forward')
+                            ->default(false)
+                            ->helperText('When subscription lapses, coins remain in wallet'),
+                        
+                        TextInput::make('lapse_grace_period_hours')
+                            ->label('Grace Period After Expiry (Hours)')
+                            ->required()
+                            ->numeric()
+                            ->minValue(0)
+                            ->default(2)
+                            ->placeholder('2')
+                            ->helperText('Time allowed to use remaining views after subscription expires'),
                     ]),
 
                 Section::make('Status')
@@ -119,6 +183,30 @@ class SubscriptionPlanResource extends Resource
                 
                 TextColumn::make('views_allowed')
                     ->label('Views Allowed')
+                    ->formatStateUsing(fn ($state) => $state === null ? 'Unlimited' : $state)
+                    ->sortable(),
+                
+                TextColumn::make('coins_included')
+                    ->label('Coins')
+                    ->sortable(),
+                
+                IconColumn::make('has_priority_support')
+                    ->label('Support')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-mark')
+                    ->sortable(),
+                
+                IconColumn::make('has_ebook_content')
+                    ->label('eBooks')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-mark')
+                    ->sortable(),
+                
+                TextColumn::make('access_delay_hours')
+                    ->label('Access Delay')
+                    ->formatStateUsing(fn ($state) => $state === 0 ? 'Immediate' : $state . 'h')
                     ->sortable(),
                 
                 IconColumn::make('is_active')

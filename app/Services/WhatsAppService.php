@@ -207,17 +207,33 @@ class WhatsAppService
 
     /**
      * Format phone number for WhatsApp (remove +, spaces, etc.)
+     *
+     * @param string $phone Phone number (local or with country code)
+     * @param string|null $countryCode Country code with + prefix, e.g. '+27' or '+91'
      */
-    public static function formatPhone(string $phone): string
+    public static function formatPhone(string $phone, ?string $countryCode = null): string
     {
         // Keep only numbers
         $clean = preg_replace('/[^0-9]/', '', $phone);
-        
-        // Ensure it starts with country code
-        if (!str_starts_with($clean, '91') && strlen($clean) === 10) {
-            $clean = '91' . $clean; // Add India country code
+
+        // If the original phone already included a '+', it has a country code — use as-is
+        if (str_starts_with(trim($phone), '+')) {
+            return '+' . $clean;
         }
-        
+
+        // If a country code was explicitly provided, use it
+        if ($countryCode) {
+            $ccDigits = preg_replace('/[^0-9]/', '', $countryCode);
+            // Strip leading 0 if present (local format)
+            $localNumber = ltrim($clean, '0');
+            return '+' . $ccDigits . $localNumber;
+        }
+
+        // Fallback: assume India if 10 digits with no country info
+        if (strlen($clean) === 10) {
+            return '+91' . $clean;
+        }
+
         return '+' . $clean;
     }
 }

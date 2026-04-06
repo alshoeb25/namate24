@@ -1,81 +1,63 @@
 <template>
   <div>
-    <!-- Coin Packages -->
+    <!-- Custom Coins Purchase -->
     <div>
-      <h2 class="text-2xl font-bold text-gray-800 mb-4">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">
         <i class="fas fa-shopping-cart mr-2"></i>Buy Coins
       </h2>
-      <div v-if="loading" class="text-center py-12">
-        <i class="fas fa-spinner fa-spin text-4xl text-pink-600"></i>
-        <p class="text-gray-600 mt-4">Loading packages...</p>
-      </div>
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div
-          v-for="pkg in packages"
-          :key="pkg.id"
-          class="bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 relative border-2"
-          :class="pkg.is_popular ? 'border-pink-500' : 'border-transparent'"
-        >
-          <!-- Popular Badge -->
-          <div v-if="pkg.is_popular" class="absolute -top-3 right-4 bg-pink-500 text-white px-3 py-1 rounded-full text-xs font-bold">
-            <i class="fas fa-star mr-1"></i>POPULAR
-          </div>
-          
-          <!-- Package Content -->
-          <div class="text-center mb-4">
-            <div class="mb-4">
-              <div class="w-20 h-20 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center mx-auto shadow-lg">
-                <i class="fas fa-coins text-white text-3xl"></i>
-              </div>
-            </div>
-            
-            <h3 class="text-xl font-bold text-gray-800 mb-2">{{ pkg.name }}</h3>
-            
-            <div class="text-4xl font-bold text-pink-600 mb-1">
-              {{ pkg.coins }}
-            </div>
-            <p class="text-sm text-gray-500 mb-2">Coins</p>
-            
-            <p v-if="pkg.bonus_coins > 0" class="text-sm text-green-600 font-semibold bg-green-50 rounded-full px-3 py-1 inline-block mb-3">
-              <i class="fas fa-gift mr-1"></i>+ {{ pkg.bonus_coins }} Bonus Coins
-            </p>
-            
-            <div class="mt-3 pt-3 border-t border-gray-200">
-              <div class="space-y-1">
-                <p class="text-3xl font-bold text-gray-800">
-                  {{ pkg.display_price || displayPrice(pkg).symbol + displayPrice(pkg).total }}
-                </p>
-                <p v-if="pkg.pricing && pkg.pricing.currency === 'INR'" class="text-xs text-gray-500">
-                  Base: ₹{{ Number(pkg.pricing.subtotal).toFixed(2) }} · GST ({{ pkg.pricing.gst_rate }}%): ₹{{ Number(pkg.pricing.tax_amount).toFixed(2) }}
-                </p>
-                <p v-else-if="pkg.pricing && pkg.pricing.currency === 'USD'" class="text-xs text-gray-500">
-                  {{ pkg.pricing.display_price }} (No GST)
-                </p>
-              </div>
-              <p v-if="pkg.description" class="text-xs text-gray-500 mt-2">{{ pkg.description }}</p>
-            </div>
-          </div>
-          
-          <!-- Buy Button -->
-          <button
-            @click="onBuy(pkg)"
-            :disabled="isProcessing || processingId === pkg.id"
-            class="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold py-3 rounded-lg hover:from-pink-600 hover:to-purple-700 transition transform hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            <span v-if="processingId === pkg.id || isProcessing">
-              <i class="fas fa-spinner fa-spin mr-2"></i>Processing...
-            </span>
-            <span v-else>
-              <i class="fas fa-shopping-cart mr-2"></i>Buy Now
-            </span>
-          </button>
-        </div>
-      </div>
       
-      <!-- Empty State -->
-      <div v-if="!loading && packages.length === 0" class="text-center py-12">
-        <i class="fas fa-box-open text-gray-300 text-6xl mb-4"></i>
-        <p class="text-gray-600 text-lg">No coin packages available at the moment.</p>
+      <div class="bg-white rounded-xl shadow-md p-8 max-w-md mx-auto">
+        <!-- Coin Input -->
+        <div class="mb-6">
+          <label class="block text-sm font-semibold text-gray-700 mb-3">
+            <i class="fas fa-coins mr-2 text-yellow-500"></i>Number of Coins
+          </label>
+          <div class="relative">
+            <input
+              v-model.number="customCoins"
+              type="number"
+              min="99"
+              step="1"
+              placeholder="Enter amount (minimum 99 coins)"
+              class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-pink-500 focus:outline-none text-lg font-semibold"
+            />
+            <span class="absolute right-4 top-3 text-gray-500 text-sm">coins</span>
+          </div>
+          <p v-if="customCoins < 99 && customCoins > 0" class="text-red-600 text-xs mt-2">
+            <i class="fas fa-exclamation-circle mr-1"></i>Minimum 99 coins required
+          </p>
+          <p class="text-gray-500 text-xs mt-2">Minimum: 99 coins</p>
+        </div>
+
+        <!-- Price Display -->
+        <div v-if="customCoins >= 99" class="mb-6 p-4 bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg border border-pink-200">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-gray-700 font-medium">Amount:</span>
+            <span class="text-2xl font-bold" :class="isIndiaUser ? 'text-blue-600' : 'text-blue-600'">
+              {{ calculatedPrice.symbol }}{{ calculatedPrice.total }}
+            </span>
+          </div>
+          <p v-if="isIndiaUser" class="text-xs text-gray-600">
+            Base: ₹{{ calculatedPrice.base }} + GST (18%): ₹{{ calculatedPrice.tax }}
+          </p>
+          <p v-else class="text-xs text-gray-600">
+            Special Rate: 99 coins = $15 (for non-India)
+          </p>
+        </div>
+
+        <!-- Buy Button -->
+        <button
+          @click="buyCustomCoins"
+          :disabled="customCoins < 99 || isProcessing"
+          class="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-pink-600 hover:to-purple-700 transition transform hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+        >
+          <span v-if="isProcessing">
+            <i class="fas fa-spinner fa-spin mr-2"></i>Processing...
+          </span>
+          <span v-else>
+            <i class="fas fa-shopping-cart mr-2"></i>Buy {{ customCoins >= 99 ? customCoins : 0 }} Coins
+          </span>
+        </button>
       </div>
     </div>
     
@@ -140,10 +122,10 @@ export default {
       type: String,
       default: ''
     },
-    // Backend endpoint to create Razorpay order
+    // Backend endpoint to create Razorpay order for custom coins
     createOrderUrl: {
       type: String,
-      default: '/api/wallet/purchase'
+      default: '/api/wallet/purchase-custom-coins'
     },
     // Backend endpoint to verify payment and credit coins
     verifyPaymentUrl: {
@@ -159,11 +141,10 @@ export default {
   emits: ['purchase', 'order-created', 'payment-success', 'payment-failed', 'payment-notify'],
   data() {
     return {
-      processingId: null,
-      isProcessing: false, // global lock to prevent multiple simultaneous purchases
+      customCoins: 99,
+      isProcessing: false,
       razorpayReady: !!(typeof window !== 'undefined' && window.Razorpay),
-      currentTransactionId: null,
-      failedPackage: null
+      currentTransactionId: null
     };
   },
   computed: {
@@ -171,37 +152,58 @@ export default {
       // Prefer prop, fallback to Vite env variable
       const envKey = (import.meta && import.meta.env && import.meta.env.VITE_RAZORPAY_KEY) || '';
       return this.razorpayKey || envKey;
+    },
+    isIndiaUser() {
+      const countryCode = String(this.userCountryCode || '').toUpperCase();
+      return ['IN', 'IND', '91'].includes(countryCode);
+    },
+    calculatedPrice() {
+      if (this.customCoins < 99) {
+        return { symbol: '', base: '0', tax: '0', total: '0' };
+      }
+
+      // Special pricing: 99 coins = $15 for non-Indian users
+      if (this.customCoins === 99 && !this.isIndiaUser) {
+        return {
+          symbol: '$',
+          base: '15.00',
+          tax: '0.00',
+          total: '15.00'
+        };
+      }
+
+      // Formula-based pricing: 1.25 USD per 100 coins
+      const basePricePerCoin = 1.25 / 100;
+      const priceInUSD = this.customCoins * basePricePerCoin;
+
+      if (this.isIndiaUser) {
+        // INR with 18% GST
+        const conversionRate = 83.5;
+        const priceInINR = priceInUSD * conversionRate;
+        const gstRate = 0.18;
+        const taxAmount = priceInINR * gstRate;
+        const totalAmount = priceInINR + taxAmount;
+        return {
+          symbol: '₹',
+          base: priceInINR.toFixed(2),
+          tax: taxAmount.toFixed(2),
+          total: totalAmount.toFixed(2)
+        };
+      } else {
+        // USD pricing
+        return {
+          symbol: '$',
+          base: priceInUSD.toFixed(2),
+          tax: '0.00',
+          total: priceInUSD.toFixed(2)
+        };
+      }
     }
   },
   mounted() {
     this.ensureRazorpay();
   },
   methods: {
-    displayPrice(pkg) {
-      const inr = Number(pkg.price || 0);
-      const usdRate = (import.meta?.env?.VITE_COIN_USD_RATE_PER_INR ?? 0.0125);
-      const isIndia = ['IN', 'IND', '91'].includes(String(this.userCountryCode || '').toUpperCase());
-      if (isIndia) {
-        const gstRate = Number(import.meta?.env?.VITE_COIN_GST_RATE ?? 0.18);
-        const tax = Math.round(inr * gstRate * 100) / 100;
-        const total = Math.round((inr + tax) * 100) / 100;
-        return {
-          symbol: '₹',
-          base: inr.toFixed(2),
-          tax: tax.toFixed(2),
-          total: total.toFixed(2),
-          hint: `GST included (${(gstRate*100).toFixed(0)}%)`
-        };
-      }
-      const usd = Math.round(inr * Number(usdRate) * 100) / 100;
-      return {
-        symbol: '$',
-        base: usd.toFixed(2),
-        tax: (0).toFixed(2),
-        total: usd.toFixed(2),
-        hint: `~₹${inr.toFixed(2)} (charged in USD)`
-      };
-    },
     ensureRazorpay() {
       if (typeof window === 'undefined') return;
       if (window.Razorpay) {
@@ -219,65 +221,55 @@ export default {
       document.body.appendChild(s);
     },
 
-    async onBuy(pkg) {
-      return this._createAndCheckout(pkg);
-    },
+    async buyCustomCoins() {
+      if (this.customCoins < 99) {
+        console.error('Minimum 99 coins required');
+        return;
+      }
 
-    async _createAndCheckout(pkg) {
       try {
         if (!this.resolvedRazorpayKey) {
           console.error('Missing razorpayKey prop');
           return;
         }
-        this.processingId = pkg.id;
         this.isProcessing = true;
-        this.failedPackage = pkg;
         await this.ensureRazorpay();
 
-        // Create order on backend (expects only package_id)
-        const { data } = await axios.post(this.createOrderUrl, { package_id: pkg.id });
+        // Create order on backend for custom coins
+        const { data } = await axios.post(this.createOrderUrl, { 
+          coins: this.customCoins,
+          reason: 'custom_purchase'
+        });
 
-        // Expecting { order, transaction_id, user }
         const order = data?.order || data;
         if (!order || !order.id) {
           throw new Error('Invalid order response');
         }
 
-        // Save transaction for later verification
         this.currentTransactionId = data?.transaction_id || null;
 
-        this.$emit('order-created', { pkg, order });
-        this.openCheckout(order, pkg);
+        this.$emit('order-created', { coins: this.customCoins, order });
+        this.openCheckout(order);
       } catch (err) {
-        console.error('Order creation failed', err);
-        this.$emit('payment-failed', { pkg, error: err, isRetryable: false });
-        this.processingId = null;
+        console.error('Custom coin order creation failed', err);
+        this.$emit('payment-failed', { error: err, isRetryable: false });
         this.isProcessing = false;
       }
     },
 
-    async retryPayment() {
-      if (this.failedPackage) {
-        await this._createAndCheckout(this.failedPackage);
-      }
-    },
-
-    openCheckout(order, pkg) {
+    openCheckout(order) {
       if (!window.Razorpay) {
         console.error('Razorpay not ready');
-        this.processingId = null;
         this.isProcessing = false;
         return;
       }
 
-      // Use the exact currency and amount from backend (already includes GST for India)
-      // Fallback to INR if backend doesn't specify currency
       const options = {
         key: this.resolvedRazorpayKey,
-        amount: order.amount, // Amount in smallest currency unit (paise for INR, cents for USD)
-        currency: order.currency || this.defaultCurrency, // Currency set by backend, default INR
+        amount: order.amount,
+        currency: order.currency || this.defaultCurrency,
         name: 'Namate24',
-        description: pkg.name,
+        description: `Buy ${this.customCoins} Coins`,
         order_id: order.id || order.razorpay_order_id,
         notes: order.notes || {},
         prefill: {
@@ -287,12 +279,11 @@ export default {
         },
         theme: { color: '#ec4899' },
         handler: (response) => {
-          this.handlePaymentSuccess(response, order, pkg);
+          this.handlePaymentSuccess(response, order);
         },
         modal: {
           ondismiss: async () => {
             try {
-              // Record payment cancellation in backend
               await axios.post('/api/wallet/payment-cancelled', {
                 order_id: order.id,
                 transaction_id: this.currentTransactionId,
@@ -301,7 +292,6 @@ export default {
             } catch (err) {
               console.error('Failed to record payment cancellation', err);
             } finally {
-              this.processingId = null;
               this.isProcessing = false;
             }
           }
@@ -310,15 +300,13 @@ export default {
 
       const rzp = new window.Razorpay(options);
       rzp.on('payment.failed', (resp) => {
-        // Mark order and transaction as failed in backend
-        this.markPaymentFailed(order, pkg, resp);
+        this.markPaymentFailed(order, resp);
       });
       rzp.open();
     },
 
-    async handlePaymentSuccess(response, order, pkg) {
+    async handlePaymentSuccess(response, order) {
       try {
-        // Send to backend for signature verification and wallet credit
         const verifyPayload = {
           transaction_id: this.currentTransactionId,
           razorpay_payment_id: response.razorpay_payment_id,
@@ -329,31 +317,28 @@ export default {
         const notify = {
           type: 'success',
           title: 'Payment successful',
-          message: 'Coins credited to your wallet. View transaction history.',
+          message: `${this.customCoins} coins credited to your wallet. View transaction history.`,
           ctaUrl: '/wallet/payment-history'
         };
-        this.$emit('payment-success', { pkg, response, result: data });
+        this.$emit('payment-success', { coins: this.customCoins, response, result: data });
         this.$emit('payment-notify', notify);
       } catch (err) {
         console.error('Payment verification failed', err);
-        // Verification failures are NOT retryable (backend issue, not gateway)
         const notify = {
           type: 'error',
           title: 'Payment failed',
           message: 'Your payment was not completed. Check transactions or retry.',
           ctaUrl: '/wallet/payment-history'
         };
-        this.$emit('payment-failed', { pkg, error: err, isRetryable: false });
+        this.$emit('payment-failed', { error: err, isRetryable: false });
         this.$emit('payment-notify', notify);
       } finally {
-        this.processingId = null;
         this.isProcessing = false;
       }
     },
 
-    async markPaymentFailed(order, pkg, response) {
+    async markPaymentFailed(order, response) {
       try {
-        // Call API to mark order and transaction as failed
         const payload = {
           order_id: order.id,
           transaction_id: this.currentTransactionId,
@@ -363,16 +348,8 @@ export default {
         };
 
         await axios.post('/api/wallet/payment-failed', payload);
-
         console.log('Payment failure recorded', payload);
 
-        // Store package for retry
-        this.failedPackage = this.failedPackage || pkg;
-        if (!this.failedPackage.id) {
-          this.failedPackage = { ...pkg };
-        }
-
-        // Emit event with retry option for gateway failures
         const notify = {
           type: 'error',
           title: 'Payment failed',
@@ -380,14 +357,12 @@ export default {
           ctaUrl: '/wallet/payment-history'
         };
 
-        this.$emit('payment-failed', { pkg: this.failedPackage, error: response?.error, isRetryable: true });
+        this.$emit('payment-failed', { error: response?.error, isRetryable: true });
         this.$emit('payment-notify', notify);
       } catch (err) {
         console.error('Failed to record payment failure', err);
-        // Still emit failure event even if recording fails
-        this.$emit('payment-failed', { pkg, error: response?.error, isRetryable: true });
+        this.$emit('payment-failed', { error: response?.error, isRetryable: true });
       } finally {
-        this.processingId = null;
         this.isProcessing = false;
       }
     }

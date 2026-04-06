@@ -149,7 +149,7 @@
           ]"
         >
           <i :class="unlocking ? 'fas fa-spinner fa-spin' : userHasSubscription() ? 'fas fa-unlock' : 'fas fa-crown'"></i>
-          {{ unlocking ? 'Unlocking...' : requirement.lead_info?.is_full ? 'No Spots Available' : (userHasSubscription() ? 'Unlock Contact (Free)' : 'Subscribe to Unlock') }}
+          {{ unlocking ? 'Unlocking...' : requirement.lead_info?.is_full ? 'No Spots Available' : (userHasSubscription() ? `Unlock Contact (-₹${requirement.unlock_price || 49})` : 'Subscribe to Unlock') }}
         </button>
         <button 
           v-if="requirement.has_unlocked"
@@ -212,7 +212,7 @@
           <div class="flex items-center">
             <i class="fas fa-crown text-green-600 text-2xl mr-3"></i>
             <div>
-              <p class="font-semibold text-green-800">Free with your Subscription</p>
+              <p class="font-semibold text-green-800">Deduct -₹{{ requirement.unlock_price || 49 }} coins from your wallet</p>
             </div>
           </div>
         </div>
@@ -243,7 +243,7 @@
             <span v-if="unlocking">
               <i class="fas fa-spinner fa-spin mr-2"></i>Processing...
             </span>
-            <span v-else>Accept & Unlock (Free)</span>
+            <span v-else>Accept & Unlock (-₹{{ requirement.unlock_price || 49 }} coins)</span>
           </button>
         </div>
       </div>

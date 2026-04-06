@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 use App\Helpers\CountryHelper;
+use Spatie\Permission\Models\Role;
 
 class SocialAuthController extends Controller
 {
@@ -78,6 +79,8 @@ class SocialAuthController extends Controller
                 ]);
 
                 // Sync role with Spatie
+                // Ensure role exists first (create on-demand if doesn't exist)
+                Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
                 $user->syncRoles([$role]);
 
                 // Create wallet

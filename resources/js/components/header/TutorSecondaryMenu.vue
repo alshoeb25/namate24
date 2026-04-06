@@ -101,6 +101,12 @@
                        active-class="text-pink-600 font-semibold">
             <i class="fas fa-user-graduate mr-2"></i>My Learners
           </router-link>
+
+          <router-link to="/tutor/wallet"
+                       class="text-gray-700 hover:text-pink-600 font-medium transition"
+                       active-class="text-pink-600 font-semibold">
+            <i class="fas fa-wallet mr-2"></i>Wallet
+          </router-link>
         </nav>
       </div>
 
@@ -159,6 +165,13 @@
             <router-link to="/tutor/profile/my-learners" @click="closeMobileMenu"
                          class="block px-4 py-2 text-gray-700 font-medium hover:bg-gray-50 rounded-md">
               <i class="fas fa-user-graduate mr-2"></i>My Learners
+            </router-link>
+          </li>
+
+          <li>
+            <router-link to="/tutor/wallet" @click="closeMobileMenu"
+                         class="block px-4 py-2 text-gray-700 font-medium hover:bg-gray-50 rounded-md">
+              <i class="fas fa-wallet mr-2"></i>Wallet
             </router-link>
           </li>
         </ul>

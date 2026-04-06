@@ -89,6 +89,17 @@
             <i class="fas fa-coins mr-2"></i>Coin Transactions
           </button>
           <button
+            @click="activeTab = 'subscription-coins'"
+            :class="[
+              'flex-1 min-w-[240px] px-4 md:px-6 py-3 md:py-4 font-semibold transition-all whitespace-nowrap',
+              activeTab === 'subscription-coins'
+                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white'
+                : 'text-gray-600 hover:bg-gray-50'
+            ]"
+          >
+            <i class="fas fa-hourglass-half mr-2"></i>Subscription Coins
+          </button>
+          <button
             @click="activeTab = 'payment-transactions'"
             :class="[
               'flex-1 min-w-[240px] px-4 md:px-6 py-3 md:py-4 font-semibold transition-all whitespace-nowrap',
@@ -189,6 +200,11 @@
           </div>
         </div>
 
+        <!-- Subscription Coins Tab -->
+        <div v-show="activeTab === 'subscription-coins'">
+          <SubscriptionCoinsSpent />
+        </div>
+
         <!-- Payment Transactions Tab -->
         <div v-show="activeTab === 'payment-transactions'">
           <div class="bg-white rounded-2xl shadow-md p-6">
@@ -265,13 +281,15 @@ import axios from 'axios';
 import ReferralShareCard from '../components/Wallet/ReferralShareCard.vue';
 import BuyCoins from '../components/Wallet/BuyCoins.vue';
 import TransactionDetailsModal from '../components/Wallet/TransactionDetailsModal.vue';
+import SubscriptionCoinsSpent from '../components/Wallet/SubscriptionCoinsSpent.vue';
 
 export default {
   name: 'TutorWallet',
   components: {
     ReferralShareCard,
     BuyCoins,
-    TransactionDetailsModal
+    TransactionDetailsModal,
+    SubscriptionCoinsSpent
   },
   setup() {
     const wallet = ref({});

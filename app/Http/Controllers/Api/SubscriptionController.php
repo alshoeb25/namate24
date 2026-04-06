@@ -102,14 +102,28 @@ class SubscriptionController extends Controller
                 ->first();
 
             if ($existingSubscription) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'You already have an active subscription. Please wait for it to expire or contact support to upgrade.',
-                    'current_subscription' => [
-                        'plan_name' => $existingSubscription->plan->name,
-                        'expires_at' => $existingSubscription->expires_at->format('Y-m-d H:i:s'),
-                    ],
-                ], 400);
+                // Check if this is an upgrade
+                $existingPlanType = $existingSubscription->getPlanType();
+                $newPlanType = $plan->getPlanType(); // Use the model method directly
+                
+                // Allow upgrade from BASIC to PRO only
+                $isUpgrade = ($existingPlanType === 'BASIC' && $newPlanType === 'PRO');
+                
+                if (!$isUpgrade) {
+                    // Block downgrades or same plan purchases
+                    return response()->json([
+                        'success' => false,
+                        'message' => $existingPlanType === $newPlanType 
+                            ? 'You already have this subscription plan'
+                            : 'You cannot downgrade your subscription. Please wait for it to expire or contact support.',
+                        'current_subscription' => [
+                            'plan_name' => $existingSubscription->plan->name,
+                            'plan_type' => $existingPlanType,
+                            'expires_at' => $existingSubscription->expires_at->format('Y-m-d H:i:s'),
+                        ],
+                    ], 400);
+                }
+                // If upgrade: continue to purchase flow
             }
 
             // Create order
@@ -443,4 +457,6 @@ class SubscriptionController extends Controller
             ], 500);
         }
     }
+
 }
+

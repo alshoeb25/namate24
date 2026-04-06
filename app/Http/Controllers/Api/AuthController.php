@@ -18,6 +18,7 @@ use App\Models\UserActivity;
 use App\Jobs\RecordLoginActivity;
 use App\Jobs\RecordLogoutActivity;
 use App\Helpers\CountryHelper;
+use Spatie\Permission\Models\Role;
 
 class AuthController extends Controller
 {
@@ -61,6 +62,10 @@ class AuthController extends Controller
         ]);
 
         // Sync role with Spatie roles table
+        // Ensure role exists first (create on-demand if doesn't exist)
+        $role = Role::firstOrCreate(
+            ['name' => $data['role'], 'guard_name' => 'web']
+        );
         $user->syncRoles([$data['role']]);
 
         // Create wallet

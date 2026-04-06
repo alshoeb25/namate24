@@ -45,6 +45,11 @@ Route::get('public/tutors/{id}', [TutorController::class,'publicShow']);
 // Advanced search endpoints for tutors
 Route::get('tutors/nearby', [TutorController::class,'nearby']);
 Route::get('tutors/by-location', [TutorController::class,'byLocation']);
+
+// Authenticated tutor routes
+Route::middleware('auth:api')->group(function () {
+    Route::post('tutors/{id}/unlock-profile', [TutorController::class, 'unlockProfile']);
+});
 Route::get('cms/{slug}', [CmsPageController::class,'show']);
 Route::get('credit-packages', [CreditPackageController::class,'index']);
 Route::get('subjects', [SubjectController::class,'index']);
@@ -126,8 +131,50 @@ Route::middleware('auth:api')->group(function() {
             $wallet = $user->wallet->only(['id', 'user_id', 'balance']);
         }
         
-        // Check for active subscription
-        $hasActiveSubscription = $user->activeSubscription() !== null;
+        // ✅ Get FULL subscription info including coin wallet
+        $activeSubscription = $user->activeSubscription();
+        $subscriptionInfo = null;
+        if ($activeSubscription) {
+            $subscriptionInfo = [
+                'id' => $activeSubscription->id,
+                'plan_id' => $activeSubscription->subscription_plan_id,
+                'plan_name' => $activeSubscription->plan->name ?? 'Unknown',
+                'plan_type' => $activeSubscription->isPROPlan() ? 'PRO' : ($activeSubscription->isBASICPlan() ? 'BASIC' : 'OTHER'),
+                'price' => (float)$activeSubscription->plan->price,
+                'currency' => 'INR',
+                'views_allowed' => $activeSubscription->plan->views_allowed,
+                'views_used' => $activeSubscription->views_used,
+                'remaining_views' => $activeSubscription->getRemainingViews(),
+                'unlimited_views' => $activeSubscription->plan->views_allowed === null,
+                'validity_days' => $activeSubscription->plan->validity_days,
+                'remaining_days' => $activeSubscription->getRemainingDays(),
+                'activated_at' => $activeSubscription->activated_at,
+                'expires_at' => $activeSubscription->expires_at,
+                'status' => 'active',
+            ];
+        }
+        
+        // Check for lapsed subscription (had one that expired)
+        $lapsedSubscription = null;
+        if (!$activeSubscription) {
+            $lapsed = \App\Models\UserSubscription::where('user_id', $user->id)
+                ->where('status', 'active')
+                ->where('expires_at', '<=', now())
+                ->latest('expires_at')
+                ->first();
+            
+            if ($lapsed) {
+                $lapsedSubscription = [
+                    'plan_name' => $lapsed->plan->name ?? 'Unknown',
+                    'expired_at' => $lapsed->expires_at,
+                    'days_since_expiry' => now()->diffInDays($lapsed->expires_at),
+                    'has_remaining_coins' => true,
+                    'view_delay_applied' => true,
+                    'delay_minutes' => 120, // 2-hour delay
+                    'message' => 'Your subscription has expired. You can still view requirements with coins, but with a 2-hour delay.',
+                ];
+            }
+        }
         
         // Get roles
         $userRoles = $user->roles->pluck('name')->toArray();
@@ -150,14 +197,17 @@ Route::middleware('auth:api')->group(function() {
             'role' => $user->role,
             'email_verified_at' => $user->email_verified_at,
             'coins' => $user->coins,
+            'coin_wallet_balance' => $user->coins, // Direct coin balance (includes subscription credits)
             'referral_code' => $user->referral_code,
             'referred_by' => $user->referred_by,
             'tutor' => $tutor,
             'student' => $student,
             'wallet' => $wallet,
+            'subscription' => $subscriptionInfo,
+            'lapsed_subscription' => $lapsedSubscription,
             'roles' => $userRoles,
-            'has_active_subscription' => $hasActiveSubscription,
-            'subscription_active' => $hasActiveSubscription,
+            'has_active_subscription' => $activeSubscription !== null,
+            'subscription_active' => $activeSubscription !== null,
         ]);
     });
 
@@ -268,12 +318,15 @@ Route::middleware('auth:api')->group(function() {
     // Coin Wallet Routes
     Route::prefix('wallet')->group(function () {
         Route::get('/', [WalletController::class, 'index']); // Get balance and transactions
+        Route::get('view', [WalletController::class, 'view']); // Clean wallet view (balance + transactions, no buy)
         Route::get('payment-history', [WalletController::class, 'paymentHistory']); // Get payment history with filters
         Route::get('payment-transactions', [WalletController::class, 'paymentTransactions']); // PaymentTransaction-only API
         Route::get('coin-transactions', [WalletController::class, 'coinTransactions']); // CoinTransaction-only API with filters
+        Route::get('subscription-coins-spent', [WalletController::class, 'subscriptionCoinsSpent']); // Subscription-related coin spend tracking
         Route::get('packages', [WalletController::class, 'packages']); // Get coin packages
         Route::get('coin-packages', [WalletController::class, 'coinPackages']); // Get coin packages with dynamic pricing
         Route::post('purchase', [WalletController::class, 'purchaseCoins']); // Create Razorpay order
+        Route::post('purchase-custom-coins', [WalletController::class, 'purchaseCustomCoins']); // Create order for custom coin amount (min 99)
         Route::post('verify-payment', [WalletController::class, 'verifyPayment']); // Verify payment and credit coins
         Route::post('payment-failed', [WalletController::class, 'markPaymentFailed']); // Mark payment as failed from gateway
         Route::post('payment-cancelled', [WalletController::class, 'cancelledPayment']); // Handle user dismissing payment modal

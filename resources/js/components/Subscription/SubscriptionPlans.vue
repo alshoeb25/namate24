@@ -1,128 +1,215 @@
 <template>
-  <div class="subscription-container">
-    <!-- Navigation Menu -->
-    <div class="subscription-menu">
-      <div class="menu-header">
-        <h2 class="menu-title">Subscription Plans</h2>
-      </div>
-      <div class="menu-tabs">
-        <button 
-          v-if="hasActiveSubscription"
-          class="menu-tab" 
-          :class="{ active: activeTab === 'current' }"
+  <div class="min-h-screen bg-gray-50">
+    <!-- Tab Navigation -->
+    <div class="bg-white rounded-2xl shadow-md mb-6 overflow-hidden">
+      <div class="flex border-b border-gray-200 overflow-x-auto">
+        <button
+          v-if="hasActiveSubscription || hasLapsedSubscription"
+          class="flex-1 min-w-[180px] px-4 md:px-6 py-3 md:py-4 font-semibold transition-all whitespace-nowrap"
+          :class="[
+            activeTab === 'current'
+              ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+              : 'text-gray-600 hover:bg-gray-50'
+          ]"
           @click="activeTab = 'current'"
         >
-          <span class="tab-icon">✓</span> Current Plan
+          <i class="fas fa-check mr-2"></i>{{ hasActiveSubscription ? 'Current Plan' : 'Lapsed' }}
         </button>
-        <button 
-          class="menu-tab" 
-          :class="{ active: activeTab === 'browse' }"
+        <button
+          class="flex-1 min-w-[160px] px-4 md:px-6 py-3 md:py-4 font-semibold transition-all whitespace-nowrap"
+          :class="[
+            activeTab === 'browse'
+              ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+              : 'text-gray-600 hover:bg-gray-50'
+          ]"
           @click="activeTab = 'browse'"
         >
-          <span class="tab-icon">📋</span> Browse Plans
+          <i class="fas fa-list-alt mr-2"></i>Browse Plans
         </button>
-        <button 
-          class="menu-tab" 
-          :class="{ active: activeTab === 'history' }"
+        <button
+          class="flex-1 min-w-[160px] px-4 md:px-6 py-3 md:py-4 font-semibold transition-all whitespace-nowrap"
+          :class="[
+            activeTab === 'history'
+              ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+              : 'text-gray-600 hover:bg-gray-50'
+          ]"
           @click="activeTab = 'history'"
         >
-          <span class="tab-icon">📜</span> History
+          <i class="fas fa-history mr-2"></i>History
         </button>
       </div>
-      <div class="country-info">
-        <span v-if="isIndiaUser" class="badge badge-india">🇮🇳 India - INR (with 18% GST)</span>
-        <span v-else class="badge badge-foreign">🌍 International - USD</span>
+    </div>
+
+    <!-- Lapsed Subscription Alert -->
+    <div v-if="hasLapsedSubscription && !hasActiveSubscription" class="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-lg mb-6">
+      <div class="flex gap-4">
+        <div class="flex-shrink-0">
+          <i class="fas fa-exclamation-circle text-yellow-600 text-2xl mt-1"></i>
+        </div>
+        <div class="flex-1">
+          <h3 class="text-lg font-bold text-yellow-800 mb-2">Subscription Expired</h3>
+          <p class="text-yellow-700 mb-4">
+            Your {{ subscription.plan_name }} subscription expired {{ subscription.days_since_expiry }} day(s) ago.
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+            <div class="bg-white rounded-lg p-3">
+              <div class="text-xs text-gray-600 uppercase font-semibold">Remaining Coins</div>
+              <div class="text-2xl font-bold text-green-600">{{ subscription.remaining_coins }}</div>
+              <div class="text-xs text-gray-500 mt-1">{{ subscription.coins_display }}</div>
+            </div>
+            <div class="bg-white rounded-lg p-3">
+              <div class="text-xs text-gray-600 uppercase font-semibold">View Delay</div>
+              <div class="text-2xl font-bold text-orange-600">{{ subscription.delay_hours }}h</div>
+              <div class="text-xs text-gray-500 mt-1">After expiry</div>
+            </div>
+            <div class="bg-white rounded-lg p-3">
+              <div class="text-xs text-gray-600 uppercase font-semibold">Cost per View</div>
+              <div class="text-2xl font-bold text-blue-600">{{ subscription.view_cost_with_coins }}</div>
+              <div class="text-xs text-gray-500 mt-1">coins required</div>
+            </div>
+          </div>
+          <div class="bg-white rounded-lg p-4 mb-4 border border-yellow-200">
+            <p class="text-sm text-gray-700">
+              <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+              {{ subscription.delay_message }}
+            </p>
+          </div>
+          <div class="flex gap-3">
+            <button 
+              v-if="subscription.can_view_with_coins"
+              class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition"
+              @click="activeTab = 'browse'"
+            >
+              <i class="fas fa-eye mr-2"></i>Use Coins to Browse
+            </button>
+            <button 
+              class="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold rounded-lg transition"
+              @click="activeTab = 'browse'; scrollToPlans = true"
+            >
+              <i class="fas fa-refresh mr-2"></i>Re-Subscribe Now
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- Current Subscription Tab -->
-    <div v-if="hasActiveSubscription && activeTab === 'current'" class="status-section">
-      <div class="status-card">
-        <div class="card-header">
-          <h2>Your Current Subscription</h2>
-          <span class="badge-active">Active</span>
+    <div v-if="(hasActiveSubscription || hasLapsedSubscription) && activeTab === 'current'">
+      <!-- Current Plan Card -->
+      <div class="bg-white rounded-2xl shadow-md p-6 md:p-8 mb-6">
+        <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
+          <div>
+            <h2 class="text-2xl font-bold text-gray-800">
+              <i class="fas fa-check-circle text-green-600 mr-2"></i>Your Current Subscription
+            </h2>
+          </div>
+          <span class="inline-block px-4 py-1 rounded-full bg-green-100 text-green-700 font-semibold text-sm">
+            <i class="fas fa-check mr-1"></i>Active
+          </span>
         </div>
         
-        <div class="status-details">
-          <div class="detail-group">
-            <h3>Plan Information</h3>
-            <div class="status-item">
-              <label>Plan Name:</label>
-              <span class="highlight">{{ subscription.plan_name }}</span>
-            </div>
-            <div class="status-item">
-              <label>Plan Price:</label>
-              <span class="highlight">
-                <span v-if="isIndiaUser">₹{{ subscription.base_price }}</span>
-                <span v-else>${{ subscription.display_price }}</span>
-              </span>
-            </div>
-            <div v-if="isIndiaUser && subscription.gst_amount > 0" class="status-item">
-              <label>GST (18%):</label>
-              <span>₹{{ (subscription.gst_amount).toFixed(2) }}</span>
-            </div>
-            <div class="status-item">
-              <label>Total Amount:</label>
-              <span class="highlight">
-                <span v-if="isIndiaUser">₹{{ Number(subscription.price).toFixed(2) }}</span>
-                <span v-else>${{ Number(subscription.price).toFixed(2) }}</span>
-              </span>
-            </div>
-          </div>
-
-          <div class="detail-group">
-            <h3>Access Details</h3>
-            <div class="status-item">
-              <label>Views Allowed:</label>
-              <span v-if="subscription.unlimited_views" class="highlight">Unlimited</span>
-              <span v-else class="highlight">{{ subscription.views_allowed }} views</span>
-            </div>
-            <div v-if="!subscription.unlimited_views" class="status-item">
-              <label>Views Used:</label>
-              <span>{{ subscription.views_used }} / {{ subscription.views_allowed }}</span>
-            </div>
-            <div v-if="!subscription.unlimited_views" class="progress-bar">
-              <div class="progress-fill" :style="{ width: (subscription.views_used / subscription.views_allowed * 100) + '%' }"></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <!-- Left Column -->
+          <div>
+            <h3 class="text-lg font-semibold text-gray-700 mb-4">Plan Information</h3>
+            <div class="space-y-3">
+              <div class="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span class="text-gray-600">Plan Name:</span>
+                <span class="font-semibold text-gray-800">{{ subscription.plan_name }}</span>
+              </div>
+              <div class="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span class="text-gray-600">Plan Price:</span>
+                <span class="font-semibold text-blue-600">
+                  <span v-if="isIndiaUser">₹{{ subscription.base_price }}</span>
+                  <span v-else>${{ subscription.display_price }}</span>
+                </span>
+              </div>
+              <div v-if="isIndiaUser && subscription.gst_amount > 0" class="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span class="text-gray-600">GST (18%):</span>
+                <span class="text-gray-700">₹{{ (subscription.gst_amount).toFixed(2) }}</span>
+              </div>
+              <div class="flex justify-between items-center pt-2 bg-blue-50 px-3 py-2 rounded-lg">
+                <span class="font-semibold text-gray-700">Total Amount:</span>
+                <span class="font-bold text-blue-600 text-lg">
+                  <span v-if="isIndiaUser">₹{{ Number(subscription.price).toFixed(2) }}</span>
+                  <span v-else>${{ Number(subscription.price).toFixed(2) }}</span>
+                </span>
+              </div>
             </div>
           </div>
 
-          <div class="detail-group">
-            <h3>Validity</h3>
-            <div class="status-item">
-              <label>Activated On:</label>
-              <span>{{ formatDate(subscription.activated_at) }}</span>
+          <!-- Right Column -->
+          <div>
+            <h3 class="text-lg font-semibold text-gray-700 mb-4">Access & Validity</h3>
+            <div class="space-y-3">
+              <div class="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span class="text-gray-600">Views Allowed:</span>
+                <span class="font-semibold" :class="subscription.unlimited_views ? 'text-green-600' : 'text-gray-800'">
+                  {{ subscription.unlimited_views ? 'Unlimited' : subscription.views_allowed + ' views' }}
+                </span>
+              </div>
+              <div v-if="!subscription.unlimited_views" class="pb-2 border-b border-gray-100">
+                <div class="flex justify-between items-center mb-2">
+                  <span class="text-gray-600">Views Used:</span>
+                  <span class="text-gray-700">{{ subscription.views_used }} / {{ subscription.views_allowed }}</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                  <div class="bg-blue-500 h-2 rounded-full transition-all" :style="{ width: (subscription.views_used / subscription.views_allowed * 100) + '%' }"></div>
+                </div>
+              </div>
+              <div class="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span class="text-gray-600">Remaining:</span>
+                <span class="font-semibold text-orange-600">{{ subscription.remaining_days }} days</span>
+              </div>
+              <div class="flex justify-between items-center pt-2 bg-yellow-50 px-3 py-2 rounded-lg" v-if="subscription.remaining_days <= 7">
+                <i class="fas fa-exclamation-triangle text-yellow-600 mr-2"></i>
+                <span class="text-yellow-700 text-sm font-medium">Renew soon!</span>
+              </div>
             </div>
-            <div class="status-item">
-              <label>Expired On:</label>
-              <span class="highlight">{{ formatDate(subscription.expires_at) }} <small class="text-muted">(+{{ subscription.validity_days }} days)</small></span>
-            </div>
-            <div class="status-item">
-              <label>Remaining:</label>
-              <span class="countdown">{{ subscription.remaining_days }} days</span>
-            </div>
-          </div>
-
-          <div class="expiry-warning" v-if="subscription.remaining_days <= 7">
-            <span class="warning-icon">⚠️</span>
-            Your subscription will expire soon! Consider renewing now.
           </div>
         </div>
 
-        <div class="status-actions">
-          <button class="btn btn-primary btn-large" @click="getRenewOptions">
-            ✓ Renew Subscription
+        <!-- Plan Details Section -->
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200 mb-6">
+          <h3 class="text-lg font-semibold text-gray-800 mb-4">Plan Details</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex items-start gap-3">
+              <i class="fas fa-coins text-yellow-500 mt-0.5 font-bold"></i>
+              <div class="flex-1">
+                <span class="text-gray-700 font-semibold">{{ subscription.coins_included_text }}</span>
+                <p class="text-xs text-gray-500">{{ subscription.cost_per_view_text }}</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <i class="fas fa-bolt text-green-500 mt-0.5 font-bold"></i>
+              <span class="text-gray-700">{{ subscription.access_delay_text }}</span>
+            </div>
+            <div class="flex items-start gap-3">
+              <i class="fas fa-redo text-indigo-500 mt-0.5 font-bold"></i>
+              <span class="text-gray-700 font-semibold" :class="subscription.coins_carry_forward ? 'text-green-600' : 'text-orange-600'">
+                {{ subscription.coins_carry_forward_text }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button class="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-700 transition shadow-md"
+            @click="getRenewOptions">
+            <i class="fas fa-refresh mr-2"></i>Renew Subscription
           </button>
-          <button class="btn btn-outline" @click="cancelSubscription" :disabled="cancelling">
-            {{ cancelling ? 'Cancelling...' : '✕ Cancel Subscription' }}
+          <button class="flex-1 px-6 py-3 border-2 border-red-500 text-red-600 font-semibold rounded-lg hover:bg-red-50 transition"
+            @click="cancelSubscription" :disabled="cancelling">
+            <i class="fas fa-times mr-2"></i>{{ cancelling ? 'Cancelling...' : 'Cancel' }}
           </button>
         </div>
       </div>
 
       <!-- Renew Options -->
-      <div v-if="showRenewOptions" class="renew-section">
-        <h3>Renew Your Subscription</h3>
-        <p>Select a plan to extend your access</p>
-        <div class="plans-grid">
+      <div v-if="showRenewOptions" class="bg-white rounded-2xl shadow-md p-6 md:p-8 mb-6">
+        <h3 class="text-2xl font-bold text-gray-800 mb-2">Renew Your Subscription</h3>
+        <p class="text-gray-600 mb-6">Select a plan to extend your access</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div
             v-for="plan in plans"
             :key="plan.id"
@@ -135,7 +222,14 @@
               <span v-else>${{ plan.display_price }}</span>
               <span v-if="isIndiaUser && plan.gst_amount > 0" class="gst-info">(+₹{{ (plan.gst_amount).toFixed(2) }} GST)</span>
             </p>
-            <p class="views-text">{{ plan.views_text }}</p>
+            <div class="mb-3 space-y-1 text-sm">
+              <p class="text-gray-700"><strong>{{ plan.coins_included_text }}</strong></p>
+              <p class="text-gray-600">{{ plan.cost_per_view_text }}</p>
+              <p class="text-gray-600">{{ plan.views_text }}</p>
+              <p class="text-gray-600">{{ plan.access_delay_text }}</p>
+              <p class="text-gray-600 font-semibold" :class="plan.coins_carry_forward ? 'text-green-600' : 'text-orange-600'">{{ plan.coins_carry_forward_text }}</p>
+            </div>
+            <p class="views-text">Valid for {{ plan.validity_text }}</p>
             <button class="btn btn-primary">Select</button>
           </div>
         </div>
@@ -149,8 +243,8 @@
         Select a subscription plan to unlock access to tutor profiles and requirements with the specified view limits.
       </p>
 
-      <!-- Region Toggle -->
-      <div class="region-toggle">
+      <!-- Region Toggle (Hidden - Auto-detect based on user location) -->
+      <!-- <div class="region-toggle">
         <button
           class="region-btn"
           :class="{ active: selectedRegion === 'india' }"
@@ -165,63 +259,112 @@
         >
           🌍 Foreign National (USD)
         </button>
-      </div>
+      </div> -->
 
-      <div class="plans-grid">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div
           v-for="plan in plans"
           :key="plan.id"
-          class="plan-card"
-          :class="{ popular: plan.id === 1 }"
+          class="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-lg transition-shadow border-2 duration-300"
+          :class="plan.id === 1 ? 'border-blue-500 md:col-span-2 lg:col-span-1' : 'border-gray-200'"
         >
-          <div class="plan-header">
-            <h3 class="plan-name">{{ plan.name }}</h3>
-            <span v-if="plan.id === 1" class="badge-popular">Most Popular</span>
+          <!-- Plan Header -->
+          <div class="p-6 bg-gradient-to-r" :class="plan.id === 1 ? 'from-blue-500 to-indigo-600' : 'from-gray-50 to-gray-100'">
+            <div class="flex justify-between items-start gap-4">
+              <div>
+                <h3 class="text-xl font-bold" :class="plan.id === 1 ? 'text-white' : 'text-gray-800'">
+                  {{ plan.name }}
+                </h3>
+              </div>
+              <span v-if="plan.id === 1" class="px-3 py-1 rounded-full transition text-white font-semibold text-sm bg-blue-400 whitespace-nowrap">
+                <i class="fas fa-star mr-1"></i>Most Popular
+              </span>
+            </div>
           </div>
 
-          <!-- India Pricing -->
-          <template v-if="selectedRegion === 'india'">
-            <div class="plan-price">
-              <span class="currency">₹</span>
-              <span class="amount">{{ plan.base_price }}</span>
-              <span class="period">/month</span>
-            </div>
-            <div v-if="plan.gst_amount > 0" class="gst-breakdown">
-              <small>+ GST (18%): ₹{{ (plan.gst_amount).toFixed(2) }}</small>
-              <small class="total-price">Total: ₹{{ Number(plan.price).toFixed(2) }}</small>
-            </div>
-          </template>
+          <!-- Plan Pricing -->
+          <div class="p-6 border-b border-gray-100">
+            <!-- India Pricing -->
+            <template v-if="selectedRegion === 'india'">
+              <div class="mb-4">
+                <div class="flex items-baseline gap-1">
+                  <span class="text-gray-600 text-sm">₹</span>
+                  <span class="text-4xl font-bold text-blue-600">{{ plan.base_price }}</span>
+                  <span class="text-gray-600 text-sm">/month</span>
+                </div>
+                <div v-if="plan.gst_amount > 0" class="mt-3 text-sm text-gray-600 space-y-1">
+                  <div class="flex justify-between">
+                    <span>GST (18%):</span>
+                    <span>₹{{ (plan.gst_amount).toFixed(2) }}</span>
+                  </div>
+                  <div class="flex justify-between font-semibold text-blue-600 pt-1 border-t border-gray-100">
+                    <span>Total:</span>
+                    <span>₹{{ Number(plan.price).toFixed(2) }}</span>
+                  </div>
+                </div>
+              </div>
+            </template>
 
-          <!-- International / Foreign National Pricing -->
-          <template v-else>
-            <div class="plan-price">
-              <span class="currency">$</span>
-              <span class="amount">{{ foreignPrice(plan) }}</span>
-              <span class="period">/month</span>
-            </div>
-            <div class="foreign-note">
-              <small>No tax applied · Billed in USD</small>
-            </div>
-          </template>
-
-          <div class="plan-features">
-            <p class="feature">
-              ✓ Valid for {{ plan.validity_text }}
-            </p>
-            <p class="feature">
-              ✓ {{ plan.views_text }}
-            </p>
-            <p v-if="plan.description" class="description">{{ plan.description }}</p>
+            <!-- International / Foreign National Pricing -->
+            <template v-else>
+              <div class="mb-4">
+                <div class="flex items-baseline gap-1">
+                  <span class="text-gray-600 text-sm">$</span>
+                  <span class="text-4xl font-bold text-blue-600">{{ foreignPrice(plan) }}</span>
+                  <span class="text-gray-600 text-sm">/month</span>
+                </div>
+                <div class="mt-3 text-xs text-gray-500 italic">
+                  No tax applied · Billed in USD
+                </div>
+              </div>
+            </template>
           </div>
 
-          <button
-            class="btn-subscribe"
-            :class="{ 'btn-primary': plan.id === 1, 'btn-secondary': plan.id !== 1 }"
-            @click="selectPlan(plan)"
-            :disabled="loading"
-          >
-            {{ loading ? 'Processing...' : 'Subscribe Now' }}
-          </button>
+          <!-- Plan Features -->
+          <div class="p-6 border-b border-gray-100">
+            <div class="space-y-3">
+              <div class="flex items-start gap-3">
+                <i class="fas fa-coins text-yellow-500 mt-0.5 font-bold"></i>
+                <div class="flex-1">
+                  <span class="text-gray-700 font-semibold">{{ plan.coins_included_text }}</span>
+                  <p class="text-xs text-gray-500">{{ plan.cost_per_view_text }}</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3">
+                <i class="fas fa-eye text-blue-500 mt-0.5 font-bold"></i>
+                <span class="text-gray-700">{{ plan.views_text }}</span>
+              </div>
+              <div class="flex items-start gap-3">
+                <i class="fas fa-calendar text-purple-500 mt-0.5 font-bold"></i>
+                <span class="text-gray-700">Valid for {{ plan.validity_text }}</span>
+              </div>
+              <div class="flex items-start gap-3">
+                <i class="fas fa-bolt text-green-500 mt-0.5 font-bold"></i>
+                <span class="text-gray-700">{{ plan.access_delay_text }}</span>
+              </div>
+              <div class="flex items-start gap-3">
+                <i class="fas fa-redo text-indigo-500 mt-0.5 font-bold"></i>
+                <span class="text-gray-700">{{ plan.coins_carry_forward_text }}</span>
+              </div>
+              <div v-if="plan.description" class="text-xs text-gray-500 italic pt-2 border-t border-gray-100">
+                {{ plan.description }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Subscribe Button -->
+          <div class="p-6">
+            <button
+              class="w-full py-3 px-4 font-semibold rounded-lg transition-all"
+              :class="plan.id === 1 
+                ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 disabled:opacity-60'
+                : 'border-2 border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50 disabled:opacity-60'"
+              @click="selectPlan(plan)"
+              :disabled="loading"
+            >
+              {{ loading ? 'Processing...' : 'Subscribe Now' }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -285,109 +428,136 @@
     </div>
 
     <!-- Purchase Flow -->
-    <div v-if="showPurchaseFlow" class="purchase-section">
-      <button class="btn-back" @click="cancelPurchase">
-        ← Back to Plans
+    <div v-if="showPurchaseFlow" class="bg-gray-50 py-4">
+      <button 
+        class="mb-4 text-blue-600 hover:text-blue-700 font-medium flex items-center gap-2 transition-colors"
+        @click="cancelPurchase"
+      >
+        <i class="fas fa-arrow-left"></i>Back to Plans
       </button>
 
-      <div class="purchase-card">
-        <h2>Complete Your Purchase</h2>
+      <div class="bg-white rounded-2xl shadow-md p-6 md:p-8">
+        <h2 class="text-3xl font-bold text-gray-800 mb-6">Complete Your Purchase</h2>
 
-        <div class="order-summary">
-          <h3>Order Summary</h3>
-          <div class="summary-row">
-            <span>Plan:</span>
-            <strong>{{ selectedPlan.name }}</strong>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Order Summary -->
+          <div class="md:col-span-2">
+            <div class="bg-gray-50 rounded-xl p-5 mb-6">
+              <h3 class="text-lg font-semibold text-gray-800 mb-4">Order Summary</h3>
+              <div class="space-y-3">
+                <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+                  <span class="text-gray-600 text-sm">Plan:</span>
+                  <strong class="text-gray-800">{{ selectedPlan.name }}</strong>
+                </div>
+                <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+                  <span class="text-gray-600 text-sm">Validity:</span>
+                  <strong class="text-gray-800">{{ selectedPlan.validity_text }}</strong>
+                </div>
+                <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+                  <span class="text-gray-600 text-sm">Views:</span>
+                  <strong class="text-gray-800">{{ selectedPlan.views_text }}</strong>
+                </div>
+                <div v-if="isIndiaUser && selectedPlan.gst_amount > 0" class="flex justify-between items-center pb-3 border-b border-gray-200">
+                  <span class="text-gray-600 text-sm">Base Price:</span>
+                  <strong class="text-gray-800">₹{{ (selectedPlan.price - selectedPlan.gst_amount).toFixed(2) }}</strong>
+                </div>
+                <div v-if="isIndiaUser && selectedPlan.gst_amount > 0" class="flex justify-between items-center pb-3 border-b border-gray-200">
+                  <span class="text-gray-600 text-sm">GST (18%):</span>
+                  <strong class="text-gray-800">₹{{ (selectedPlan.gst_amount).toFixed(2) }}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-5">
+              <h3 class="text-lg font-semibold text-blue-900 mb-3">
+                <i class="fas fa-credit-card mr-2"></i>Payment Method
+              </h3>
+              <p class="text-blue-800 mb-4 text-sm">
+                <i class="fas fa-info-circle mr-2"></i> You will be redirected to Razorpay to complete the payment securely.
+              </p>
+              <button
+                class="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-700 transition shadow-md disabled:opacity-60 text-sm"
+                @click="initiatePayment"
+                :disabled="loading"
+              >
+                <i class="fas fa-lock mr-2"></i>{{ loading ? 'Processing...' : 'Proceed to Payment' }}
+              </button>
+            </div>
           </div>
-          <div class="summary-row">
-            <span>Validity:</span>
-            <strong>{{ selectedPlan.validity_text }}</strong>
-          </div>
-          <div class="summary-row">
-            <span>Views:</span>
-            <strong>{{ selectedPlan.views_text }}</strong>
-          </div>
-          <div v-if="isIndiaUser && selectedPlan.gst_amount > 0" class="summary-row">
-            <span>Base Price:</span>
-            <strong>₹{{ (selectedPlan.price - selectedPlan.gst_amount).toFixed(2) }}</strong>
-          </div>
-          <div v-if="isIndiaUser && selectedPlan.gst_amount > 0" class="summary-row">
-            <span>GST (18%):</span>
-            <strong>₹{{ (selectedPlan.gst_amount).toFixed(2) }}</strong>
-          </div>
-          <div class="summary-row total">
-            <span>Total Amount:</span>
-            <strong>
+
+          <!-- Price Summary Side Panel -->
+          <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 h-fit border border-blue-200">
+            <h3 class="text-lg font-bold text-gray-800 mb-3">Total Amount</h3>
+            <div class="text-4xl font-bold text-blue-600 mb-2">
               <span v-if="isIndiaUser">₹{{ selectedPlan.price.toFixed(2) }}</span>
               <span v-else>${{ selectedPlan.price.toFixed(2) }}</span>
-            </strong>
+            </div>
+            <p class="text-gray-600 text-xs mb-3">
+              <span v-if="isIndiaUser">Including 18% GST</span>
+              <span v-else>No additional taxes</span>
+            </p>
+            <div class="text-center text-gray-500 text-xs pt-3 border-t border-blue-200">
+              <i class="fas fa-lock mr-1"></i> Secure payment encrypted
+            </div>
           </div>
-        </div>
-
-        <div class="payment-method">
-          <h3>Payment Method</h3>
-          <p class="info">
-            <i class="fas fa-info-circle mr-2"></i> You will be redirected to Razorpay to complete the payment securely.
-          </p>
-
-          <button
-            class="btn btn-primary btn-large"
-            @click="initiatePayment"
-            :disabled="loading"
-          >
-            {{ loading ? 'Processing...' : 'Proceed to Payment' }}
-          </button>
-        </div>
-
-        <div class="payment-info">
-          <p>
-            <i class="fas fa-lock mr-2"></i> Your payment information is secure and encrypted.
-          </p>
-          <p>
-            <i class="fas fa-shield-alt mr-2"></i> We accept all major credit/debit cards and digital wallets.
-          </p>
         </div>
       </div>
     </div>
 
     <!-- Subscription History -->
-    <div v-if="activeTab === 'history'" class="history-section">
-      <h2>Subscription History</h2>
+    <div v-if="activeTab === 'history'" class="bg-white rounded-2xl shadow-md p-6 md:p-8">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">
+        <i class="fas fa-history text-gray-600 mr-2"></i>Subscription History
+      </h2>
 
-      <div v-if="history.length === 0" class="no-history">
-        <p>No subscription history yet.</p>
+      <div v-if="history.length === 0" class="text-center py-12">
+        <i class="fas fa-inbox text-gray-300 text-4xl mb-4 block"></i>
+        <p class="text-gray-500 text-lg">No subscription history yet.</p>
       </div>
 
-      <table v-else class="history-table">
-        <thead>
-          <tr>
-            <th>Plan</th>
-            <th>Price</th>
-            <th>Activated</th>
-            <th>Expires</th>
-            <th>Views</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="sub in history" :key="sub.id">
-            <td>{{ sub.plan_name }}</td>
-            <td>
-              <span v-if="sub.is_india_user">₹{{ Number(sub.price).toFixed(2) }}</span>
-              <span v-else>${{ Number(sub.price).toFixed(2) }}</span>
-            </td>
-            <td>{{ formatDate(sub.activated_at) }}</td>
-            <td>{{ formatDate(sub.expires_at) }}</td>
-            <td>{{ sub.views_text }}</td>
-            <td>
-              <span class="badge" :class="`status-${sub.status}`">
-                {{ sub.status }}
-              </span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+      <div v-else class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b-2 border-gray-200">
+              <th class="text-left py-4 px-4 font-semibold text-gray-700">Plan</th>
+              <th class="text-left py-4 px-4 font-semibold text-gray-700">Price</th>
+              <th class="text-left py-4 px-4 font-semibold text-gray-700">Activated</th>
+              <th class="text-left py-4 px-4 font-semibold text-gray-700">Expires</th>
+              <th class="text-left py-4 px-4 font-semibold text-gray-700">Views</th>
+              <th class="text-left py-4 px-4 font-semibold text-gray-700">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="sub in history" :key="sub.id" class="border-b border-gray-200 hover:bg-gray-50 transition-colors">
+              <td class="py-4 px-4 font-medium text-gray-800">{{ sub.plan_name }}</td>
+              <td class="py-4 px-4 text-gray-700">
+                <span v-if="sub.is_india_user" class="font-semibold">₹{{ Number(sub.price).toFixed(2) }}</span>
+                <span v-else class="font-semibold">${{ Number(sub.price).toFixed(2) }}</span>
+              </td>
+              <td class="py-4 px-4 text-gray-700">{{ formatDate(sub.activated_at) }}</td>
+              <td class="py-4 px-4 text-gray-700">{{ formatDate(sub.expires_at) }}</td>
+              <td class="py-4 px-4 text-gray-700">{{ sub.views_text }}</td>
+              <td class="py-4 px-4">
+                <span 
+                  class="px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap"
+                  :class="{
+                    'bg-green-100 text-green-700': sub.status === 'active',
+                    'bg-red-100 text-red-700': sub.status === 'expired',
+                    'bg-gray-100 text-gray-700': sub.status === 'cancelled'
+                  }"
+                >
+                  <i class="fas mr-1" :class="{
+                    'fa-check-circle': sub.status === 'active',
+                    'fa-times-circle': sub.status === 'expired',
+                    'fa-ban': sub.status === 'cancelled'
+                  }"></i>
+                  {{ sub.status.charAt(0).toUpperCase() + sub.status.slice(1) }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
     <!-- Error Message -->
     <div v-if="error" class="alert alert-error">
@@ -401,6 +571,7 @@
       <button class="btn-close" @click="success = null">×</button>
     </div>
   </div>
+</div>
 </template>
 
 <script>
@@ -413,6 +584,7 @@ export default {
       plans: [],
       subscription: null,
       hasActiveSubscription: false,
+      hasLapsedSubscription: false,
       selectedPlan: null,
       showPurchaseFlow: false,
       showRenewOptions: false,
@@ -425,6 +597,7 @@ export default {
       isIndiaUser: false,
       selectedRegion: 'india',
       razorpayReady: !!(typeof window !== 'undefined' && window.Razorpay),
+      scrollToPlans: false,
     };
   },
   computed: {
@@ -451,6 +624,8 @@ export default {
         const response = await axios.get('/api/subscriptions/plans');
         this.plans = response.data.data;
         this.isIndiaUser = response.data.is_india_user;
+        // Auto-set region based on user's country
+        this.selectedRegion = this.isIndiaUser ? 'india' : 'international';
 
         // If no active subscription, show plans tab
         if (!this.hasActiveSubscription) {
@@ -469,14 +644,22 @@ export default {
 
         if (status.has_active_subscription) {
           this.hasActiveSubscription = true;
+          this.hasLapsedSubscription = false;
           this.subscription = status;
           this.activeTab = 'current';
+        } else if (status.has_lapsed_subscription) {
+          this.hasActiveSubscription = false;
+          this.hasLapsedSubscription = true;
+          this.subscription = status;
+          this.activeTab = 'current'; // Show lapsed status
         } else {
           this.hasActiveSubscription = false;
+          this.hasLapsedSubscription = false;
           this.activeTab = 'browse';
         }
       } catch (error) {
         this.hasActiveSubscription = false;
+        this.hasLapsedSubscription = false;
         this.activeTab = 'browse';
       }
     },
@@ -640,11 +823,20 @@ export default {
           this.success = 'Payment is being processed. We will notify you once it completes.';
           this.loading = false;
           
-          setTimeout(() => {
+          setTimeout(async () => {
             this.showPurchaseFlow = false;
             this.selectedPlan = null;
-            this.loadSubscriptionStatus();
-            this.loadPlans();
+            await this.loadSubscriptionStatus();
+            await this.loadPlans();
+            this.activeTab = 'current';
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            // Clear success message after 5 seconds
+            setTimeout(() => {
+              this.success = null;
+            }, 5000);
           }, 3000);
           return;
         }
@@ -653,11 +845,20 @@ export default {
         this.success = 'Subscription activated successfully!';
         this.loading = false;
 
-        setTimeout(() => {
+        setTimeout(async () => {
           this.showPurchaseFlow = false;
           this.selectedPlan = null;
-          this.loadSubscriptionStatus();
-          this.loadPlans();
+          await this.loadSubscriptionStatus();
+          await this.loadPlans();
+          this.activeTab = 'current';
+          
+          // Scroll to top to show the updated current subscription
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          
+          // Clear success message after 5 seconds
+          setTimeout(() => {
+            this.success = null;
+          }, 5000);
         }, 2000);
       } catch (error) {
         const errorMessage = error.response?.data?.message || 'Payment verification failed';
@@ -971,6 +1172,22 @@ export default {
   border-color: #4CAF50;
   background: #f0f9f0;
   box-shadow: 0 5px 20px rgba(76, 175, 80, 0.2);
+}
+
+.plan-card h4 {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+  margin: 0 0 15px 0;
+  padding: 0;
+}
+
+.plan-card .price {
+  font-size: 18px;
+  color: #4CAF50;
+  font-weight: 600;
+  margin: 10px 0 15px 0;
+  padding: 0;
 }
 
 .plan-header {

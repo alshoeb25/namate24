@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\StudentRequirement;
 use App\Services\LabelService;
 use App\Services\RequirementSearchService;
+use App\Services\SubscriptionAccessService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -13,11 +14,13 @@ class RequirementController extends Controller
 {
     protected $searchService;
     protected LabelService $labelService;
+    protected SubscriptionAccessService $accessService;
 
-    public function __construct(RequirementSearchService $searchService, LabelService $labelService)
+    public function __construct(RequirementSearchService $searchService, LabelService $labelService, SubscriptionAccessService $accessService)
     {
         $this->searchService = $searchService;
         $this->labelService = $labelService;
+        $this->accessService = $accessService;
     }
 
     public function store(Request $request)
@@ -171,12 +174,28 @@ class RequirementController extends Controller
                 $request->user()
             );
 
+            // ✅ Apply subscription-based access delay filtering for authenticated users
+            $user = $request->user();
+            if ($user) {
+                $filteredItems = $this->applyAccessDelayFilter($transformedItems, $user);
+                
+                // Enrich with access information
+                $filteredItems = collect($filteredItems)->map(function($item) use ($user) {
+                    return $this->enrichWithAccessInfo($item, $user);
+                })->toArray();
+            } else {
+                $filteredItems = $transformedItems;
+            }
+
             return response()->json([
-                'data' => $transformedItems,
+                'data' => $filteredItems,
                 'total' => $results->total(),
                 'per_page' => $results->perPage(),
                 'current_page' => $results->currentPage(),
                 'last_page' => $results->lastPage(),
+                'note' => $user && $user->activeSubscription() && $user->activeSubscription()->isBASICPlan() 
+                    ? 'BASIC plan: Showing requirements older than ' . $user->activeSubscription()->plan->getAccessDelayHours() . ' hours'
+                    : null,
             ]);
         } catch (\Exception $e) {
             // Fallback to database query
@@ -210,7 +229,14 @@ class RequirementController extends Controller
             ->limit($limit)
             ->get();
 
-        $data = $requirements->map(function ($req) {
+        $user = $request->user();
+        
+        // ✅ Apply subscription-based access delay filtering for authenticated users
+        if ($user) {
+            $requirements = $this->applyAccessDelayFilter($requirements, $user);
+        }
+
+        $data = $requirements->map(function ($req) use ($user) {
             $location = $req->location;
             if (!$location) {
                 $parts = array_filter([$req->area, $req->city]);
@@ -232,7 +258,7 @@ class RequirementController extends Controller
                 $subjects = [$req->subject->name];
             }
 
-            return [
+            $itemData = [
                 'id' => $req->id,
                 'student_name' => $req->student?->user?->name
                     ?? $req->student?->name
@@ -244,11 +270,21 @@ class RequirementController extends Controller
                 'posted_at' => $req->posted_at?->toIso8601String() ?? $req->created_at?->toIso8601String(),
                 'created_at' => $req->created_at?->toIso8601String(),
             ];
+            
+            // Enrich with access information if user is authenticated
+            if ($user) {
+                $itemData = $this->enrichWithAccessInfo($itemData, $user);
+            }
+            
+            return $itemData;
         });
 
         return response()->json([
             'data' => $data,
             'count' => $data->count(),
+            'note' => $user && $user->activeSubscription() && $user->activeSubscription()->isBASICPlan() 
+                ? 'BASIC plan: Showing requirements older than ' . $user->activeSubscription()->plan->getAccessDelayHours() . ' hours'
+                : null,
         ]);
     }
 
@@ -289,9 +325,25 @@ class RequirementController extends Controller
 
         try {
             $results = $this->searchService->searchNearby($latitude, $longitude, $filters, $radius, $perPage, $page);
+            
+            $user = $request->user();
+            $items = $results->items();
+            
+            // ✅ Apply subscription-based access delay filtering for authenticated users
+            if ($user) {
+                $filteredItems = $this->applyAccessDelayFilter($items, $user);
+                
+                // Enrich with access information
+                $filteredItems = collect($filteredItems)->map(function($item) use ($user) {
+                    $item = (array)$item;
+                    return $this->enrichWithAccessInfo($item, $user);
+                })->toArray();
+            } else {
+                $filteredItems = $items;
+            }
 
             return response()->json([
-                'data' => $results->items(),
+                'data' => $filteredItems,
                 'total' => $results->total(),
                 'per_page' => $results->perPage(),
                 'current_page' => $results->currentPage(),
@@ -300,7 +352,10 @@ class RequirementController extends Controller
                     'latitude' => $latitude,
                     'longitude' => $longitude,
                     'radius' => $radius . 'km',
-                ]
+                ],
+                'note' => $user && $user->activeSubscription() && $user->activeSubscription()->isBASICPlan() 
+                    ? 'BASIC plan: Showing requirements older than ' . $user->activeSubscription()->plan->getAccessDelayHours() . ' hours'
+                    : null,
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -342,16 +397,35 @@ class RequirementController extends Controller
 
         try {
             $results = $this->searchService->searchByLocation($location, $filters, $perPage, $page);
+            
+            $user = $request->user();
+            $items = $results->items();
+            
+            // ✅ Apply subscription-based access delay filtering for authenticated users
+            if ($user) {
+                $filteredItems = $this->applyAccessDelayFilter($items, $user);
+                
+                // Enrich with access information
+                $filteredItems = collect($filteredItems)->map(function($item) use ($user) {
+                    $item = (array)$item;
+                    return $this->enrichWithAccessInfo($item, $user);
+                })->toArray();
+            } else {
+                $filteredItems = $items;
+            }
 
             return response()->json([
-                'data' => $results->items(),
+                'data' => $filteredItems,
                 'total' => $results->total(),
                 'per_page' => $results->perPage(),
                 'current_page' => $results->currentPage(),
                 'last_page' => $results->lastPage(),
                 'search' => [
                     'location' => $location,
-                ]
+                ],
+                'note' => $user && $user->activeSubscription() && $user->activeSubscription()->isBASICPlan() 
+                    ? 'BASIC plan: Showing requirements older than ' . $user->activeSubscription()->plan->getAccessDelayHours() . ' hours'
+                    : null,
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -395,12 +469,53 @@ class RequirementController extends Controller
         }
     }
 
-    public function show($id)
+    /**
+     * Get a single requirement with full details
+     * POST /api/requirements/{id}
+     * 
+     * This counts as ONE VIEW in the subscription system:
+     * - PRO: Rs. 39 coins deducted (unlimited views)
+     * - BASIC: 1 view from 5-view quota, or Rs. 49 coins if views exhausted
+     * - No subscription: Rs. 49-99 coins (based on nationality)
+     */
+    public function show($id, Request $request)
     {
         $requirement = StudentRequirement::with('subject', 'subjects', 'student.user')->findOrFail($id);
         if ($requirement->student && ($requirement->student->is_disabled || $requirement->student->user?->is_disabled)) {
             return response()->json(['message' => 'Requirement not available'], 404);
         }
+
+        $user = $request->user();
+        
+        // ✅ SUBSCRIPTION-BASED VIEW TRACKING
+        // Track this as a view and handle coin/view deduction
+        if ($user && $user->hasRole('tutor')) {
+            try {
+                $coinSpendingService = app(\App\Services\CoinSpendingService::class);
+                
+                $result = $coinSpendingService->checkAndDeductCoins(
+                    $user,
+                    'requirement_view',
+                    [
+                        'requirement_id' => $requirement->id,
+                        'viewable_id' => $requirement->id,
+                        'viewable_type' => 'requirement_detail',
+                    ]
+                );
+
+                if (!$result['success']) {
+                    return response()->json($result, $result['status_code']);
+                }
+            } catch (\Exception $e) {
+                \Log::error('Requirement view tracking error', [
+                    'user_id' => $user->id,
+                    'requirement_id' => $id,
+                    'error' => $e->getMessage(),
+                ]);
+                // Continue showing requirement even if tracking fails
+            }
+        }
+
         $requirement = $this->labelService->addLabels($requirement);
 
         return response()->json($requirement);
@@ -532,6 +647,81 @@ class RequirementController extends Controller
             
             return $item;
         }, $items);
+    }
+
+    /**
+     * Apply subscription-based access delay filtering to requirements
+     * BASIC tier users see 1-2 hour delayed requirements
+     * PRO tier and non-subscribers see requirements immediately
+     */
+    protected function applyAccessDelayFilter($requirements, $user = null)
+    {
+        if (!$user || !$requirements) {
+            return $requirements;
+        }
+
+        // Get user's subscription
+        $subscription = $user->activeSubscription();
+        
+        // No subscription or PRO tier - no filtering
+        if (!$subscription || $subscription->isPROPlan()) {
+            return $requirements;
+        }
+
+        // BASIC tier - filter out requirements that are too new
+        $delayHours = $subscription->plan?->getAccessDelayHours() ?? 0;
+        
+        if ($delayHours === 0) {
+            return $requirements; // No delay configured
+        }
+
+        $cutoffTime = now()->subHours($delayHours);
+
+        // Filter requirements - only keep those older than the cutoff time
+        return collect($requirements)->filter(function ($req) use ($cutoffTime) {
+            $createdAt = $req->created_at ?? $req['created_at'] ?? null;
+            
+            if (!$createdAt) {
+                return true; // If no timestamp, allow access
+            }
+
+            // Convert to Carbon if it's a string
+            if (is_string($createdAt)) {
+                $createdAt = \Carbon\Carbon::parse($createdAt);
+            }
+
+            return $createdAt->lessThanOrEqualTo($cutoffTime);
+        })->values();
+    }
+
+    /**
+     * Enrich requirement data with access information for BASIC tier users
+     */
+    protected function enrichWithAccessInfo(array $requirementData, $user = null)
+    {
+        if (!$user) {
+            return $requirementData;
+        }
+
+        $subscription = $user->activeSubscription();
+        if (!$subscription || $subscription->isPROPlan()) {
+            return $requirementData;
+        }
+
+        $createdAt = isset($requirementData['created_at']) 
+            ? \Carbon\Carbon::parse($requirementData['created_at'])
+            : null;
+
+        if ($createdAt) {
+            $accessInfo = $this->accessService->canAccessRequirement($user, $createdAt);
+            $requirementData['access'] = [
+                'can_access' => $accessInfo['can_access'],
+                'delay_hours' => $accessInfo['delay_hours'],
+                'available_at' => $accessInfo['available_at']?->toIso8601String(),
+            ];
+        }
+
+        return $requirementData;
     }
 }
 

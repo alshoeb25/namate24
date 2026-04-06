@@ -409,8 +409,121 @@ class TutorController extends Controller
         $tutor->setAttribute('rating_summary', $ratingSummary);
         $tutor->setAttribute('reviews', $reviews);
 
-        // Eager-loaded JSON columns are already cast on the model
-        return response()->json($tutor);
+        // Convert to array to ensure proper JSON serialization
+        $tutorData = $tutor->toArray();
+        $tutorData['rating_summary'] = $ratingSummary;
+        $tutorData['reviews'] = $reviews;
+        
+        return response()->json($tutorData);
+    }
+
+    /**
+     * Unlock tutor profile view (for students)
+     * POST /api/tutors/{id}/unlock-profile
+     */
+    public function unlockProfile(Request $request, $tutorId)
+    {
+        $user = $request->user();
+        
+        // Find tutor
+        $tutor = Tutor::where('id', $tutorId)
+            ->where('is_disabled', false)
+            ->whereHas('user', fn($q) => $q->where('is_disabled', false))
+            ->firstOrFail();
+
+        if ($tutor->moderation_status !== 'approved') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tutor profile not available',
+            ], 404);
+        }
+
+        try {
+            // Use CoinSpendingService to check and deduct coins
+            $coinSpendingService = app(\App\Services\CoinSpendingService::class);
+            
+            $result = $coinSpendingService->checkAndDeductCoins(
+                $user,
+                'profile_unlock',
+                [
+                    'tutor_id' => $tutorId,
+                    'viewable_id' => $tutorId,
+                    'viewable_type' => 'tutor_profile',
+                ]
+            );
+
+            if (!$result['success']) {
+                return response()->json($result, $result['status_code']);
+            }
+
+            // Return full profile data
+            $approvedReviews = \DB::table('tutor_reviews')
+                ->join('students', 'tutor_reviews.student_id', '=', 'students.id')
+                ->join('users', 'students.user_id', '=', 'users.id')
+                ->where('tutor_reviews.tutor_id', $tutor->id)
+                ->where('tutor_reviews.status', 'approved')
+                ->orderByDesc('tutor_reviews.created_at')
+                ->select([
+                    'tutor_reviews.id',
+                    'tutor_reviews.rating',
+                    'tutor_reviews.comment',
+                    'tutor_reviews.status',
+                    'tutor_reviews.created_at',
+                    'users.name as student_name',
+                    'users.avatar as student_photo',
+                ])
+                ->get();
+
+            $reviews = $approvedReviews->map(function ($review) {
+                return [
+                    'name' => $review->student_name,
+                    'photo' => $review->student_photo,
+                    'rating' => (int) $review->rating,
+                    'date' => optional($review->created_at)->toDateString(),
+                    'comment' => $review->comment,
+                    'status' => $review->status,
+                    'created_at' => $review->created_at,
+                ];
+            });
+
+            $ratingSummary = [
+                'average' => $approvedReviews->avg('rating') ? round((float) $approvedReviews->avg('rating'), 2) : null,
+                'total_reviews' => $approvedReviews->count(),
+            ];
+
+            $tutor->load('user','subjects','documents');
+            $tutor->setAttribute('rating_summary', $ratingSummary);
+            $tutor->setAttribute('reviews', $reviews);
+            $tutor->setAttribute('profile_unlocked', true);
+
+            \Log::info('Student unlocked tutor profile', [
+                'user_id' => $user->id,
+                'tutor_id' => $tutorId,
+                'coins_spent' => $result['coins_deducted'] ?? 0,
+                'remaining_balance' => $result['balance_after'],
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tutor profile unlocked',
+                'tutor' => $tutor,
+                'coins_spent' => $result['coins_deducted'] ?? 0,
+                'remaining_balance' => $result['balance_after'],
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error unlocking tutor profile', [
+                'user_id' => $user->id,
+                'tutor_id' => $tutorId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to unlock profile. Please try again.',
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
     }
 
     public function store(Request $request)
@@ -426,6 +539,8 @@ class TutorController extends Controller
 
         $user = $request->user();
         if (! $user->hasRole('tutor')) {
+            // Ensure tutor role exists before assigning
+            \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'tutor', 'guard_name' => 'web']);
             $user->assignRole('tutor');
         }
 

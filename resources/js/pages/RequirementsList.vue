@@ -128,7 +128,7 @@
                     :class="userHasSubscription ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'">
                     <i class="fas fa-check-circle mr-1" v-if="userHasSubscription"></i>
                     <i class="fas fa-crown mr-1" v-else></i>
-                    {{ approachLoading ? 'Processing...' : (userHasSubscription ? 'Approach (Free)' : 'Subscribe to Approach') }}
+                    {{ approachLoading ? 'Processing...' : (userHasSubscription ? `Approach (${approachCostDisplay})` : 'Subscribe to Approach') }}
                   </button>
                   <div v-else class="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium">
                     <i class="fas fa-check-circle mr-1"></i>Approached
@@ -324,15 +324,24 @@ export default {
     const interestedTeachers = ref([]);
     const selectedRequirement = ref(null);
     const approachLoading = ref(false);
-    const approachCoinCost = ref(0);
 
     const userHasSubscription = computed(() => {
       return userStore.user?.has_active_subscription || userStore.user?.subscription_active || false;
     });
 
+    const userPlanType = computed(() => {
+      return userStore.user?.subscription?.plan_type || 'BASIC';
+    });
+
+    const approachCoinCost = computed(() => {
+      const planType = userPlanType.value;
+      return planType === 'PRO' ? 39 : 49;
+    });
+
     const approachCostDisplay = computed(() => {
       if (userHasSubscription.value) {
-        return 'Free';
+        const cost = approachCoinCost.value;
+        return `-${cost} coins`;
       }
       return 'Subscription required';
     });
@@ -432,7 +441,6 @@ export default {
       try {
         const response = await axios.get(`/api/student/requirements/${id}/interested-teachers`);
         interestedTeachers.value = response.data.teachers || [];
-        approachCoinCost.value = response.data.approach_coin_cost || 10;
         selectedRequirement.value = requirements.value.find(r => r.id === id);
         showInterestedModal.value = true;
       } catch (err) {
@@ -449,49 +457,39 @@ export default {
     const selectTeacher = async (teacherId) => {
       if (!selectedRequirement.value) return;
       
-      // Prepare confirmation message based on subscription status
-      const confirmMessage = userHasSubscription.value 
-        ? 'Are you sure you want to approach this tutor?\n\nThis will be FREE with your active subscription and you will receive their contact details.'
-        : 'A subscription is required to approach tutors. Would you like to subscribe now?';
-      
-      if (!confirm(confirmMessage)) {
-        return;
-      }
+      const teacher = interestedTeachers.value.find(t => t.id === teacherId);
+      if (!teacher) return;
 
-      // Redirect non-subscribers to subscription page
-      if (!userHasSubscription.value) {
-        router.push('/student/subscriptions');
-        return;
-      }
-      
       approachLoading.value = true;
       try {
         const response = await axios.post(`/api/student/requirements/${selectedRequirement.value.id}/approach-teacher`, {
           teacher_id: teacherId
         });
         
-        // Show success message
-        const successMessage = 'Successfully approached! Contact details are now available.';
-        alert(successMessage);
+        // Mark teacher as approached locally
+        teacher.has_approached = true;
+        teacher.email = response.data.approached_teacher?.email;
+        teacher.phone = response.data.approached_teacher?.phone;
         
-        // Reload interested teachers from database to show updated contact details
-        const teachersResponse = await axios.get(`/api/student/requirements/${selectedRequirement.value.id}/interested-teachers`);
-        interestedTeachers.value = teachersResponse.data.teachers || [];
-        
-        // Update selected requirement status
-        const req = requirements.value.find(r => r.id === selectedRequirement.value.id);
-        if (req) {
-          req.status = 'approached';
-          selectedRequirement.value = { ...req };
+        // Show success message with coins/views info
+        let message = response.data.message;
+        if (response.data.coins_deducted && response.data.coins_deducted > 0) {
+          message += ` [${response.data.coins_deducted} coins deducted, Balance: ${response.data.current_balance}]`;
+        } else if (response.data.used_subscription) {
+          message += ` [View used, Remaining views: ${response.data.subscription_info?.remaining_views || 'N/A'}]`;
         }
         
-        // Refresh main requirements list to update status
+        alert(message);
+        
+        // Refresh requirements list to update status
         await fetchRequirements(pagination.value?.current_page || 1);
       } catch (err) {
         if (err.response?.status === 402) {
-          alert(err.response.data.message);
+          alert(err.response.data.message || 'Insufficient coins or subscription expired');
         } else if (err.response?.status === 422) {
           alert(err.response?.data?.message || 'You have already approached this tutor.');
+        } else if (err.response?.status === 403) {
+          alert(err.response.data.message || 'Access denied');
         } else {
           alert(err.response?.data?.message || 'Failed to approach teacher');
         }

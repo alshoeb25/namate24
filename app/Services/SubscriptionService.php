@@ -55,6 +55,15 @@ class SubscriptionService
                 'validity_text' => $this->getValidityText($plan->validity_days),
                 'views_allowed' => $plan->views_allowed,
                 'views_text' => $this->getViewsText($plan->views_allowed),
+                'coins_included' => $plan->coins_included,
+                'coins_included_text' => $plan->coins_included . ' coins included',
+                'cost_per_view' => $plan->cost_per_view,
+                'cost_per_view_text' => 'Minimum ' . $plan->cost_per_view . ' coins per view',
+                'coins_carry_forward' => $plan->coins_carry_forward,
+                'coins_carry_forward_text' => $plan->coins_carry_forward ? 'Coins carry forward' : 'Coins do not carry forward',
+                'access_delay_hours' => $plan->access_delay_hours,
+                'access_delay_text' => $plan->access_delay_hours > 0 ? $plan->access_delay_hours . '-2 hour delay' : 'Instant access',
+                'unlimited_views' => $plan->views_allowed === null,
                 'description' => $plan->description,
                 'display_order' => $plan->display_order,
                 'is_india' => $isIndiaUser,
@@ -71,6 +80,25 @@ class SubscriptionService
     {
         $subscription = UserSubscription::where('user_id', $user->id)
             ->where('status', 'active')
+            ->where('expires_at', '>', now())
+            ->with('plan', 'order')
+            ->first();
+
+        if (!$subscription) {
+            return null;
+        }
+
+        return $this->formatSubscriptionResponse($subscription);
+    }
+
+    /**
+     * Get user's cancelled subscription that hasn't expired yet
+     * Cancelled subscriptions continue to work until their expiry date
+     */
+    public function getCancelledButActiveSubscription(User $user)
+    {
+        $subscription = UserSubscription::where('user_id', $user->id)
+            ->where('status', 'cancelled')
             ->where('expires_at', '>', now())
             ->with('plan', 'order')
             ->first();
@@ -211,9 +239,52 @@ class SubscriptionService
         $planId = $order->metadata['subscription_plan_id'] ?? null;
         $plan = SubscriptionPlan::findOrFail($planId);
 
-        // Create UserSubscription record
+        // Track if this is an upgrade for logging
+        $isUpgrade = false;
+        $oldPlanName = null;
+        $oldCoinsSpent = 0;
+        $oldCoinsAllowed = 0;
+
+        // Check for existing active subscription (upgrade scenario)
+        $existingSubscription = UserSubscription::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->where('expires_at', '>', now())
+            ->first();
+
+        // If upgrading from BASIC to PRO
+        if ($existingSubscription) {
+            $existingPlanType = $existingSubscription->getPlanType();
+            $newPlanType = $plan->getPlanType(); // Use the model method directly
+            
+            if ($existingPlanType === 'BASIC' && $newPlanType === 'PRO') {
+                // ✅ UPGRADE FLOW: Mark old subscription as history, new subscription gets full fresh benefits
+                $isUpgrade = true;
+                $oldPlanName = $existingSubscription->plan->name;
+                $oldCoinsSpent = $existingSubscription->coins_spent ?? 0;
+                $oldCoinsAllowed = $existingSubscription->plan->coins_included ?? 0;
+                
+                // Mark old subscription as history (inactive)
+                $existingSubscription->update([
+                    'status' => 'history',
+                    'expires_at' => now(), // Immediately inactive
+                    'upgraded_to_subscription_id' => null, // Will be set after new subscription created
+                ]);
+                
+                // Log the upgrade
+                \Log::info('Subscription upgraded', [
+                    'user_id' => $user->id,
+                    'from_plan' => $oldPlanName,
+                    'to_plan' => $plan->name,
+                    'old_coins_allowed' => $oldCoinsAllowed,
+                    'old_coins_spent' => $oldCoinsSpent,
+                    'message' => 'Upgrading to new plan with full fresh benefits (no carryover)',
+                ]);
+            }
+        }
+
+        // Create new UserSubscription record
         $activatedAt = now();
-        $expiresAt = $activatedAt->copy()->addDays($plan->validity_days);
+        $expiresAt = $this->calculateSubscriptionRenewalTime($plan);
 
         $subscription = UserSubscription::create([
             'user_id' => $user->id,
@@ -221,9 +292,14 @@ class SubscriptionService
             'order_id' => $order->id,
             'activated_at' => $activatedAt,
             'expires_at' => $expiresAt,
-            'views_used' => 0,
+            'views_used' => 0, // Fresh start with no views used
             'status' => 'active',
         ]);
+
+        // If this was an upgrade, link old subscription as history
+        if ($isUpgrade) {
+            $existingSubscription->update(['upgraded_to_subscription_id' => $subscription->id]);
+        }
 
         // Update order status using PaymentService
         $this->paymentService->updateOrderPaymentStatus(
@@ -249,15 +325,45 @@ class SubscriptionService
             );
         }
 
+        // ✅ CREDIT COINS BASED ON PLAN CONFIGURATION
+        // Use coins_included field from the plan for flexibility
+        $coinsToCredit = $plan->coins_included ?? 0;
+        $isPROPlan = $plan->isPROPlan();
+
+        // Credit coins to user if applicable
+        if ($coinsToCredit > 0) {
+            $user->increment('coins', $coinsToCredit);
+            $user->refresh();
+        }
+
         // Log transaction in coin system for tracking
-        $description = "Subscription purchased: {$plan->name} (₹{$plan->price}) for {$plan->validity_days} days";
+        $upgradeText = $isUpgrade ? " (UPGRADED from {$oldPlanName})" : "";
+        $coinDescription = $coinsToCredit > 0 
+            ? " - {$coinsToCredit} coins credited"
+            : " (view-based only)";
+        
+        $description = "Subscription purchased: {$plan->name} (₹{$plan->price}) for {$plan->validity_days} days{$coinDescription}{$upgradeText}";
+        
         \App\Models\CoinTransaction::create([
             'user_id' => $user->id,
             'type' => 'subscription_purchase',
-            'amount' => 0, // No coins deducted, this is paid via Razorpay
+            'amount' => $coinsToCredit,
             'balance_after' => $user->coins,
             'description' => $description,
             'order_id' => $order->id,
+            'meta' => [
+                'subscription_id' => $subscription->id,
+                'plan_name' => $plan->name,
+                'plan_id' => $plan->id,
+                'is_pro_plan' => $isPROPlan,
+                'validity_days' => $plan->validity_days,
+                'views_allowed' => $plan->views_allowed,
+                'coin_spent' => 0, // Fresh start - no coins spent yet
+                'is_upgrade' => $isUpgrade,
+                'upgraded_from_plan' => $isUpgrade ? $oldPlanName : null,
+                'old_plan_coins_allowed' => $isUpgrade ? $oldCoinsAllowed : null,
+                'old_plan_coins_spent' => $isUpgrade ? $oldCoinsSpent : null,
+            ],
         ]);
 
         // Create subscription invoice
@@ -300,6 +406,19 @@ class SubscriptionService
 
         return $invoice;
     }
+
+    /**
+     * Calculate next subscription renewal time
+     * 
+     * @param SubscriptionPlan $plan
+     * @return \Carbon\Carbon
+     */
+    private function calculateSubscriptionRenewalTime(SubscriptionPlan $plan)
+    {
+        $validityDays = $plan->validity_days ?? 365;
+        return now()->addDays($validityDays);
+    }
+
 
     /**
      * Log a view for subscription tracking
@@ -366,9 +485,43 @@ class SubscriptionService
     {
         $subscription = $this->getUserActiveSubscription($user);
 
+        // Check for cancelled subscription that hasn't expired yet
         if (!$subscription) {
+            $cancelledSubscription = $this->getCancelledButActiveSubscription($user);
+            if ($cancelledSubscription) {
+                $subscription = $cancelledSubscription;
+            }
+        }
+
+        if (!$subscription) {
+            // Check for lapsed subscription (coins carry forward case)
+            $lapsedSubscription = $user->getMostRecentSubscription();
+            
+            if ($lapsedSubscription && $lapsedSubscription->hasExpired() && $lapsedSubscription->isPROPlan()) {
+                $isIndia = $this->isIndiaUser($user);
+                $daysSinceExpiry = now()->diffInDays($lapsedSubscription->expires_at);
+                
+                return [
+                    'has_active_subscription' => false,
+                    'has_lapsed_subscription' => true,
+                    'message' => 'Your subscription has expired',
+                    'plan_name' => $lapsedSubscription->plan->name,
+                    'expired_at' => $lapsedSubscription->expires_at,
+                    'days_since_expiry' => $daysSinceExpiry,
+                    'remaining_coins' => $user->coins,
+                    'coins_display' => $this->formatCoins($user->coins, $isIndia),
+                    'currency' => $isIndia ? 'INR' : 'USD',
+                    'view_cost_with_coins' => 39, // PRO plan cost when using coins
+                    'can_view_with_coins' => $user->coins >= 39,
+                    'delay_hours' => 2,
+                    'delay_message' => 'Your subscription has expired. You can still view requirements with your remaining coins, but with a 2-hour delay. Re-subscribe for immediate access.'
+                ];
+            }
+            
+            // No subscription and no lapsed subscription
             return [
                 'has_active_subscription' => false,
+                'has_lapsed_subscription' => false,
                 'message' => 'No active subscription',
             ];
         }
@@ -380,6 +533,7 @@ class SubscriptionService
 
         return [
             'has_active_subscription' => true,
+            'has_lapsed_subscription' => false,
             'plan_name' => $subscription['plan_name'],
             'plan_id' => $subscription['plan_id'],
             'views_allowed' => $subscription['views_allowed'],
@@ -387,6 +541,14 @@ class SubscriptionService
             'remaining_views' => $subscription['remaining_views'],
             'unlimited_views' => $subscription['views_allowed'] === null,
             'views_text' => $this->getViewsText($subscription['views_allowed']),
+            'coins_included' => $plan->coins_included,
+            'coins_included_text' => $plan->coins_included . ' coins included',
+            'cost_per_view' => $plan->cost_per_view,
+            'cost_per_view_text' => 'Minimum ' . $plan->cost_per_view . ' coins per view',
+            'coins_carry_forward' => $plan->coins_carry_forward,
+            'coins_carry_forward_text' => $plan->coins_carry_forward ? 'Coins carry forward' : 'Coins do not carry forward',
+            'access_delay_hours' => $plan->access_delay_hours,
+            'access_delay_text' => $plan->access_delay_hours > 0 ? $plan->access_delay_hours . '-2 hour delay' : 'Instant access',
             'remaining_days' => $subscription['remaining_days'],
             'expires_at' => $subscription['expires_at'],
             'activated_at' => $subscription['activated_at'],
@@ -399,6 +561,16 @@ class SubscriptionService
             'gst_amount' => $pricing['gst_amount'] ?? 0,
             'gst_rate' => $pricing['gst'],
         ];
+    }
+    
+    /**
+     * Format coins display with currency
+     */
+    private function formatCoins($coins, $isIndia = true)
+    {
+        $prefix = $isIndia ? '₹' : '$';
+        $value = $coins * 1; // Assuming 1 coin = 1 unit of currency
+        return $prefix . number_format($value, 0);
     }
 
     /**
@@ -487,6 +659,14 @@ class SubscriptionService
                 'views_used' => $subscription->views_used,
                 'unlimited_views' => $plan->views_allowed === null,
                 'views_text' => $this->getViewsText($plan->views_allowed),
+                'coins_included' => $plan->coins_included,
+                'coins_included_text' => $plan->coins_included . ' coins included',
+                'cost_per_view' => $plan->cost_per_view,
+                'cost_per_view_text' => 'Minimum ' . $plan->cost_per_view . ' coins per view',
+                'coins_carry_forward' => $plan->coins_carry_forward,
+                'coins_carry_forward_text' => $plan->coins_carry_forward ? 'Coins carry forward' : 'Coins do not carry forward',
+                'access_delay_hours' => $plan->access_delay_hours,
+                'access_delay_text' => $plan->access_delay_hours > 0 ? $plan->access_delay_hours . '-2 hour delay' : 'Instant access',
                 'validity_days' => $plan->validity_days,
                 'validity_text' => $this->getValidityText($plan->validity_days),
                 'activated_at' => $subscription->activated_at->format('Y-m-d H:i:s'),
@@ -614,6 +794,14 @@ class SubscriptionService
             'remaining_views' => $subscription->getRemainingViews(),
             'unlimited_views' => $subscription->plan->views_allowed === null,
             'views_text' => $this->getViewsText($subscription->plan->views_allowed),
+            'coins_included' => $subscription->plan->coins_included,
+            'coins_included_text' => $subscription->plan->coins_included . ' coins included',
+            'cost_per_view' => $subscription->plan->cost_per_view,
+            'cost_per_view_text' => 'Minimum ' . $subscription->plan->cost_per_view . ' coins per view',
+            'coins_carry_forward' => $subscription->plan->coins_carry_forward,
+            'coins_carry_forward_text' => $subscription->plan->coins_carry_forward ? 'Coins carry forward' : 'Coins do not carry forward',
+            'access_delay_hours' => $subscription->plan->access_delay_hours,
+            'access_delay_text' => $subscription->plan->access_delay_hours > 0 ? $subscription->plan->access_delay_hours . '-2 hour delay' : 'Instant access',
             'activated_at' => $subscription->activated_at->format('Y-m-d H:i:s'),
             'expires_at' => $subscription->expires_at->format('Y-m-d H:i:s'),
             'remaining_days' => $subscription->getRemainingDays(),

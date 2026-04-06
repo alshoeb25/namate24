@@ -87,8 +87,8 @@ class TutorProfileController extends Controller
         ]);
 
         $method = $validated['method'] ?? 'whatsapp';
-        $phone = WhatsAppService::formatPhone($validated['phone']);
         $countryCode = $validated['country_code'] ?? '+91';
+        $phone = WhatsAppService::formatPhone($validated['phone'], $countryCode);
 
         // Generate OTP (6 digits)
         $otp = random_int(100000, 999999);
