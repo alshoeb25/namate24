@@ -125,6 +125,11 @@ class SubscriptionPlanResource extends Resource
                             ->default(false)
                             ->helperText('Support response within minutes'),
                         
+                        Toggle::make('has_backend_team_support')
+                            ->label('Backend Team Support')
+                            ->default(false)
+                            ->helperText('Access to backend development team support'),
+                        
                         Toggle::make('has_ebook_content')
                             ->label('eBooks & Content')
                             ->default(false)
@@ -192,6 +197,13 @@ class SubscriptionPlanResource extends Resource
                 
                 IconColumn::make('has_priority_support')
                     ->label('Support')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-mark')
+                    ->sortable(),
+                
+                IconColumn::make('has_backend_team_support')
+                    ->label('Backend Team')
                     ->boolean()
                     ->trueIcon('heroicon-o-check-circle')
                     ->falseIcon('heroicon-o-x-mark')

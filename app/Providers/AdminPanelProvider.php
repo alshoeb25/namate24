@@ -29,6 +29,7 @@ use App\Filament\Resources\ReferralResource;
 use App\Filament\Resources\ReviewResource;
 use App\Filament\Resources\SubjectResource;
 use App\Filament\Resources\OrderResource;
+use App\Filament\Resources\PaymentTransactionResource;
 use Filament\Http\Middleware\AuthorizeAccess;
 
 class AdminPanelProvider extends PanelProvider
