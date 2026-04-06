@@ -133,7 +133,7 @@ class CoinSpendingService
                 'amount' => -$viewCost,
                 'balance_after' => $user->fresh()->coins,
                 'description' => $this->getTransactionDescription($actionType, $meta),
-                'meta' => $meta,
+                'meta' => json_encode($meta),
             ]);
         });
 
@@ -276,7 +276,7 @@ class CoinSpendingService
                 'amount' => -$requiredCoins,
                 'balance_after' => $user->fresh()->coins,
                 'description' => $description,
-                'meta' => $meta,
+                'meta' => json_encode($meta),
             ]);
         });
 
@@ -338,7 +338,7 @@ class CoinSpendingService
                 'amount' => -$requiredCoins,
                 'balance_after' => $user->fresh()->coins,
                 'description' => 'Coins spent for ' . $this->getActionDescription($actionType),
-                'meta' => $meta,
+                'meta' => json_encode($meta),
             ]);
         });
 

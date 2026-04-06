@@ -1130,11 +1130,18 @@ class StudentController extends Controller
                 return response()->json($result, $result['status_code']);
             }
 
+            \Log::info('CoinSpendingService result', [
+                'coins_deducted' => $result['coins_deducted'] ?? 'missing',
+                'balance_after' => $result['balance_after'] ?? 'missing',
+                'full_result' => $result,
+            ]);
+
             // Create contact record
+            $coinsDeducted = $result['coins_deducted'] ?? 0;
             \DB::table('student_tutor_contacts')->insert([
                 'student_id' => $student->id,
                 'tutor_id' => $tutorId,
-                'coins_spent' => $result['coins_deducted'] ?? 0,
+                'coins_spent' => $coinsDeducted,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -1142,7 +1149,7 @@ class StudentController extends Controller
             \Log::info('Student unlocked tutor contact', [
                 'student_id' => $student->id,
                 'tutor_id' => $tutorId,
-                'coins_spent' => $result['coins_deducted'] ?? 0,
+                'coins_spent' => $coinsDeducted,
                 'remaining_balance' => $result['balance_after'],
             ]);
 
@@ -1152,7 +1159,7 @@ class StudentController extends Controller
                 'success' => true,
                 'message' => 'Contact details unlocked successfully',
                 'remaining_balance' => $result['balance_after'],
-                'coins_spent' => $result['coins_deducted'] ?? 0,
+                'coins_spent' => $coinsDeducted,
                 'used_subscription' => $hasSubscription,
             ];
 

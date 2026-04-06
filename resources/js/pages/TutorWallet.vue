@@ -56,28 +56,6 @@
       <div class="bg-white rounded-2xl shadow-md mb-6 overflow-hidden">
         <div class="flex border-b border-gray-200 overflow-x-auto">
           <button
-            @click="activeTab = 'buy'"
-            :class="[
-              'flex-1 min-w-[180px] px-4 md:px-6 py-3 md:py-4 font-semibold transition-all whitespace-nowrap',
-              activeTab === 'buy'
-                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white'
-                : 'text-gray-600 hover:bg-gray-50'
-            ]"
-          >
-            <i class="fas fa-shopping-cart mr-2"></i>Buy Coins
-          </button>
-          <button
-            @click="activeTab = 'referral'"
-            :class="[
-              'flex-1 min-w-[180px] px-4 md:px-6 py-3 md:py-4 font-semibold transition-all whitespace-nowrap',
-              activeTab === 'referral'
-                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white'
-                : 'text-gray-600 hover:bg-gray-50'
-            ]"
-          >
-            <i class="fas fa-gift mr-2"></i>Refer & Earn
-          </button>
-          <button
             @click="activeTab = 'coin-transactions'"
             :class="[
               'flex-1 min-w-[220px] px-4 md:px-6 py-3 md:py-4 font-semibold transition-all whitespace-nowrap',
@@ -100,6 +78,17 @@
             <i class="fas fa-hourglass-half mr-2"></i>Subscription Coins
           </button>
           <button
+            @click="activeTab = 'buy'"
+            :class="[
+              'flex-1 min-w-[180px] px-4 md:px-6 py-3 md:py-4 font-semibold transition-all whitespace-nowrap',
+              activeTab === 'buy'
+                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white'
+                : 'text-gray-600 hover:bg-gray-50'
+            ]"
+          >
+            <i class="fas fa-shopping-cart mr-2"></i>Buy Coins
+          </button>
+          <button
             @click="activeTab = 'payment-transactions'"
             :class="[
               'flex-1 min-w-[240px] px-4 md:px-6 py-3 md:py-4 font-semibold transition-all whitespace-nowrap',
@@ -109,6 +98,17 @@
             ]"
           >
             <i class="fas fa-receipt mr-2"></i>Payment Transactions
+          </button>
+          <button
+            @click="activeTab = 'referral'"
+            :class="[
+              'flex-1 min-w-[180px] px-4 md:px-6 py-3 md:py-4 font-semibold transition-all whitespace-nowrap',
+              activeTab === 'referral'
+                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white'
+                : 'text-gray-600 hover:bg-gray-50'
+            ]"
+          >
+            <i class="fas fa-gift mr-2"></i>Refer & Earn
           </button>
         </div>
       </div>
@@ -296,7 +296,7 @@ export default {
     const user = ref({});
     const packages = ref([]);
     const loading = ref(true);
-    const activeTab = ref('buy');
+    const activeTab = ref('coin-transactions');
     const buyCoinsComponent = ref(null);
     const transactionModal = ref({ visible: false, status: 'success', details: {} });
     const paymentTx = ref([]);

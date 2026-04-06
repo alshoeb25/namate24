@@ -750,10 +750,16 @@ export default {
           
           // Show success message with coins/views info
           let message = response.data.message;
-          if (response.data.coins_spent && response.data.coins_spent > 0) {
-            message += ` [${response.data.coins_spent} coins deducted, Balance: ${response.data.remaining_balance}]`;
-          } else if (response.data.used_subscription) {
-            message += ` [View used, Remaining views: ${response.data.subscription_info?.remaining_views || 'N/A'}]`;
+          const coinsSpent = response.data.coins_spent || 0;
+          
+          if (coinsSpent > 0) {
+            message += ` [₹${coinsSpent} coins deducted, Balance: ₹${response.data.remaining_balance}]`;
+          }
+          
+          if (response.data.used_subscription) {
+            if (response.data.subscription_info?.remaining_views !== undefined) {
+              message += ` [Subscription View Used, Remaining: ${response.data.subscription_info.remaining_views}]`;
+            }
           }
           
           alert(message);

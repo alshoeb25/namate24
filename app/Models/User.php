@@ -158,6 +158,7 @@ class User extends Authenticatable implements JWTSubject, FilamentUser
     public function activeSubscription()
     {
         return $this->subscriptions()
+            ->with('plan')
             ->where('status', 'active')
             ->where('expires_at', '>', now())
             ->first();
@@ -170,6 +171,7 @@ class User extends Authenticatable implements JWTSubject, FilamentUser
     public function getMostRecentSubscription()
     {
         return $this->subscriptions()
+            ->with('plan')
             ->where('status', 'active')
             ->orderBy('expires_at', 'desc')
             ->first();

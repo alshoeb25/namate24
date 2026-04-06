@@ -49,16 +49,16 @@
             <i class="fas fa-list mr-2"></i>Subscriptions
           </router-link>
 
-          <router-link to="/student/contacted-tutors" 
-                       class="text-gray-700 hover:text-blue-600 font-medium transition"
-                       active-class="text-blue-600 font-semibold">
-            <i class="fas fa-user-tie mr-2"></i>My Tutors
-          </router-link>
-
           <router-link to="/student/wallet" 
                        class="text-gray-700 hover:text-blue-600 font-medium transition"
                        active-class="text-blue-600 font-semibold">
             <i class="fas fa-wallet mr-2"></i>Wallet
+          </router-link>
+
+          <router-link to="/student/contacted-tutors" 
+                       class="text-gray-700 hover:text-blue-600 font-medium transition"
+                       active-class="text-blue-600 font-semibold">
+            <i class="fas fa-user-tie mr-2"></i>My Tutors
           </router-link>
         </nav>
       </div>
@@ -98,16 +98,16 @@
           </li>
 
           <li>
-            <router-link to="/student/contacted-tutors" @click="closeMobileMenu" 
+            <router-link to="/student/wallet" @click="closeMobileMenu" 
                          class="block px-4 py-2 text-gray-700 font-medium hover:bg-gray-50 rounded-md">
-              <i class="fas fa-user-tie mr-2"></i>My Tutors
+              <i class="fas fa-wallet mr-2"></i>Wallet
             </router-link>
           </li>
 
           <li>
-            <router-link to="/student/wallet" @click="closeMobileMenu" 
+            <router-link to="/student/contacted-tutors" @click="closeMobileMenu" 
                          class="block px-4 py-2 text-gray-700 font-medium hover:bg-gray-50 rounded-md">
-              <i class="fas fa-wallet mr-2"></i>Wallet
+              <i class="fas fa-user-tie mr-2"></i>My Tutors
             </router-link>
           </li>
         </ul>

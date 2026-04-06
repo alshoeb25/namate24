@@ -114,15 +114,16 @@ class PublicTutorProfileController extends Controller
         $hasSubscription = $activeSubscription !== null;
 
         // Check subscription view limit and set required coins accordingly
-        // If has subscription with available views: require 0 coins (FREE)
+        // If has subscription with available views: use plan cost (39 PRO, 49 BASIC) for tracking
         // If has subscription but views exhausted: only show upgrade option (NO coins)
         // If no subscription: require coins
         
         $requiredCoins = 0;
         
         if ($hasSubscription && $activeSubscription->canView()) {
-            // ✅ Has subscription with available views - no coins needed (FREE)
-            $requiredCoins = 0;
+            // ✅ Has subscription with available views - set coins based on plan for tracking
+            $planType = $activeSubscription->getPlanType();
+            $requiredCoins = ($planType === 'PRO') ? 39 : 49;
         } 
         else if ($hasSubscription && !$activeSubscription->canView()) {
             // ⚠️  Has subscription but views exhausted - only show upgrade option
