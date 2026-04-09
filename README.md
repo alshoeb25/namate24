@@ -14,6 +14,13 @@ A Laravel 11+ API backend for a tutor-student marketplace with:
 
 This repository contains a scaffold to bootstrap development. It is not production-ready out of the box — fill env vars, configure Meilisearch/Razorpay/S3, add tests, and secure credentials before deployment.
 
+## Development Setup
+
+### VS Code Setup (Recommended)
+This project includes optimized VS Code workspace settings for better performance and GitHub Copilot integration. See [`.vscode/README.md`](.vscode/README.md) for details.
+
+If you experience "Chat took too long to get ready" with GitHub Copilot, see [`COPILOT_CHAT_FIX.md`](COPILOT_CHAT_FIX.md).
+
 Quick start (dev)
 1. Clone repository
 2. composer install
